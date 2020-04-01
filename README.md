@@ -4,7 +4,7 @@ This is my first time in _GitHub_, so I might not use common standards, I'm afra
 
 I just uploaded my _Eclipse_ project with some applications appart from _Sokker Asistente_
 
-To use _Sokker Asistente_ you will need to add the following variables in your `server.xml` so that the app can login to Sokker and get, for example, NT players:
+To use _Sokker Asistente_ you will need to add the following variables to your `server.xml` so that the app can login to Sokker and get, for example, NT players:
 ````xml
   <GlobalNamingResources>
       <Environment name="login" value="..." type="java.lang.String" override="false"/>
