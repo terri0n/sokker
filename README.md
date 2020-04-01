@@ -12,4 +12,4 @@ To use _Sokker Asistente_ you will need to add the following variables in your _
   </GlobalNamingResources>
 ~~~~
 
-And that's all. Users will be created in /home/asistente in _.properties_ files (no DB needed)
+And that's all. Users will be created in _/home/asistente_ in _.properties_ files (no DB needed)
