@@ -1,6 +1,6 @@
 ![Alt](/WebContent/img/sa.png "Sokker Asistente")
 
-This is my first time in _GitHub_, so I might not use common standards, I'm afraid :P
+This is my first time in _GitHub_, so I might not use common standards, I'm sorry :P
 
 I just uploaded my _Eclipse_ project with some applications appart from _Sokker Asistente_
 
