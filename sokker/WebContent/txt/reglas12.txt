@@ -1,0 +1,70 @@
+12. League system
+League competitions
+
+The league system in each country is divided into divisions, comprising a number of teams dependent on the level of the division. At the top level, there is always one league - the most important and prestigious for the given country. Each lower division consists of 4 times more leagues than the division directly above it, and so:
+
+Division 1: 1 league,
+Division 2: 4 leagues,
+Division 3: 16 leagues,
+Division 4: 64 leagues,
+etc.
+
+Each league has 8 teams playing each team twice, giving 14 matches over the course of the season. The points are assigned as they are in real life leagues; so for a win, the team gets 3 points and for a draw, the team gets 1 point. The order in the table is determined based on the following (from the most important downwards):
+- points
+- goal difference
+- number of goals for
+- the number of victories
+- position in the league at the end of last season
+
+At the end of the season, the winner of the league from the top division becomes the champion of the country.
+
+Promotion & Relegation
+
+The best 25% of league winners from lower leagues will promote without having to play a qualifier match. This also means that the worst 25% of teams (ranked by points, goal difference, number of goals, and position in the league at the end of last season as described above) will be relegated automatically. This means that the 8th place team is not always the one to be automatically relegated. The winners of the remaining leagues play in play-offs with the remaining teams placed 5th to 8th.
+
+Play-off pairs are determined on the point and goal difference basis with the weakest teams from the higher leagues playing against the strongest contender. In the event of a draw, the teams play extra time or eventually penalties. The match is played on the stadium of the team from the higher league.
+
+The Cup
+
+National cups start before the first round of a new season. The number of teams that qualify for the cup is the highest possible exponential of 2. And so, in a country with 3 divisions (21 leagues, 168 teams) the number of teams participating in the cup is 128. The national cup is based on ranking points which are used to determine whether a team qualifies for the cup and determining the fixtures for the cup. This increases the importance of friendly matches, especially for bottom league teams, as the loss of ranking points may decide whether a team qualifies or not. The national ranking page of a country shows the teams that will qualify for the cup the following season, by highlighting those not qualified with a grey background.
+
+In each round the teams will be allocated into two baskets according to their seeding based on their previous year's ranking point as of Monday of week 15, with the 1st basket containing the "strongest" 50% of teams, and the 2nd containing the "weakest" 50%. Once this is done, the pairings will then be random - i.e. any team from the 1st basket could play any team from the 2nd basket.
+
+The teams play one match only, at the stadium of the weaker team. Matches are played in the cup system, with extra time and penalties if necessary.
+
+Champions Cup
+
+The top teams of each country in Sokker will take part in the Sokker Club Champions Cup. The total number of participants in the Champions Cup is 128 teams.
+
+All of the League Champions from each country (that already have a national team) will participate in the Cup. The total number of participants is completed by the National Cup winners from the countries that have the highest national ranking. Where one team wins both National Championship and National Cup, then the Champions Cup place moves down to a National Cup winner from the next country in the national ranking.
+
+This competition is based on a knockout system similar to the national cups. The draw shall be seeded based on the teams current ranking.
+
+Friendlies
+
+The teams that did not qualify for the cup or have been already eliminated have additional time in mid-week. They can join one of the friendly leagues (if such exist) or agree with another team to play a one-off friendly. The match can be played using the league system (without extra time and penalties) or using the cup system. If you want to invite a team for a friendly, go to their team page and click on "Match Invitation" where you will be able to invite the team and select what type of friendly you would like, but also where you would like to play it. Alternatively, if you go to your Office and click on "Friendlies", you will be able to publish a friendly advertisement or search for friendly advertisements from other teams.
+
+Friendly leagues
+
+Only Plus subscribers can start their own friendly leagues; however, every manager can join one of the existing leagues.
+The founder is allowed to set up only one friendly league. The application for setting up a league can be found in a “Friendlies” file in the Reception.
+The founder determines the following:
+- when the league begins
+- which of the submitted teams would take part whether the second leg round would be played
+
+The founder is not allowed to give up playing in his own league, he may not activate it or simply delete it.
+
+The moment the league is set up, the teams can be submitted to it. The founder invites the teams he selects for his league. Once he’s decided that the list of the teams is complete and is willing to start the league in the first possible term, he approves the league.
+The league can be approved under the following conditions:
+- The number of teams is not odd, not less than 4 and not greater than the given Max. number of teams, dependant on the number of weeks left until the end of the season.
+- All teams selected for the league do not already have a friendly or cup match booked.
+
+A League approved between Thursday and Sunday, will kick off the following Wednesday, the calendar would be drawn on Monday. Between Monday and Wednesday, you can create a new league or join one of the inactive leagues; however, you can not approve/activate your league.
+
+The status of a league that has not been approved remains unchanged. It can be activated in the following weeks or can remain inactive forever.
+
+A friendly league that has finished the tournament becomes inactive again, so you can start a new round, invite new teams etc.
+
+Arcade Matches
+
+Arcade matches are a type of friendly match possible between two Plus users. These can be played each day except on Wednesdays or any day where an official match is played (e.g. league match). Arcade games are purely for fun and have no effect on Sokker reality; injuries and cards are not carried forward after the game, and the matches have no impact on training. However arcade matches will impact on your clubs ranking. All players are available for selection during arcade games, even if they have acquired an injury or red card.

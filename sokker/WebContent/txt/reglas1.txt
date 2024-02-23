@@ -1,0 +1,70 @@
+1. Rules
+To set up your new team, go to Registration on the Sokker main page. You must submit your data and current e-mail account. Please use your correct and personal e-mail address because you must be able to send back a confirmation mail. Do not worry, we do not use your info other than contact you for a specific reason.
+
+The process can be greatly simplified by using an existing Facebook account to register as most fields are filled automatically, just type team name, and play.
+
+Country
+
+You must apply for a team in the country you are permanently living in. You cannot apply for a new account in a country where you are on any temporary stay or vacation.
+There are two exceptions: 1) if your country is not available in Sokker then you can apply elsewhere, preferably in a country near yours or that shares the same language.
+2) If you are from a country that is not the one you are resident then you could contact an admin to apply in your original country.
+
+Please note it is compulsory to inform an administrator if you will log in from another country for a timeframe exceeding a 50 days period. This means it is not necessary to inform the staff if you go on a 3 week holiday, but it is necessary if you are going to work abroad for 2 months or if you permanently relocate to another country.
+
+Internet connection
+
+When applying to a new account you should use a normal Internet connection. Sokker disallows the use of any IP modifying or hiding tool (TOR, VPN) to access his site, and the unjustified use of those tools before registration would lead to the denial of the application and once you have registered it would lead to the closing of the account. In case you cannot avoid the use of a tool that hides your real IP you have to explain it to an admin.
+
+Also, if you believe that you could possibly share an IP address with another user, you must tell it to an admin. E.g. if you will log in from your office, have family playing the game, ...
+
+First steps in the game
+
+Just after your registration is confirmed you will be able to log on. You will find your team created, so you will be able to set up the squad, set training, watch matches and so familiarize with Sokker. However, at first, you will have limited rights. Only after your application is accepted by an admin, you will have full right. You are encouraged to contact a tutor or talk with other users in the forums. The game would be much easier to start, learning from more experienced users.
+
+On rare occasions, your country’s leagues may be full. This may lead to a slightly longer wait. In that case, please be patient as all leagues are continually reviewed to eliminate inactive teams to make room for new ones. Countries are expanded when necessary, usually during the offseason.
+
+New user limitations
+
+New users given a team automatically but not yet accepted by an admin won't be able to do the following:
+-write in forum or vote in forum polls.
+-write skmails.
+-buy Plus.
+-sell, buy, or advertise players.
+-bid on trainers.
+-vote in elections, or be a candidate for NT.
+-bet on a match in TV Studio or write a comment.
+-join as friends of other users.
+
+Contacting an admin
+
+Please follow fair play rules in Section 2. In case of any problem, or if you have any doubts about your registration, contact an admin.
+
+There are two ways to contact an admin without having a full account:
+1) send an email to admins@sokker.org .
+2) Write a message to an admin on the staff page of your country. List of countries.
+
+Trial plus
+
+Newly registered users will receive 2 days of trial plus immediately after given a team and 2 more days after a month. Trial plus users will not be able to create associations or friendly leagues or to add articles or guestbook entries.
+
+Trial plus will also be active for all users on 25th December every year.
+
+Account management
+
+Your Sokker account can be deleted for several reasons:
+
+- Your team has exceeded the bankruptcy limits for over 14 days.
+- Your account has been blocked due to failure to follow the fair-play rules or forum rules as stated in section 2.
+- You have not logged in for 50 days (when a country is almost full, this can drop to a minimum of 15 days of inactivity in the lowest leagues of that country. In such cases, Sokker staff will inform you about this in the forum of your country).
+
+Please note that if your account was deleted for inactivity but your team still exists (that is: it was not replaced by a new team) you may contact an admin to see if you can recover your team.
+
+In each case, if you would like to rejoin Sokker with a new account, you will be allowed to register one more time. However, you must wait for 50 days from your last login before doing this.
+
+User invitations
+
+When you invite your friend to join Sokker you can tell him to fill out your login ID during the registration process or just send them a link as below:
+
+www.sokker.org/?buddy=your_login
+
+A 30 days free Plus will be added to your account every time a user that you have invited buys plus for the first time!

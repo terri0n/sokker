@@ -1,0 +1,106 @@
+Reglamento Factor X
+
+1 – Jugador de nacionalidad española.
+
+2 - Cada usuario puede presentar todos los jugadores que cumplan los requisitos, no hay límite.
+
+3 – La edad del jugador debe estar entre 18 y 20 años.
+
+4 – Pueden participar también jugadores que hayan debutado en la selección.
+
+5 – Se podrán añadir jugadores una vez iniciado el concurso.
+
+6 – El jugador podrá renunciar a participar en el concurso en cualquier momento, no pudiendo volver a inscribirse en esa edición con el mismo dueño
+
+7 – Para poder inscribir al jugador hay que ponerle un anuncio de traspaso.
+
+8 – Cada semana se pondrá una clasificación para ver quién sería en ese momento el/los elegido/s y para darle también un mayor seguimiento al concurso. Por lo tanto, después del entrenamiento del jueves se anunciarán las subidas de niveles y para comprobarlas el jugador en cuestión debe tener un anuncio de traspaso. El sistema comprobará los anuncios cada mañana a las 8:00h automáticamente.
+
+9 – Al inscribir a un jugador se indicará su nombre, edad, habilidades e ID (o un enlace al mismo). Se podrá escoger una de las siguientes demarcaciones:
+
+- Portero
+- Defensa
+- Centrocampista
+- Delantero
+
+Esta demarcación la elegirá su dueño valorando la que sea más conveniente a su posición o al desarrollo que tenga como jugador. Una vez elegida no se podrá cambiar, a menos que permanezca con 0 puntos en la clasificación.
+
+10 – Los jugadores deberán de tener unos requisitos mínimos que cumplir a la hora de apuntarse al torneo. Cada nivel de habilidad suma 1 pto. (Terrible 1, deficiente 2, Pobre 3, Débil 4, Regular 5, Aceptable 6, Bueno 7, Solido 8, Muy Bueno 9, Excelente 10, Formidable 11, Destacado 12, Increíble 13, Brillante 14, Mágico 15, Sobrenatural 16, Divino 17)
+
+
+
+Como podéis comprobar, los requisitos son para asegurar que los jugadores que se inscriban tengan una “mínima” calidad
+
+11 - Cada subida de habilidad que logre el jugador durante la temporada le otorgará una serie de puntos. No todas las habilidades suman los mismos puntos de cara a la clasificación:
+
+
+
+12 - En caso de empate a puntos ganará aquel que:
+
+1- Menos semanas haya participado
+2- Menor edad tenga
+3- El que más alta tenga una cualidad
+4- Valor del jugador
+
+13 - La fecha de inicio del concurso es el viernes de la semana 0 y la fecha fin del concurso es el jueves de la semana 12.
+
+14 - Los ganadores serán:
+
+Siempre que la suma de participantes a lo largo de la temporada sea al menos de 40 jugadores
+
+- Mejor portero
+- Los 4 mejores defensas
+- Los 4 mejores medios
+- Los 2 mejores delanteros
+- Los 3 mejores suplentes, aquellos que tengan la mejor puntuación a partir de los 11 elegidos anteriormente, no pudiendo superar un máximo de 1 portero, 1 defensa, 1 medio, 1 delantero.
+
+Si los participantes son de 30 a 40 jugadores:
+
+- Mejor portero
+- Los 3 mejores defensas
+- Los 3 mejores medios
+- Los 2 mejores delanteros
+- Los 2 mejores suplentes, aquellos que tengan la mejor puntuación a partir de los 9 elegidos anteriormente, no pudiendo superar un máximo de 1 portero, 1 defensa, 1 medio, 1 delantero.
+
+Si los participantes son de 20 a 30 jugadores:
+
+- Mejor portero
+- Los 2 mejores defensas
+- Los 2 mejores medios
+- El mejor delantero
+- El mejor suplente, aquel que tenga la mejor puntuación a partir de los 6 elegidos anteriormente.
+
+En base al número de participantes por posición también se establece:
+
+1. Si la cantidad de defensas/medios participantes en el concurso no llega a un mínimo de 10 pero mayor de 5, jugarán el partido amistoso los 2 mejores defensas/medios y el mejor suplente. En caso de que sean 5 o menos defensas/medios jugará el mejor defensa/medio y un suplente.
+
+2. Si la cantidad de delanteros participantes en el concurso no llega a un mínimo de 8 pero mayor de 5, jugarán el partido amistoso el mejor delantero y el mejor suplente. En caso de que sean 5 o menos delanteros jugará el mejor delantero.
+
+NOTA: la formación premiada (4-4-2 por defecto) podrá ser cambiada en función de las necesidades del seleccionador U21). Actualmente es una 3-4-3.
+
+15. Premios:
+
+- Plus para los managers que entrenen a los 3 primeros clasificados de esta edición.*
+
+(premio 1): seis meses de plus (1)
+(premio 2): 3 meses (2)
+(premio 3): 2 meses (3)
+
+Premios 1, 2 y 3, para los 3 primeros respectivamente (Siempre que la suma de participantes a lo largo de la temporada sea al menos de 40 jugadores)
+Premios 2 y 3, al primer y segundo puesto respectivamente (Si los participantes son de 20 a 39 jugadores:)
+Sólo premio 3, al primer clasificado (Si hay menos de 20 jugadores).
+
+EN EL SUPUESTO DE QUE SE ALCANCEN 40 jugadores participantes..,
+
+Si hacen podio 3 jugadores del mismo equipo, el usuario recibe 1 año de plus. Los usuarios cuyos jugadores queden 4º y 5º, recibirán plus por dos meses. Si 4º y 5º pertenecen al mismo equipo, el usuario recibe por el 4º y se corre la lista al siguiente que haya sido un usuario ya premiado.
+
+Si 2 jugadores de un mismo equipo hacen podio, recibirán sumatoria de tiempo según las bases de premios. Pero se creará un 4º premio por otro jugador perteneciente a otro usuario que no sea ninguno de los que ya recibe premio por figurar en podio, pudiéndose, en ese caso, correr la lista al siguiente, para cumplirse siempre la condición de que 3 usuarios se beneficien.
+
+EN EL SUPUESTO DE QUE SE ALCANCEN 20 jugadores participantes pero no se llegue a los 40.
+
+Si uno se gana los dos premios, habrá un tercer premio de 2 meses.
+
+- Todos los ganadores jugarán con la selección U21 un partido amistoso.**
+
+* El premio del plus está sujeto a la aparición de un patrocinador. Esta edición el patrocinador será SokkerAsistente :)
+** El partido está sujeto a la aceptación por parte del seleccionador/staff.

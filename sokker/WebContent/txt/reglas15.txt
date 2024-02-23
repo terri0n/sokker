@@ -1,0 +1,50 @@
+15. Menu of the game
+In this chapter, you will find a short manual to the menu regarding individual topics described in the rules.
+
+User menu - the right frame
+
+On your right you will find a bar with 9 icons with links to the most important places in your club:
+
+- News - a link to the home page where the news regarding the game are displayed
+- The club page - takes you to the main page of your club, you will get access to your league table as well as to your profile where you can edit data such as your login, password, e-mail etc.
+- The Players - a list of the players currently employed by your club, here you can obtain all the needed information on your line-up. You can go to the individual players’ pages to find out more about him or to take an action (place him on a transfer list, sack him)
+- The matches - a list of the latest matches and a fixture list of matches not yet played.
+- Training - here you manage and coach your team, recruit new coaches, assign jobs to coaches that have valid contracts. You can also access the coach page where you can watch his individual skills, sign a contract with him, sack him etc. On the training page, you also select the individual training and training position.
+- Finance - here you can check the pay-ins and pay-outs of your club in the following and previous week and monitor the balance of your account.
+- Stadium - on this page you can view your stadium and get an estimate cost of stand expansion or start building works.
+- Office - in the Office you will find additional information on what is going on at your club, read the reports, and find out about the supporters’ club’s condition and the mood of the subscribers. You can also monitor the current transfers. Additionally you will find useful links to other important pages.
++ Juniors - check your sub junior school, determine the max number of participants, and promote the ones ready to join the line-up.
++ Friendlies - various data on friendly matches and leagues
++ Media - determine the club’ match kits, the club’s emblem, publish press articles etc (option available to Plus subscribers only).
++ Briefcase - here you can find the list of observed players and teams option (available to Plus subscribers only))
++ Mail - send internal Sokker mails to other Sokker managers.
+
+Main menu - left frame
+
+In this menu the links to the general pages about your country and Sokker are found:
+- Country - the main page of your country, all basic information, browser of official and friendly leagues. In files, additional pages are available:
++ Regions - the list of regions for the given country
++ Statistics (available to Plus subscribers only)
++ Events - the list of today’s events in the country
+- Search - the browser of users, players and teams
+- Transfers - the browser of players placed on the transfer list
+- Forum - here you get access to the forums, where you can have discussions with other managers. If there are numbers in the form of (+x / +y) next to a forum’s name it means that there are x comments in y threads that remain unread by you. Remember to observe the rules of the forum.
+- Rules - a link to the rules you are reading right now :).
+- Plus - here you can find out about the advantages of subscribing to Plus and subscribe to it if you wish to do so.
+
+Editing the line-up
+
+On entering the list of your matches, you can find a link Line-up next to the matches not yet played. It leads to the page allowing you to select players fro the given match, determine their orders and choose the right tactics. The view of the tactics shows the average position of the players and may appear slightly different to what you see in the tactics editor. Put your players on the selected positions, choose the tactics and click on Save. You will see the page with the selected line-up again. To be sure leave to line-up editor and check it again. Some browsers may generate errors.
+
+Editing the match orders
+
+On entering the list of your matches, you can find a link Match Orders next to the matches not yet played. It leads to the page allowing you to select players for a given match determine their orders and choose the right tactics. The view of the tactics shows the average position of the players and may appear slightly different to what you see in the tactics editor. Select your 16 players (first 11 plus 5 substitutes) by selecting their names against positions 1 to 16. make sure that you do not have more than 1 GK, 5 DEF, 5 MID and 3 STR. Then choose the tactics and click on Save. You will see the page with the selected line-up again. Remember to check that the line-up has been saved, by leaving the line-up editor and then checking it again. Some browsers may generate errors.
+
+Editing the tactics
+
+The tactics editor can be found in the Training file, or on the Line-up editing page. You can only edit your own tactics, if you do not have any you will need to copy one of the existing tactics. To do this, use the Create new tactics based on: dropdown and choose a tactic that will be a basis to the new line-up from the list. Then you should choose a name, so it is easy for you to find. Upon clicking on Create, the user tactics will be displayed under the standard ones. Above the tactics editor, the tactic name is displayed.
+
+Select the tactic that you want to edit. It will then appear in the football pitch to the right. To alter the tactics, “drag” the ball in the centre of the field with your mouse pointer by pressing the left mouse button. You will see how the players move around the pitch. They will do the same on the pitch provided their pace and stamina will allow them to. The current position of the ball indicates how the players should be lined up at the moment. If you want to change the line-up, simply “drop” the ball in the chosen place and place the players in the desired positions. Pay attention to whether your players change their positions smoothly with the moving ball. Improper line-up may cause that your players would not be able to reach their positions on time, making your tactics useless.
+You decide yourself on the style of play that your team delivers, e.g. decide how far defenders can go during offensive actions, placing the players wide or closer to the centre of the pitch, thereby strengthening or weakening selected parts of the field etc. There are millions of potential combinations for you to use!
+
+On pages with players’ line-up for the match and with the individual marks, the view of the applied tactics is generated. Do not be surprised if this view differs significantly from that you can see after opening you tactics in the editor as this highlights the average position of each player.

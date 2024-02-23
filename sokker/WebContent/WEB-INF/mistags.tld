@@ -1,0 +1,67 @@
+<taglib>
+    <tlib-version>1.0</tlib-version>
+    <jsp-version>2.0</jsp-version>
+    <short-name>mistags</short-name>
+    <uri>/WEB-INF/mistags.tld</uri>
+    <description>Tags de Sokker Asistente</description>
+	
+    <tag>
+	    <name>desplegable</name>
+        <tag-class>com.formulamanager.sokker.tags.TagLibDesplegable</tag-class>
+        <info>Desplegable con código HTML</info>
+
+        <attribute>
+			<name>name</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+        </attribute>
+        
+		<attribute>
+			<name>style</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+        </attribute>
+
+		<attribute>
+			<name>class_</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+        </attribute>
+
+		<attribute>
+			<name>value</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+        </attribute>
+
+		<attribute>
+			<name>onchange</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+
+    <tag>
+	    <name>string</name>
+        <tag-class>com.formulamanager.sokker.tags.TagLibString</tag-class>
+        <info>Funciones de la clase String</info>
+
+        <attribute>
+			<name>value</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+        </attribute>
+
+        <attribute>
+			<name>begin_index</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+        </attribute>
+
+        <attribute>
+			<name>end_index</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+        </attribute>
+	</tag>    
+</taglib>

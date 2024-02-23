@@ -1,0 +1,18 @@
+18. Basic prices and costs
+Weekly stadium`s maintenance expenses (1 place):	0.75 €
+Weekly expenses on single place in junior school:	1 000.00 €
+Interest rate in case of debt:	4.5%
+Max debt:	-250 000 €
+Bankruptcy limit:	-500 000 €
+Supporter`s subscription card`s price (per season):	125.00 €
+Tickets` prices (rounded)
+
+Stand	along line	behind goal
+Standing places	2.00 €	2.00 €
+Standing places under roof	2.00 €	2.00 €
+Terraces	4.00 €	4.00 €
+Terraces under roof	5.00 €	5.00 €
+Benches	6.25 €	6.25 €
+Benches under roof	7.50 €	6.25 €
+Seats	7.50 €	6.25 €
+Seats under roof	8.75 €	7.50 €

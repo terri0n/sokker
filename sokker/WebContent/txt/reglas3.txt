@@ -1,0 +1,8 @@
+3. Your club
+Your club, as a real football club has its own football stadium, players, coaches and assistants as well as sub junior school. Managing a team involves some costs, such as salaries, transfers, stadium building works etc. Your club must maintain financial liquidity, otherwise it will go bankrupt. You will find more details concerning the team management further on.
+
+Bankruptcy
+
+Teams that are about to declare bankruptcy (account balance less than -500 000 €) will be able to log on for 72 hours from the last log in.
+
+This is to allow them to correct their bank balance - sell players, sack coaches etc. After 72 hours they cannot log in again, until the account balance improves sufficiently (account balance more than -500 000 €). If their account balance goes over that amount, they will then be able to log in as normal. However, if the account balance remains below -500 000 € for a period of 14 days, the team will be formally bankrupt as described in the Account Management portion of Section 1 above.

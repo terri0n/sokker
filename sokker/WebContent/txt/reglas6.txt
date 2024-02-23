@@ -1,0 +1,50 @@
+6. Training
+For the sake of your team’s development and improvement, your players must be properly trained. Every week you can choose a skill that is going to be practised during individual training. Most types of training demand that the player played in the selected position during the week, in the friendly/cup game and/or the league game.
+
+A player who played in the same position (ie, as a def) twice during the week will train better than one who played in only one game. Similarly, a player who played in an official match will train better than one who just played in a friendly. If a player played in two different positions during the week, the last match counts. The benefit of playing a player with the same match order twice is small - they will receive near full training by playing 1 match. If they play only in an international, they will receive around 50% of the normal training. Players do not receive training in extra time as they are too tired.
+
+The differences in training effectiveness resulting from player’s appearances during the week are small. A player who played in one friendly only, will have only slightly less effective training than the one from the first team line-up. The difference is even smaller for a player that played in two games instead of just one.
+
+The hidden individual feature of each player is his talent. The more talented the player, the more he takes advantage of training and improves his skills faster. With age the ability to improve weakens, the older the player, the longer it will take his skills to improve. In addition to individual training, a general training session takes place. All players that played in the current week’s matches participate in it. The effectiveness of general training is much smaller than that of the individual training session.
+
+The quality of both individual and general training responsibility lies mostly with the main coach. The feature that counts most is his individual skills; his general appraisal does not influence the effectiveness of training. Select a head coach who has a high ability in training the skill you have chosen for the individual training. Decide yourself how important for you, are the other coach abilities and if you can afford to pay more for a better coach.
+
+The assistants may be helpful to the main coach improving his training effectiveness - the better the assistant (in terms of general appraisal); the more he helps the main coach. However, do not hire too many assistants. If you hire more than 3, they will argue, resulting in training being less effective, or even lost.
+
+Note that when you substitute a player, they will only receive training according to how long they played in the match. The player must play with the same match order (def, att etc) in both matches in one week, otherwise only the last match they played will count for training (even if you are training pace). The only time when the match order does not count is with stamina training.
+
+Training of stamina
+
+This skill trains the quickest. All players in the team train it irrespective whether they were playing in the team that week or not. The players train with the same efficiency regardless of age and talent. However, untrained stamina may go down, even for younger players. The maximum Stamina that any player can reach is Formidable.
+
+Training of pace
+
+Pace is trained by all players that played at least once during the week, regardless of position. Although this is similar to stamina training, pace is a physical training and thus its effectiveness depends on both a player’s age and talent.
+
+Training of striker
+
+Strikers (ATT position) train most effectively, a bit slower the midfielders (MID) and to a little extent, defenders (DEF) and goalkeepers (GK).
+
+Training of passing
+
+Passing is most effectively trained by midfielders (MID), the remaining positions train slower. If you want to enhance the effect of training passing for other positions, you can do so. However, it will result in decreasing the effect of training for midfielders.
+
+Training of playmaking
+
+The training of playmaking is similar to that of passing. The position that profits most from this type of training are midfielders (MID). Similar to training passing, you can also enhance the effectiveness for another position; however, it will also result in decreasing the effect of training for midfielders.
+
+Training of defending (tackling the ball)
+
+You can select the position that will train defending most effectively during the week, you can choose among ATT, MID and DEF. The remaining positions train slower.
+
+Training of technique
+
+Similar to defending, it is most intensively trained by the position selected for the current week.
+
+Goalkeeping training
+
+Only goalkeepers (GK position) that played during the week participate in the training.
+
+Tactical Discipline
+
+Tactical Discipline increases/decreases independantly from training of other skills. Experience is gained or lost based on matches played, activity in the matches, and type of match. Players at lower levels of experience increase the skill faster than players with higher levels. Team-work represents how well a coach can teach tactics and how much the player has learned with that club and depends primarily on head coach's general appraisal. Team-work depends on time played in weekly matches with that team. Older players' team-work increases and decreases in slower (they are more "change resistant"). After every transfer, team-work of the transferred player drops down to the lowest value.

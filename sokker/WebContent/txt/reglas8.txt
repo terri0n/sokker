@@ -1,0 +1,32 @@
+8. Transfers
+One of the basic ways of acquiring new players in Sokker Manager is to buy them from other clubs. The transfer market works as an auction. Note that it is not possible to list players for 0 € - you will need to list them for at least 1 € to have them successfully listed.
+
+Placing a player up for sale involves a transfer fee of 2.5% of the starting price. After the transfer, the seller has to pay tax of 5% on the received price. If the player is not originally from your team and is aged 23 or under, then a further 5% of the received price will go to his original club.
+
+After being placed up for sale, the player remains on the transfer list for two days unless he is withdrawn by his employer. Players can only be withdrawn while no bids are placed. When the bidding expires, the player will move to the club that offers the most money for him. After bidding, the player remains in his previous club until he is brought in by his new employer or is sent out by his former club owner. At that moment, the transaction is complete.
+
+If the buyer does not bring the player in and the seller does not send the player away, it will be possible to cancel the transfer. To do this, if both individuals wait one week after the bidding has finished, the transfer will be canceled automatically, and both users will have to pay 10% of the final bidding price to do this.
+
+Daytrading
+
+Sokker includes rules designed to limit daytrading of players. Every single player could refuse the proposal of being auctioned by their team.
+
+The chance that a player will refuse being auctioned will depend on:
+- the number of matches played for the club - the less he played, the higher the chance of refusal
+- the number of players put up for sale by the team within the past 2 weeks
+- form of the player - the lower the form, the chances of his rejecting the transfer increase (lower affect)
+- mood of the supporters - the worse, the more likely that player will agree to a move (lower affect)
+
+The daytrading regulations exclude all players from your initial squad and youth school.
+
+Transfer Advertisements
+
+There are several ways to advertise your players for transfers:
+
+- You may create up to 3 transfer advertisements for players to find out what type of interest in them there is within the market by clicking on "sell" on the player page and then clicking the Create Announcement button. This will enable you to start a thread associated with that player that describes him and which will be visible to any users looking at your player. In addition, the skills of players being advertised will be available to be seen by other users whether or not they're transfer listed. On the Transfers search screen, users can search for players who are under this type of advertisement (select transfer advertisements on the Type of List dropdown).
+
+- For players who meet certain minimum requirements, you can post within the Transfer (en), Transfer Star (en) and Transfer Junior (en) forums. You can add those forums to your forum list by clicking in ->Show other forums. Please be sure to follow forum rules on what types of players can be listed and posting requirements.
+
+- You can advertise your players in your own country's local transfer forum and the forum of the country that the player is from. For example, if you're from England and are selling a player from France, you may advertise the player in Transfers England and Transfers France but not in other local transfers forums.
+
+You should remember the fair-play rules listed at the beginning in regards to transfers.

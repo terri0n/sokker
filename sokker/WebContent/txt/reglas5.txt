@@ -1,0 +1,44 @@
+5. Coaches
+Where would a team be without a coach? No where, as no progression would be made.
+Your coaches enhance players’ skills during training sessions and take care of the junior team.
+
+
+Training skills
+
+Each coach is graded in their training effectiveness for each of eight playing skills. These grades are valid solely for the head coach, as other coaches only need the general coach skill (see below). You should try and have your coach with the highest skill possible in the area that you intend to train.
+
+General appraisal
+
+General appraisal of a coach depends on the sum of his individual marks for training each individual skill. It is very important for assistant coaches - the higher their appraisals the more efficiently they help the main coach. Additionally, for your sub junior school you should select a coach with the highest possible general appraisal. The higher their appraisal, the quicker your juniors will improve. The training of Team-work is solely dependant on your coaches general appraisal, mostly based on the head coach but affected slightly by the assistants.
+
+Earnings
+
+Generally, the better the coach, the higher the salary. At the beginning, you will not be able to afford a fantastic coach, unless you want your club to go bankrupt. The salary of the coach is not renegotiable - it remains at the same level throughout his contract with the club.
+
+Age
+
+Your coach is a human being, at some moment he may finish his coaching career. Do not be surprised when your aged coach hands you his notice and leaves for well-deserved retirement in Bermuda.
+
+Searching for coaches
+
+When you first start in Sokker, your club will already have a few coaches. They will not be the best coaches you could possibly have; they have been kept in the club thanks to their acquaintances amongst the previous owners of the club. However, they have one important advantage; their salaries are low. You can easily sack them and look for better staff.
+
+Recruitment
+
+You can search for a coach using the coach searching form. Recruiting a new coach costs money. The more precisely you define his skills the higher the charge is. You must pay this charge, even if the search does not find a coach that fits your requirements.
+A coach will arrive with skills approximately comparable to those you have chosen in the coach searching form. If he meets your expectations you can choose to accept him, contracting him to the team. Signing a contract does not involve any costs, however when a contract is terminated the coach receives his salary for the whole week. However if he does not fit your requirements you do not have to sign contract with him, you can sack him and search for another one. Sacking a coach without a signed contract does not cost anything.
+Tip: Set all skills in the form to requested general appraisal when searching for assistant or junior coach (i.e. all average for an average coach).
+
+Sacking coaches
+
+As stated earlier, sacking a coach that you have yet to assign a role is free. However once you have accepted a coach, it will cost you a weeks wages to sack that coach. If a coach is sacked, he is added to the contract list.
+
+Coach assignments
+
+Once you have accepted a coach, he is added to your team personnel and can be found in training screen under the section No Assignment. This means that the coach has been hired but has yet to have been assigned a post within your club. The posts of head coach, assistant coach and sub junior coach can be taken by any of your contracted coaches. You should therefore assign the coach to the post you recruited him to fill. You are able to swap coach assignments free of charge at any time (e.g. promote your assistant coach to head coach etc.) Any coaches that have not been assigned a role will continue to receive their salaries (even if they are doing nothing!)
+
+Coach contract market
+
+Coaches sacked from any club (if they were previously employed), if they wish to continue their coaching career, will go on the trainer contract list. If you wish to have one of them at your club, then you can place a bid on them. The money goes directly to the coach, his previous club will not receive any of the money.
+
+If the auction does not finish in one week (auction winner does not finalise the contract), the auction is annulled and the winning club pays 10% of the placed offer.

@@ -1,0 +1,99 @@
+ ¿Qué es Sokker Asistente?
+Sokker Asistente es una aplicación online que te ayuda a gestionar tu equipo de Sokker e incluso una Selección Nacional.
+
+ ¿Qué puedo hacer con Sokker Asistente?
+Podrás llevar el control de los cambios en las habilidades de tus jugadores, pero especialmente podrás llevar el control del entrenamiento milimétricamente. Sabrás cuántos puntos de entrenamiento tiene acumulado cada jugador en cada una de sus habilidades, cuánto le queda para subir al siguiente nivel, cuál es su talento aproximado...
+
+ Cuando actualizo mi equipo me dice que necesito un navegador con la restricción CORS deshabilitada, ¿qué es esto?
+Para verificar que tu contraseña es correcta desde tu equipo, Sokker Asistente necesita conectar directamente con Sokker. Esta acción, llamada CORS, por defecto no está permitida en los navegadores por motiovos de seguridad.
+
+Sin embargo existen varios métodos para poder deshabilitarlo. NOTA: esto conlleva un riesgo y no se recomienda navegar por webs no seguras con la opción desactivada.
+
+Instalar un plugin en el Navegador. Activa o desactiva el modo CORS con un par de clicks:
+Allow CORS Plugin
+
+Crear un acceso directo al navegador con la opción deshabilitada y utilizarlo únicamente para navegar por Sokker Asistente
+Opera: "C:\Program Files (x86)\Opera\launcher.exe" --disable-web-security --user-data-dir="c:\nocorsbrowserdata"
+Chrome: "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" --disable-web-security --user-data-dir="c:\nocorsbrowserdata"
+
+Utilizar la app de Android.
+Utilizar el navegador Yandex Browser (disponible para Android y iPhone), que permite instalar el plugin de Chrome para habilitar CORS.
+ ¿Qué son los puntos de entrenamiento?
+Son el tiempo efectivo de entrenamiento que lleva acumulado un jugador por semana. Este tiempo no se corresponde exactamente con los minutos jugados, ya que cada tipo de partido tiene un peso distinto para el entrenamiento, y está limitados a 100 puntos por jornada. Sokker Asistente también tiene en cuenta los entrenamientos generales a la hora de contar los puntos de entrenamiento acumulados.
+
+El equivalente en puntos de entrenamiento de cada tipo de partido es el siguiente:
+
+Tipo de partido	Puntos de entrenamiento
+Oficial (liga, copa, promoción, Champions Cup)	93
+Amistoso	70
+Selección Nacional	46.5
+Ten en cuenta que, si el jugador recibe un entrenamiento avanzado, partirá con 50 puntos de entrenamiento de inicio, y los nuevos puntos de entrenamiento adquiridos se dividirán entre 2. Además, a partir de los 93 puntos de entrenamiento, los nuevos puntos de entrenamiento se acumulan de forma mucho más lenta, alcanzando el 100% de efectividad con 180 puntos de entrenamiento.
+
+ ¿Cómo influyen los entrenadores en el entrenamiento?
+Para el enternamiento directo solo se tiene en cuenta la habilidad que entrenes del entrenador principal. Si esta es sobrenatural, el entrenamiento tendrá una eficacia del 100%, perdiendo un 6.25% por cada punto de menos que tenga la habilidad.
+
+Para el entrenamiento general se tiene en cuenta la media de la habilidad en cuestión del entrenador principal con la suma de niveles de los asistentes dividida entre 3. Si este nivel resultante es sobrenatural, el entrenamiento tendrá una eficacia del 100%, perdiendo un 6.25% por cada punto de menos que resulte.
+
+Sokker Asistente no se conforma con utilizar el nivel visible de los asistentes sino que pretende ser lo más preciso posible. Para ello, además del nivel, utilizamos la media de sus habilidades como cota mínima, y estos dos valores + 1 como cota máxima (suponiendo que todos sus subniveles estén al máximo). La intersección de estas dos cotas formará el rango posible del valor real del nivel, quedándonos con el valor intermedio.
+
+Por ejemplo:
+
+Nae Variaş, edad: 67
+salario: 45 175 €
+club: FormulaManager, país: România,
+mágico entrenador
+
+Efectividad de entrenamiento:
+sobrenatural en condición	increíble en portería
+sobrenatural en rapidez	sobrenatural en defensa
+mágico en técnica	sobrenatural en creación
+sobrenatural en pases	sobrenatural en anotación
+
+Cota por nivel: [15, 16[
+Cota por promedio de habilidades: [15.5, 16.5[
+Intersección: [15.5, 16[
+Finalmente nos quedamos con la media: 15.75
+Con esta forma de calcularlo, el valor máximo del nivel de un asistente será 16.5
+
+ ¿Por qué los datos del entrenamiento no coinciden con los que he usado?
+Sokker Asistente no puede conocer los valores exactos utilizados durante el entrenamiento, sino que lee los datos almacenados en Sokker la primera vez que se actualiza después de realizar el entrenamiento. Por lo tanto, si realizas algún cambio en este período, tus datos de entrenamiento podrían ser incorrectos.
+
+ ¿Cómo funciona el entrenamiento de condición?
+Funciona de forma distinta al resto de entrenamientos, ya que es independiente de los minutos jugados por cada jugador.
+
+Cada semana, todos los jugadores reciben una cantidad fija de entrenamiento de condición que, como he dicho antes, es aproximadamente un 10% del entrenamiento directo. Pero, al mismo tiempo, cada jugador puede perder aleatoriamente una cantidad de condición cada semana. Cuando se pierde, esta cantidad es superior al 10% que se recibe, por eso hay veces que los jugadores pierden un nivel de condición a la semana siguiente de haberlo subido. A lo largo de una temporada, la cantidad perdida es aproximadamente un 50% de lo entrenado.
+
+Como sería casi imposible saber qué cantidad real de condición se entrena cada semana, Sokker Asistente hace una aproximación, contando cada entrenamiento general de condición como un 5% del entrenamiento directo. Te puedes hacer una idea de cuánto le queda por subir a cada jugador sabiendo que un 100% equivale a un entrenamiento completo, y que un jugador puede subir un nivel completo con un 80% entrenado aproximadamente. Por eso, cuando entrenas condición, puede haber jugadores que suban 2 niveles de golpe y, en general, cada jugador sube un nivel completo de condición por temporada (con buen entrenador y asistentes). Pero, en el mejor de los casos, si tiene la suerte de no perder nunca entrenamiento, podría subir un nivel completo en 8 semanas.
+
+ ¿Cómo se calcula el talento de un jugador?
+El talento es el nº de semanas que necesita un jugador para subir un nivel completo en la escuela de juveniles con un buen entrenador de juveniles. Este número no es exacto, en parte porque existe una aleatoriedad importante, pero cuantas más semanas formen el cálculo, menor será el margen de error que cometamos.
+
+Por otro lado, el talento de la escuela se corresponde aproximadamente con el doble de semanas que necesitaría un jugador de 17 años para subir rapidez o anotación a débil, o bien defensa, técnica, creación o pases a aceptable, siempre que se tengan buenos entrenadores y asistentes. Cada nivel de más supone aproximadamente un 9.4% de incremento respecto al nivel anterior, y cada año de más también, con lo cual, una vez sabemos cuántos entrenamientos necesitamos para subir un determinado nivel, podemos calcular todos los demás.
+
+Aunque aquí ya no haya aleatoriedad, sí que hay un margen de error debido a que solo podemos ver el valor entero de cada habilidad. De nuevo, cuantos más datos tengamos, mejor se podrá acotar el talento.
+
+ ¿Por qué el talento mínimo de un jugador ha superado su talento máximo?
+Idealmente el talento mínimo y el máximo deberían converger en un número que coincidiría con el talento real de cada jugador, pero los cálculos que hace Sokker Asistente son estimaciones basadas en fórmulas aproximadas. Así que es normal que en algún momento el talento mínimo de un jugador supere a su talento máximo. Lo más probable es que el talento real del jugador se encuentre entre estos dos valores.
+
+ ¿Qué muestra la gráfica de cambios de valor?
+Esta gráfica muestra el valor del jugador procesado con la intención de eliminar el efecto de los cambios de forma sobre el valor. De esta forma se puede analizar si un jugador ha estado entrenando o no.
+
+Para ello buscamos el valor proporcionalmente, partiendo del hecho de que un jugador con forma trágica tendrá el 55% del valor que tendría con forma superdivina.
+
+ ¿Cómo se calcula el talento de un juvenil?
+Sokker Asistente aplica una regresión lineal sobre los distintos niveles asignados a los juveniles a lo largo de su vida para estimar la pendiente de la recta que determinaría su talento.
+
+ ¿Qué significa cada uno de los elementos del entrenamiento?
+
+Nivel de la habilidad que se quiere conseguir
+Entrenamiento general
+Entrenamiento individual y el número de puntos de entrenamiento acumulados
+Suma de los puntos de entrenamiento realizados
+Estimación de los puntos de entrenamiento necesarios para completar el nivel según el talento calculado del jugador, la edad del jugador y el nivel de la habilidad
+Entrenamiento completado del que se desconoce el estado inicial
+Entrenamiento iniciado y completado
+Entrenamiento iniciado pero no completado
+ ¿Para qué sirve la proyección de habilidades de un jugador?
+La proyección te ayuda a calcular cómo podría ser un jugador determinado en el futuro si entrena al 100% todas las jornadas.
+
+Para hacerlo, selecciona la edad sobre la que quieres proyectar las habilidades del jugador y ajusta el talento a tu gusto. Automáticamente se añadirán los incrementos de habilidades debidos a los entrenamientos generales que acumule el jugador hasta alcanzar la edad seleccionada, y se te indicará en número de entrenamientos individuales que puedes aplicar. Ahora auméntale habilidades a tu gusto y el indicador de entrenamientos restantes irá disminuyendo en consecuencia.

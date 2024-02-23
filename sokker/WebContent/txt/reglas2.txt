@@ -1,0 +1,87 @@
+GENERAL SOKKER RULES
+
+As an user you are obligated to obey the following major rules. In the game it is forbidden:
+- to own or to control more than one team
+- to sell or to hand over a team to another user (no matter if he was already playing in Sokker or is a new user)
+- to have a team in a country other than the country of nationality or habitual residence. In case of registering from a different country or coming from a country not included in Sokker database, please explain it by writing to admins@sokker.org.
+- to transfer any player between the teams that use the same IPs or that log from the same computer
+- to help other teams by bidding intentionally on their players above the market value
+- to transfer players over their fair market values
+- to hack another user's account and to try to obtain other user's password
+- to use programs that may be dangerous to Sokker
+- to post or present material that is designated as illegal on this family-oriented site (i.e. to present any racist, fascist, or pornographic material, presenting illegal programs or the material breaking software licenses/copyrights) or causing potential harm to another user's computer (i.e. containing viruses, harmful behavior, etc).
+- to use any encountered errors in Sokker to one's own needs (every traced bug should be reported to the admins)
+- to break the Rules of Sokker Manager or the Forum Rules stated elsewhere
+
+
+SHARING CONNECTIONS OR COMPUTERS WITH MORE THAN ONE USER
+
+It is absolutely forbidden for any user to manage more than one team. This is one of the most important rules in Sokker.
+
+With registration/permission, administartors may allow multiple different users to created teams from the same IP connection or PC (i.e. siblings in one household or friends in dorm).
+
+To register your team and recieve permission to share an IP connection or PC, you need to send e-mail to admins@sokker.org, with a description of the situation to justify the request and including ALL team names and user names that will be sharing the computer or connection. This e-mail should be sent BEFORE registration. If you forget about this condition then you may be punished based on the reasonable of suspicion a user having multiple teams.
+
+IN ALL CASES, even with registration and permission to share a computer or IP, ANY TRANSFERS between users who have EVER shared an IP is illegal.
+
+
+Violations of these rules of Sokker, including the major rules above and breaking the registration rules above (such as attempted registrations for multiple teams), will be punished with penalties up to removing the user from the game.
+
+
+SHARING OF TEAMS / LOGGING IN AS OTHER USERS
+
+Teams in Sokker are to be controlled by one user and not shared or logged into by other people
+- In extreme situations where an owner is not able to log into their team for an extended period and a clear need for maintenance of the team (ie months for military service or hospitalization), admins may be contacted (admins@sokker.org) to make an exception to this rule for a specific period of time.
+- In the case that an exception is made, the person "sitting" for the other user may ONLY set match orders (based on previously created tactics by the normal manager) and reject and pull juniors.
+- The sitter cannot bid on or sell any player (except selling juniors), post or send any message, or make any action meant to harm or give advantage to any team.
+- In the case that the owner is also the NT coach, the permission should be know publicly and may only include the actions needed to let the NT play their matches. Alternatively, admins could set up a new NT elections if necessary.
+- The owner will have to change the password after he is back in control of the team.
+- No team may ever sit for a team in the same league as they are.
+
+
+SOKKER STAFF AND PUNISHMENTS
+
+To supervise the game, the owners (developers) of Sokker have appointed the Game Administrators. Their purpose is to support other users, to enforce the rules and guidelines of the game, and ensure safety and appropriate registering of user accounts. Administrators are given powers to take steps to punish users who have broken the rules of Sokker. At their discretion, Administrators may:
+- put a financial fine for user's team
+- give a user the last-chance warning ("yellow card") - meaning giving him the last chance to play honestly in the game
+- block the user's account (including disallowing any further return of the user to the game)
+- put on user other sanctions, which haven't been specified yet.
+
+Administrators have rights to use or combine those means in order to ensure fairness and safety in the game.
+
+
+Administrators reserve themselves rights:
+- not to reveal the details of their work or decisions to the users
+- to ensure secrecy and limiting the access to the information that may affect the user, whose case is already been analyzed
+- to adjust or settle manually the transfer price, if the value paid is/was far from the market value (i.e. overpriced or suspicious)
+- to fine or block permanently a user's account if he spams other users or insults/uses vulgar vocabulary towards other users (including the private messages).
+- to block the user's account for every suspicion of controlling more than one team (noticing the Administrators about the common loggings would be set aside here)
+- to ignore all appeals for data recovery (players, stadium, trainers, juniors) if the account hasn't been properly secured (i.e. password was shared with others, was saved in browser on public computer) or that has been made by user's mistake. Other cases (i.e. hacking users accounts) may be restored if possible.
+- to ask user for his real life identity, in case of security or game fairness concerns
+
+
+Administrators will not generally perform the following actions, but reserve the right in extreme cases:
+- to interfere in cases of not bidding a certain players on agreed price - those are the matters of the mutual agreements between the seller and the buyer and are not supervised by Sokker staff
+- to remove any player from the transfer list at the request of the buyer or the seller or others
+- to remove any player from the transfer list because they were listed by an emotional action of the owner
+- to login on user's account without being granted user's permission (for example, to remove a racist newspaper article in the page of an idle or banned user)
+
+Each issue will be evaluated on its own merit, taking into account general practices to ensure fairness. This may result in increasing or decreasing the penalty for certain transgressions, at the discretion of the Administrator.
+
+Do not contact with Administrators from accounts of other users. If your account was blocked, the only way of contacting Sokker Staff is writing to admins@sokker.org. In all other cases, if you need to contact an Administrator, we kindly request you contact no more than 2 Admins. Please check who is online, send sk-mail to up to 2 of them, and wait until the sk-mail has been read.
+
+Every case not described in the rules will be handled by Game Administrators.
+
+
+
+Administrators are supported by Forum Moderators. Moderators examine forum discussions, news postings, guestbook entries, logos and team names, and all the public activity of the user to keep all discussions on the cultural and non-offensive level. If Moderator notices that a user is breaking the rules, he has the right:
+- give a warning
+- block the forum access
+- ask Administrators to punish the user more severely (up to fines and/or blocking his account).
+
+The specific forum rules are available on the Forum Statute, available via link at the top of the main Forum page.
+
+The decision on ANY punishment (by a Moderator or by an Administrator) is at the discretion of the Moderator or Administrator, and is not open for public debate or discussion. In the case of any questions, the user may raise the issue for final review and decision by emailing to admins@sokker.org. The decision of the admin or admins who review that case is then final.
+
+
+Ignorance of the rules will not be acceptable justification for breaking the rules.

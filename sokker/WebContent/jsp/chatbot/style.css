@@ -1,0 +1,21 @@
+.message-time {
+	color: lightgray;
+}
+
+.receiver .message-text {
+	color: blue;
+}
+
+.error .message-text {
+	color: red;
+}
+
+body {
+	background-color: gray;
+	overflow: hidden;
+}
+
+#container {
+	overflow-y: auto;
+	height: 75vh;
+}

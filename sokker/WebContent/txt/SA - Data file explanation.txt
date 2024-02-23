@@ -1,0 +1,44 @@
+///////////////////////////////////////////////////////////////////////////////////
+// This is the explanation of every field of the players data file of Sokker Asistente
+// You can use it to manually import data from other assistant:
+///////////////////////////////////////////////////////////////////////////////////
+
+PID=
+-------HEADER-------
+	Player name,
+	Team ID,
+	Position in SA { GK | DEF | MID | ATT | BANQUILLO | OTRA },
+	Country ID,
+	Last update (DD/MM/YYYY HH:mm),
+	Reliable: used in NTs { true | false },
+	Cards number,
+	Member of the NT { true | false },
+	Injury days,
+	On sale { 0: no | 1: on sale | 2: transfer ad },
+	Notes,
+	Optional values. If it finds a "-" sign, it reads some values (salary, height, wheight, BMI, talent, highlight, color),
+-------WEEK DATA, from last week to first--------
+	Week number,
+	Age,
+	Value,
+	Stamina,
+	Pace,
+	Technique,
+	Passing,
+	Keeper,
+	Defender,
+	Playmaker,
+	Striker,
+	Optional value. If it finds a "-" sign, it reads the injury days,
+	Form,
+	Training position { GK | DEF | MID | ATT },
+	Official minutes played (friendlies and NT minutes are converted before storing them),
+	Optional values. If it finds a "-" sign, it reads some values (experiencia, tactical discipline, teamwork),
+	Advanced training - Only if the week number is 993 or higher { true | false },
+-----END OF LINE-----
+	* (this marks the end of the line)
+
+Examples:
+	35775933=Hussain Omar Munir,5661,ATT,88,01/10/2022 13\:12,true,1,0,0,0,,-19100,175,707,2308,-,false,\#,1003,35,456000,11,11,11,4,0,8,3,12,-0,18,ATT,93.0,-17,10,2,false,1002,35,450750,11,11,11,4,0,8,3,12,-0,18,ATT,114.0,-17,8,0,false,*
+	You can also see your current players data on the "installation" button once logged in SA
+	

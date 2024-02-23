@@ -1,0 +1,103 @@
+server.xml
+----------
+	<Environment name="path" override="false" type="java.lang.String" value="D:\\home\\asistente\\"/>
+
+	<Environment name="login" value="terrion" type="java.lang.String" override="false"/>
+	<Environment name="password" value="..." type="java.lang.String" override="false"/>
+
+	<Environment name="factorx_login" value="terrion" type="java.lang.String" override="false"/>
+	<Environment name="factorx_password" value="..." type="java.lang.String" override="false"/>
+
+	<Environment name="factorx_loginJ" value="terrion" type="java.lang.String" override="false"/>
+	<Environment name="factorx_passwordJ" value="..." type="java.lang.String" override="false"/>
+
+	<Environment name="factorx_loginS" value="terrion" type="java.lang.String" override="false"/>
+	<Environment name="factorx_passwordS" value="..." type="java.lang.String" override="false"/>
+
+	<Environment name="pcliga_login" value="terrion" type="java.lang.String" override="false"/>
+	<Environment name="pcliga_password" value="..." type="java.lang.String" override="false"/>
+
+	<Environment name="mailgun_login" override="false" type="java.lang.String" value="..."/>
+  	<Environment name="mailgun_password" override="false" type="java.lang.String" value="..."/>
+
+Iberia
+------
+/etc/tomcat7/tomcat-users.xml
+<user password="..." roles="iberia" username="iberia"/>
+
+
+Asistente
+---------
+Tipo liga			ID
+
+0	Liga							isOfficial={0|1}
+1	Copa
+2	Promoci�n
+3	Amistoso 		(3, 200)		isCup={0|1}
+4	WCQ
+5	WC
+6	WC Final
+7	Juniors
+9	Champions		(39933)
+10	Amistoso NT		(39934, 43807)	isCup={0|1}
+11	Arcade			(51530, 51531)	isCup={0|1}
+
+
+Textos
+------
+Every translation should fit into one single line. The text names are composed by 2 parts separated by a dot: the first part determines the context and the second is the same word to translate or a text that represents what is to be translated. I'll write a comment on every possible context:
+
+- [b]common[/b]: common words that need no context. E.g.: append, assistants, back (ok, this could need a context haha, but it was intended to be used just like go back)
+- [b]config[/b]: texts that appear in the configuration part
+- [b]faq[/b]: texts that appear in the faq
+- [b]juniors[/b]: texts related to the junior view
+- [b]login[/b]: texts that appear in the login page
+- [b]menu[/b]: texts that appear in the menu. "{0]" is a parameter, you need to keep it in the right place. E.g.: menu.hello = Hello {0}!
+- [b]messages[/b]: messages shown in a box after some action of the user. E.g: Configuration updated, Error in login or password...
+- [b]players[/b]: texts related to the players table
+- [b]skills[/b]: texts related to the skills, such as their names or their level values. E.g.: skills.skill0f would be the tragic skill in femenine, skills.skill0m in masculine
+- [b]training[/b]: texts related to the training part of the players
+
+TODO
+----
+- zoom para la APP
+
+Grosso: portugués
+Slamtam: alemán
+sviktorov: bulgarian
+kryminator -> mangol: polaco	https://gitlab.com/LukaszKalamarz/sokkerasistentepltranslation/-/tree/main
+
+https://crowdin.com/project/sokker-asistente
+https://gitlab.com/LukaszKalamarz/sokkerasistentepltranslation/-/tree/main
+
+
+HISTORIAL CAMBIOS
+-----------------
+- Nuevo sistema de ligas:
+	Cambio el nº de jornadas por temporada de 16 a 13 a partir de la jornada 976
+- Nuevo entrenamiento: 
+	Creo un array de entrenamientos de 4 posiciones, una para cada demarcación
+	Para las jornadas anteriores a la AsistenteBO.JORNADA_NUEVO_ENTRENO uso solamente la posición 0
+- 29/01/2023 Cambio librería de jQueryUI Touch Punch por la de RWAP porque los clicks no funcionaban casi nunca en el m�vil:
+	https://raw.githubusercontent.com/RWAP/jquery-ui-touch-punch/master/jquery.ui.touch-punch.js
+- 05/02/2023 Login a la nueva api: es necesario mandar login/password en formato json. No compatible con la interfaz XML
+- 30/05/2023 Añado Usuario2 al jugador
+	Jugador de prueba: se creará un usuario diferente en ("prueba/" + tid) para que la información del entrenamiento sea independiente
+	Cuando el jugador sea traspasado desde otra cuenta de SA, aquí se guardará el usuario original mientras que en "jornada_traspaso" se guardará la jornada hasta la que se tendrá en cuenta el usuario2 para calcular el entrenamiento
+- 28/01/2024 Leo variables de server.xml a mano -> mismo WAR para local, servidor y descarga
+
+CÁLCULO TALENTO
+---------------
+To begin, we need to give a constant talent value to a base case. The rest of cases just would need to apply some maths to this base case. I used a pop to weak pace in a 16 yo player as base case, because I had a junior with talent 4 that popped to it in exactly 180 training points, IIRC
+
+In fact it wasn't "exact" because it popped the previous level with a general training, so there was about 10 training points of error margin. But I was happy with such a little error margin
+
+The problem is you don't usually have a so little error margin, so on general you have a bigger margin which gives you a range of talents: min and max
+
+How do I apply the formula to different ages/levels? Just multiply it by the age/level factor. For example: a 17 yo player would need 180 * 0.1 = 198 training points to keep a talent of value 4. The same applies to a 16yo player who pops to regular instead of weak
+
+What happens with other skills? More or less the same. In the beginning I added two levels to calculate It for other skills compared to pace, since that was the approximate difference between them. Now I use the different skills factors to make the comparison
+
+Now that we can compare everything we can also use several consecutive pops to reduce the error margin. For example, if you add the training points needed to get two pops and divide It by 2, you get the average training points needed, but you also have the average error margin, which usually will be less the more consecutive skills you add
+
+Of course this is an approximation. We would probably need some exponential function to get a better approach, but that is all what I could do :P

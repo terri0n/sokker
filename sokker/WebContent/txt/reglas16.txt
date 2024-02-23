@@ -1,0 +1,18 @@
+16. Add-on and Program Guideline
+Programs or scripts, both standalone or browser add-ons, that
+
+- Process or rearrange the data provided by Sokker
+- Modify the interface or usage of the Sokker site
+- Provide new functionality or alter existing functionality of the Sokker site
+
+are normally welcomed by Sokker as they usually enhance the experience of our users.
+
+Nonetheless, if aspects of one of these program or scripts is determined to be detrimental to the game (i.e. by spamming, decreasing game ad revenue, creating heavy traffic or load on Sokker), the Sokker developers and admins could:
+
+- Prohibit any disclosure or discussion of the program or script in the Sokker forums.
+- Forbid the use of such programs, and sanction its users.
+- Prosecute the corresponding legal action against the author if applicable.
+
+Additionally please note that the only approved and provided method to get data from Sokker is via the XML located at http://online.sokker.org/xmlinfo.php. This is a robust set of data that has been provided and is being allowed for tools to increase your enjoyment of Sokker.
+
+It is allowed to use third party browser plug-ins to manipulate screen content while browsing Sokker, if they meet the above guidelines and are not deemed to be detrimental to the game. Sokker does not review the development of such plug-ins, so be careful when using them as they may have bugs that can cause random failures. When experiencing these or similar problems always first try to disable your browser plug-ins before sending us a Bug Report. In the case of an issue with one of the plug-ins, directly inform the creator or use the appropriate plug-in forum thread to discuss.

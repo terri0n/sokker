@@ -1,0 +1,13 @@
+10. The supporters
+Every club has a number of faithful fans ready to support their favourite team. The most fanatical ones subscribe to the Supporters’ Club (the total number is available in the Office menu). Irrespective of fan club size, for each match there are always additional casual spectators, depending on weather, the size of the fan club and moods among the members of the Supporters’ Club of the visitor team.
+
+The current mood of your fans can be found in the Office menu.
+There are certain groups of supporters, some of which will not attend matches if you will not provide them with the best possible conditions in the stadium. For instance, some of them may not come if there are no covered seats for them to view the game in.
+
+Every week the supporter club size will be updated. The amount of supporters that sign up depends on:
+
+- Club division
+- League prestige
+- Opponent rank
+
+Qualification games have more influence on supporter moods than league games.

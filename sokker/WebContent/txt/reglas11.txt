@@ -1,0 +1,84 @@
+11. The Match
+Matches are played according to the rules of real world football.
+
+Selection of the line-up
+
+For each match you should select eleven players and up to five on the bench. Players with an injury lasting longer than 7 days cannot participate in a match. The players not fully cured (less than 7 days to recovery, marked as having a slight injury) may take part in the match but will play below their full capacity. A player with 3 or more yellow cards or a red card misses one official match (you will find a red card next to his name). The players not fit for playing or penalised will not participate even if you select them to the line-up.
+
+For each player you should select their position out of:
+GK - the keeper
+DEF - defender
+MID - midfielder
+ATT - forward
+
+This assignment determines the way a given footballer is going to play (e.g. defenders should tackle the ball rather than try to dribble past the opponent and thus leave his team in trouble if the ball is lost). Each position has a maximum number of players that may be assigned to it. These are: 1 for GK, 5 for DEF, 5 for MID and 3 for ATT. If you play more than the maximum allowed for an area (for example 6 DEF) or do not set a lineup you will lose training unless you switch to stamina.
+
+Read the chapter ‘Training’ to find out how a given position trains.
+
+If any of the teams assigns less than 10 players or deletes the tactics set for the match, the opposition team will automatically win the game. The footballers set as starters in the match from the winning team will train the same way as if the match had been held without substitutions.
+
+Substitutions
+
+During the match it may be necessary to replace a player on the pitch with one from the bench in the result of an injury. At that moment the player on the top of the substitution list for the given position goes on to the pitch.
+
+Other than the lineup, it is also possible to make other orders for the match. In order to make a substitution, you need to set the minute for it to take place, and the condition in which you want it to take place in. It is also possible to set the player which you want to take a penalty kick or free kick (only in the opponent's half). You can not set the player that takes the corner.
+
+For the conditional orders listed below, the minute will mean minute to start checking condition, not minute when condition is checked (if you set a condition in the first minute, it could happen in the 89th minute for instance as the event will be checked all game, rather than just in the 1st minute as it would have been before):
+
+* player has yellow card
+* red card or no player
+* player is slightly injured
+
+Note:
+If You do not set a player to take a free kick, the free kick or corner kick will be taken by the player who is closest to the ball.
+
+Walkovers
+
+Team will receive a walkover when:
+
+- The opponent sets less than 10 players in the match (5:0),
+- The tactic is removed from the tactic editor before the game and a new one is not selected (5:0),
+- If both teams lineups mean the game is a walkover, the following will happen:
+* 0:0 - if this is league game,
+* 1:0 - if this is cup game.
+
+Video coverage of the match
+
+For each match you can watch TV coverage to see how your players did during the match, see their most interesting action and find out how your tactics worked.
+For navigation use the following keys:
+- [Home], player names displaying on / off
+- [Space], panel with keys on / off
+- [left][right] arrows, slowing / acceleration of the coverage, live coverage cannot be edited
+- [down] arrow, pause
+- [alt] + [F4], terminate the coverage
+
+After-match statistics
+
+After the match the statistics for both teams are available:
+- keeping the ball, possession time counted from the moment of gaining to the moment of losing. Set pieces do not count.
+- playing on the given half, the time when the ball remained on one team’s half. If your team’s ratio exceeded 50%, do not celebrate - it means ithe players mainly defended rather than attacked!
+- shots on goal
+- fouls
+- bookings
+- efficiency of shooting, passing and defending, calculated as an average of marks for individual moves of all players (e.g. defender tackled the ball from his opponent or just attempted to then his defending skill shown during that move is taken to the total marks for the team). What he contributes depends on his defending skills, current form and whether he was successful. Even the best players mis-kick sometimes.
+Remember that the marks concern the average individual performance of your players and do not take into account the fact how your players played as a team. That depends on you, specifically from the tactics you choose.
+
+Individual after-match player marks
+
+Upon clicking on individual marks you can see a table with marks and statistics for all players participating in the given match. The columns indicate the following:
+- The mark: general mark for the player, depending on the overall performance. The more chances the player gets to take advantage of his skills the higher mark he gets. The mark depends on position; different factors are taken into account, e.g. for forwards the most important thing is the quality of his strikes (if he had any opportunities). Player’s form determines his skills utilisation so it also influences his marks.
+- Time of play minute of entering / leaving the pitch
+- The number of strikes on the goal
+- Fouls
+- Off. - percentage of offensive actions - time of play when the player moved with the ball, passed it, dribbled it past opponents.
+- Def. - percentage of defensive actions, the time when the player tackled the opponent or chased the player moving with the ball. Note that this factor does not have to be highest for defenders - for teams constantly attacking; the most active players are midfielders or even forwards.
+
+Commentary
+
+Summary of the most important actions, such as:
+- Goals.
+- Shots when the ball hits the bar, post or a near miss.
+- Shots when the keeper had problems with saving.
+- Yellow and red cards.
+- Substitutions.
+- Penalties.

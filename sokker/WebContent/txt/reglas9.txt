@@ -1,0 +1,82 @@
+9. The Stadium
+Every team has a stadium to host their home games. Optimizing the stadium size, stand types and ticket prices is very important to keep the team's financial health, as revenue coming from tickets is one of the main sources of income of every team.
+
+Stand types
+
+There are four stand types:
+- Grass (standing): In each sector with grass, only 100 standing spectators are allowed by the sideline.
+- Terraces: Standing places made of concrete. It is the second cheapest type of stand. There are certain regulations imposed by the Football Association, restricting the size of stands with terraces. Your stadium cannot be solely made up of terraces.
+- Benches: A stand with sitting places but not as comfortable as seats.
+- Seats: The more expensive and luxurious stand. Building seats is more expensive than building benches, but they can bring more spectators to see the matches as some of them expect seats to sit in when watching their team.
+
+Match Attendance
+
+Depends on:
+-Size of the supporters clubs of both teams
+-Fans mood of both clubs
+-Match type
+-Weather (roofs can help in keeping attendance on raining days)
+-Ticket prices.
+-Stadium size and stand types.
+-Fan preferences on the different types of stands.
+
+Fan preferences
+
+Not every supporter likes the same type of stand. Some fans prefer seats, others benches, some others prefer terraces and others prefer to stand on the grass. If their favorite place is sold out they are likely to buy ticket for a superior stand but they will refuse to go to an inferior stand. Depending on the weather some supporter will buy a ticket only if a roof is available in his preferred stand.
+
+Ticket Prices
+
+You can influence the match attendance by setting the ticket prices. Notice that if you set the prices much too high fewer supporters will come, and you can expect lower income. Same if the price is much too low, more supporters will come, but not so much to compensate for such a low price. You will get the highest income if you set the right price taking into account all the factors that affect the attendance to the match.
+
+Of course, if your stadium is small and you expect many supporters to attend the match, more than the total number of places in the stadium, you can set a higher price to get a higher income. However you don't get so high an income compared to expanding the stadium.
+
+To set ticket prices, go to the stadium page and click on "Change price" for each stand. Ticket price should be in limit 1 € to 250 €. The default ticket prices are shown here:
+
+Construction
+
+Be careful when modifying the stadium. Keep in mind that the investment in the stadium is recovered slowly, so while it may be a good investment in the medium and long term, it could be difficult to afford in the short term. A small stadium means that some income may be lost from matches but a too big stadium could mean added fixed cost to the team.
+
+Each stadium has eight sectors. In order to modify one sector you should click “construction” on that sector in the stadium page. Then you can select the size, the type of the stands and whether the sector will be covered by a roof or not. The selected size of the sector represents the total places that will be available after the modifications are done.
+
+After doing your selections press the “Estimate” button to get a detailed list of the cost to made the necessary modifications and an estimation of the days necessary for the works. Construction times are estimated dates provided by your builders and may vary slightly from predicted. If you want the works ready for a specific date you may need some days of margin to be safe of unexpected delays.
+
+Be aware - the price of seats grows proportionally with the size of stand. It might be cheaper to build two smaller stands than a single bigger one. On the other hand some fixed costs apply to every construction so modifications that are too small could be not a good option.
+
+During construction work, the sector is closed and only a small number of supporters are able to stand in the arena.
+
+Pitch
+
+Type of grass and pitch condition
+
+The pitch condition can affect the behaviour of the ball and also has influence in the probability of injury of the players. On the pitch, in an area of weak condition, the ball may bounce in an unpredictable direction due to the unevenness of the grass, and also may jump in a direction a player didn't want when dribbling. The probability of injury will be higher on a pitch with poor condition and lower on a pitch with better condition (condition higher than 50%).
+
+To control the pitch condition you should choose what type of grass you would like to have in your stadium. There are different types of grass, each will have a different optimum condition depending on the quality of the grass. For example, garden grass will not reach much more than 50% of condition, so it will not be as good. The condition of the grass will gradually get weaker after each match and will need time to recover. The recovery rate of the grass will depend on the weather; it will grow best when it is not too hot and not too wet.
+
+Pitch maintenance
+
+You can accelerate the recovery of the grass through spending money on pitch maintenance. With a high maintenance level your grass will recover quicker. You have two options to increase your maintenance level. Buying a small package will increase your level by 50%, while buying a big package will set maintenance to 100%. The maintenance level will decrease a bit every day. You should apply maintenance only when you want to quickly improve your pitch condition.
+
+Full table of grass types and current costs:
+
+Name: Cost to lay / Full maintenance / Half maintenance
+Garden grass for home lawn: 5 000 € / 1 250 € / 625 €
+Amateur sport and park grass: 10 000 € / 2 500 € / 1 250 €
+Semi-professional buffalo grass: 25 000 € / 6 250 € / 3 125 €
+Professional blue grass: 50 000 € / 12 500 € / 6 250 €
+Finest professional bermuda grass: 100 000 € / 25 000 € / 12 500 €
+Angel grass: 125 000 € / 31 250 € / 15 625 €
+
+Grass mow and logo
+
+You can customise what you would like your field to look like. You can choose different patterns, like vertical stripes, chequered, just blank and many others.
+
+Plus users are also able to place their team logos with selected position and size. It is recommended to use a logo in the PNG format for a better management of transparencies.
+
+Pitch Size
+
+You can change the size of your pitch, to how big (or small), you desire within allowed limits. This feature may benefit how you use your tactics. The pitch modification will cost depending on the type of grass you have. You can select any size within the following limits:
+
+width: between 64 and 78 m. Normal: 72 m.
+height: between 95 and 110 m. Normal: 102 m.
+
+Any combination is possible.

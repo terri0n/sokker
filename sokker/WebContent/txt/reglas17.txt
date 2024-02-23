@@ -1,0 +1,42 @@
+17. Skill and supporter levels
+Skills order
+
+0. tragic
+1. hopeless
+2. unsatisfactory
+3. poor
+4. weak
+5. average
+6. adequate
+7. good
+8. solid
+9. very good
+10. excellent
+11. formidable
+12. outstanding
+13. incredible
+14. brilliant
+15. magical
+16. unearthly
+17. divine
+17+. superdivine (player skill has reached maximum)
+Supporters moods
+
+1. are furious
+2. are losing hope
+3. are depressed
+4. believe in their club
+5. are satisfied
+6. are delighted with their club`s performance
+7. are madly in love with their club
+Supporters expectations
+
+1. Totally outclassed here. Even your stars will be happy to get an opponent players autograph.
+2. Your supporters hope the team won`t bring them too much shame in this match.
+3. Supporters think the opponent is better, but with a little luck you could spring a surprise.
+4. This match is expected by supporters to be a tough and even game, with slight advantage to opponent team.
+5. This match is expected to be a tough and even game by your supporters.
+6. This match is expected by supporters to be a tough and even game, with slight advantage to your team.
+7. Rival is respectable by your supporters, but they expect a win.
+8. Your supporters are sure of an easy win in this match.
+9. Supporters come to eat popcorn, relax and watch a festival of goals from your team.

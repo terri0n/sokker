@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- NOTA: este archivo hace que /sokker no funcione en el servidor!!! -->
+<Context>
+	<ResourceLink name="path"
+                global="path"
+                auth="Container"
+                type="java.lang.String" />
+
+	<ResourceLink name="login"
+                global="login"
+                auth="Container"
+                type="java.lang.String" />
+	<ResourceLink name="password"
+                global="password"
+                auth="Container"
+                type="java.lang.String" />
+
+	<ResourceLink name="factorx_login"
+                global="factorx_login"
+                auth="Container"
+                type="java.lang.String" />
+	<ResourceLink name="factorx_password"
+                global="factorx_password"
+                auth="Container"
+                type="java.lang.String" />
+
+	<ResourceLink name="factorx_loginJ"
+                global="factorx_loginJ"
+                auth="Container"
+                type="java.lang.String" />
+	<ResourceLink name="factorx_passwordJ"
+                global="factorx_passwordJ"
+                auth="Container"
+                type="java.lang.String" />
+
+	<ResourceLink name="factorx_loginS"
+                global="factorx_loginS"
+                auth="Container"
+                type="java.lang.String" />
+	<ResourceLink name="factorx_passwordS"
+                global="factorx_passwordS"
+                auth="Container"
+                type="java.lang.String" />
+
+	<ResourceLink name="pcliga_login"
+                global="pcliga_login"
+                auth="Container"
+                type="java.lang.String" />
+	<ResourceLink name="pcliga_password"
+                global="pcliga_password"
+                auth="Container"
+                type="java.lang.String" />
+</Context>

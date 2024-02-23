@@ -1,0 +1,12 @@
+eclipse.preferences.version=1
+encoding//WebContent/WEB-INF/tags/jugadores.tag=UTF-8
+encoding//WebContent/js/editor.js=UTF-8
+encoding//WebContent/jsp/chatbot/chatbot.js.jsp=UTF-8
+encoding//WebContent/jsp/chatbot/index.jsp=UTF-8
+encoding//WebContent/jsp/chatbot/style.css=UTF-8
+encoding//src/com/formulamanager/sokker/acciones/chatbot/ChatbotServlet.java=UTF-8
+encoding//src/com/formulamanager/sokker/acciones/chatbot/DalleServlet.java=UTF-8
+encoding//src/com/formulamanager/sokker/acciones/iberia/Iberia.java=UTF-8
+encoding//src/com/formulamanager/sokker/bo/NtdbBO.java=UTF-8
+encoding//src/com/formulamanager/sokker/tags/TagLibDesplegable.java=UTF-8
+encoding//src/com/formulamanager/sokker/tags/TagLibString.java=UTF-8

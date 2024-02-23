@@ -1,0 +1,58 @@
+14. National team rules
+Every country in Sokker has both a Senior National Team and an Under-21 National Team. New countries will have to wait one full season to start their National Teams. Each National Team will have his coach, who can call any of the players of the country and set the matches according to the following rules.
+
+NT coach
+
+Every season, the users of the country chose the coach of each National Team. Users can only vote in their respective countries but can apply to the job in any country. To be a candidate, a user should have played the game for at least 16 weeks (one season). Elections take place at the end of each season.
+
+To postulate for the job a user must apply on the page of elections of the corresponding NT. He can take part in only one NT coach election at a given time.
+
+After the elections start, you could open only one thread in the appropriate forum. Please do not spam forums, SK-mail people for votes, or spam users Guest Books. Any of these spam activities will result in forum banning and/or a financial fine.
+
+The candidate that obtains the most votes will be the coach for one season until the next election. In the case of a draw, the user that entered the game first will be the winner.
+
+A user elected as an NT manager will not be able to resign from their job. When you stand for the NT job, it is your responsibility to serve the full term until the end of the season.
+
+Players
+
+The NT coach can call up to 40 players to the National Team. He can select any player of the nationality of the NT. Only the owners can usually see the full skills of a player. NT coaches would not see other user players' skills unless they are in the market. To know the skills of the players he cannot see he should ask the owners to provide them. Owners have no obligation to reveal the skills of their players. Still, most users are prone to collaborate with the NT.
+
+The owners of the players cannot impede that his players summed up to the NT. They cannot sack any player while called to an NT. National Team players are also protected if the team that owns them turns into a "bot". Current members of a national team that have played at least one game for the NT will be transfer listed. The transfer list will happen when a new team replaces the "bot" team.
+
+Under 21 NT coaches can call only players of age up to 21-year-old. At the end of each season, they have to remove the players that are over that limit.
+
+Stadium
+
+Each NT has his Stadium. NT Stadiums get 60 000 places (40000 seats and 20000 benches). They have standard dimensions. And have Angel grass, laid by DivineGrass. Pitch conditions should be close to perfect most time. The NT Stadium is the default to play the games held as local. Besides, any other arena of the country is eligible for any particular match. The coaches can opt for a particular stadium following tactical reasons or just for fun.
+
+
+NT Matches
+
+
+The NT matches occur every Saturday and U21 NT matches take place every Friday. The World cup Qualifications and the World Cup Finals occur on alternate seasons. In any week that a team has no official match to play, it can pact a friendly game with other free NT. It is possible for everyone to see international matches, whether you have Plus or not. U21 NT has the same World Cup structure as Senior, but with one season of difference. Hence, when Seniors play Qualifications, U21 plays Finals and vice-versa.
+
+World Cup
+
+The full World Cup takes place over 2 seasons. The first season will hold Qualifications. The second season will hold the Finals.
+
+Qualifications
+
+All teams take part in the Qualifications. The NTs form different pots according to their NT ranking. Teams from 1-16 go to pot A, teams 17-32 to pot B, and so on. Teams from Pot A will occupy the first place, from B the second, etc. The groups play two rounds. Each group qualifies 2 teams to the Finals. The final standing in the group follows the following criteria:
+
+1. Points in the qualification group
+2. Goal difference
+3. Goals scored
+4. The number of victories
+5. Ranking points at the time of the draw.
+
+Finals
+
+The Finals consist in a Group Stage followed by a Knock-Out phase.
+
+In the Group Stage, the 32 teams qualified for the finals will form 8 groups of 4 teams. The 8 teams that finished the highest will go into the first drawing pot, the next 8 to the second, and so on. Each group will play one round and 2 best teams will qualify for the Knock Out phase. The final standing in the Group Stage follows the same criteria as Qualifications.
+
+The Knock Out phase will consist of four rounds played in 4 consecutive weeks with cup rules. The first week: Eight-finals (16 teams). The second week: Quarter-finals (8 teams). The third week: , Semifinals (4 teams). And the fourth and last week: The Final wich consecrate the World Champion of the category. Thus we will have a new World Champion every 2 seasons for each category.
+
+Friendlies
+
+It is up to the NT coaches to arrange friendlies - like friendlies between normal SK users. Free weeks between official matches and at the end of the season let play friendlies. Those teams that do not qualify for the finals will have a full season of friendlies. Usually, coaches pact friendlies at the start of the season. Yet, they are only arranged weekly after playing the previous match. Try to keep your agreements. The players’ injuries, cards, training, and statistics count the same as official matches. Red cards are only cleaned if the player keeps being a member of the NT. Also, friendlies affect the ranking of the NT in the same way as official matches.

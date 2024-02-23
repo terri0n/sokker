@@ -1,0 +1,460 @@
+body {
+	margin: 0px;
+	padding: 0px;
+	background-image: url("../img/fondo.jpg");
+    background-size: cover;
+	background-color: #41637e;
+	overflow: auto;
+}
+html {
+    height: 100vh;
+}
+p {
+	margin-top: 3px;
+	margin-bottom: 3px;
+}
+input[type='submit'] {
+	margin-top: 2px;
+}
+label, .flecha, .flecha_arr, .flecha_aba {
+	cursor: pointer;
+}
+.pointer {
+	cursor: pointer;
+}
+a, a:visited {
+	color: black;
+	decoration: none;
+}
+a:hover {
+	color: blue;
+}
+.campo input {
+	opacity: 0.5;
+}
+hr {
+	background-color: #4f8ea2; 
+	height: 1px; 
+	border: 0;
+	opacity: 0.3;
+}
+.hr {
+	margin-top: 0px; 
+	margin-bottom: 2px;
+}
+.boton {
+	color: black;
+	background-color: lightgray; 
+	border: 1px solid gray;
+	border-radius: 2px;
+	padding: 1px;
+	min-width: 16px;
+	min-height: 16px;
+	cursor: pointer;
+	margin: 2px;
+}
+.grande {
+	display: inline-block;
+	min-width: 50px;
+	min-height: 50px;
+	padding-top: 5px;
+}
+.pink {
+	background-color: pink;
+}
+.boton:hover {
+	background-color: cyan; 
+	border-color: Darkcyan;
+}
+.peque {
+	line-height: 10px;
+}
+.separador {
+	color: #4f8ea2;
+	opacity: 0.3;
+}
+.error {
+	color: red;
+}
+table {
+	border-top-left-radius: 5px;
+	border-top-right-radius: 5px;
+}
+thead th:first-child {
+	border-top-left-radius: 5px;
+}
+thead th:last-child {
+	border-top-right-radius: 5px;
+}
+tfoot th:first-child {
+	border-bottom-left-radius: 5px;
+}
+tfoot th:last-child {
+	border-bottom-right-radius: 5px;
+}
+.fondo_tabla thead th, tfoot th {
+	background-color: #539bcd;
+	/*background-image: url("img/cabecera.png");
+	background-size: contain;*/
+	color: white;
+	font-weight: bold;
+}
+tfoot, .peque {
+	font-size: small;
+}
+
+.impar {
+	background-color: #ddeeffdd;
+}
+.par {
+	background-color: #f8fcffdd;
+}
+.fondo_tabla tr:nth-child(odd) {
+	background-color: #ddeeffdd;
+}
+.fondo_tabla tr:nth-child(even) {
+	background-color: #f8fcffdd;
+}
+
+.habilidad {
+	background-color: rgba(128,128,128,0.1);
+}
+
+.cabecera_jugadores {
+	background-color: transparent;
+	text-align: left;
+}
+.GK, .GK a {
+	color: blue;
+	font-weight: bold;
+}
+.DEF, .DEF a {
+	color: green;
+	font-weight: bold;
+}
+.MID, .MID a {
+	color: #A52A2A; /* Brown */
+	font-weight: bold;
+}
+.ATT, .ATT a {
+	color: red;
+	font-weight: bold;
+}
+.estrella {
+	color: #FFD700; /* Gold */
+}
+.estrella_sup {
+	color: #006400; /* DarkGreen */
+}
+.estrella, .estrella_sup, .borde {
+	text-shadow: -0.4px 0px black, 0px 1.2px black, 1.2px 0px black, 0px -0.4px black, 1.2px 1.2px black, 0.4px -0.4px black, -0.4px 0.4px black, -0.4px -0.4px black;
+}
+.historial {
+	color: lightblue;
+}
+.mensaje {
+	color: white;
+	background-color: orange;
+	border: 1px solid black;
+}
+.error {
+	color: white;
+	background-color: red;
+	border: 1px solid black;
+	text-align: center;
+	font-weight: bolder;
+}
+.gris {
+	color: gray;
+}
+.amarillo {
+	color: yellow;
+}
+.rojo {
+	color: red;
+}
+.verde {
+	color: green;
+}
+.azul {
+	color: darkblue;
+}
+.negro {
+	color: black;
+}
+.GK_POR, .GK_RAP, .DEF_RAP, .DEF_DEF, .MID_TEC, .MID_CRE, .MID_PAS, .ATT_RAP, .ATT_TEC, .ATT_ANO {
+	color: darkblue;
+}
+.blanco {
+	color: white;
+}
+.subida {
+	color: green;
+}
+.cerca {
+	background-color: PowderBlue;
+}
+.bajada {
+	color: Red;
+}
+.cambio_subida {
+	background-color: Green;
+	color: white;
+	font-weight: bold;
+	/* text-shadow: 0 1px black, 1px 0 black; */ 	
+}
+.cambio_bajada {
+	background-color: Red;
+	color: white;
+	font-weight: bold;
+	/* text-shadow: 0 1px black, 1px 0 black; */ 	
+}
+.nuevo_juvenil {
+	background-color: gray;
+	color: white;
+	font-weight: bold;
+}
+.negrita {
+	font-weight: bolder;
+}
+.uppercase {
+	text-transform: uppercase;
+}
+.titulo {
+	color: white;
+	font-weight: bolder;
+}
+
+.cabecera_span {
+	margin-left: 1px;
+	margin-right: 1px;
+	display: inline-block;
+}
+.cabecera {
+	color: white;
+	background-color: #539bcddd;
+	font-weight: bolder;
+	border-top-left-radius: 5px;
+	border-top-right-radius: 5px;
+	padding: 1px;
+}
+#menu_principal .cabecera:hover {
+	background-color: #f8fcffdd;
+}
+.cabecera a {
+	color: white;
+}
+.seleccionada {
+	background-color: #f8fcffdd;
+}
+.seleccionada a {
+	color: blue;
+}
+.par {
+	background-color: #f8fcffdd;
+}
+.impar {
+	background-color: #ddeeffdd;
+}
+.doble {
+	background: linear-gradient(90deg, #f8fcffdd 0% 50%, #ddeeffdd 50% 100%);
+}
+.bloque {
+	padding: 10px;
+}
+.inicio_bloque {
+	border-top-left-radius: 5px;
+	border-top-right-radius: 5px;
+}
+.fin_bloque {
+	padding: 10px;
+	border-bottom-left-radius: 5px;
+	border-bottom-right-radius: 5px;
+}
+
+/* Quita algo de transparencia a los popups */
+.editar {
+	background-color: #b2d1e8f8;
+}
+.sombra {
+	box-shadow: 0.3em 0.3em 0.5em #082133;
+}
+.tabla {
+	display: inline-block; 
+	background-color: #1d4866; 
+	border-radius: 5px;
+}
+.texto_3d {
+    font-size: 40px;
+    font-weight: bold;
+    color: #fff;
+	text-align: center;
+	margin: 12px;
+	background-color: rgba(255,255,255,.1);
+	border-radius: 5px;
+    
+    text-shadow:0 1px 0 #4383bf, 
+                0 2px 0 #3a72a6, 
+                0 3px 0 #31608c, 
+                0 4px 0 #284f73,
+    			0 5px 0 #1f3d59,
+                0 6px 1px rgba(0, 46, 89, .2), 
+                0 0 5px rgba(0, 46, 89, .2), 
+                0 1px 3px rgba(0, 46, 89, .6), 
+                0 3px 5px rgba(0, 46, 89, .4), 
+                0 5px 10px rgba(0, 46, 89, .5), 
+                0 10px 10px rgba(0, 46, 89, .4),
+                0 20px 20px rgba(0, 46, 89, .3);   
+}
+
+.span_grafica {
+	cursor: pointer;
+}
+
+.grafica {
+	position: absolute;
+	display: none;
+	width: 700px;
+	height: 350px;
+	background-color: white;
+}
+
+/* ENTRENAMIENTO */
+
+.entrenamiento {
+	white-space: nowrap;
+}
+
+.entrenamiento div {
+	display: inline-block;
+	margin: 1px;
+	padding: 1px;
+	border-radius: 12px;
+	white-space: nowrap;
+	font-size: xx-small;
+	font-family: Verdana;
+}
+
+.entrenamiento div > div {
+	border: 4px solid #4f7fa2;
+}
+
+.entrenamiento span {
+	display: inline-block;
+	margin: 0.5px;
+	height: 10px;
+	padding: 4px 0px 6px 0px;
+	color: white;
+	border-radius: 8px;
+	border: 1px solid transparent;
+	cursor: pointer;
+}
+
+.entrenamiento .abierto_izq {
+	border-left: 0px;
+	border-top-left-radius: 0px;
+	border-bottom-left-radius: 0px;
+}
+
+.entrenamiento .abierto_der {
+	border-right: 0px;
+	border-top-right-radius: 0px;
+	border-bottom-right-radius: 0px;
+}
+
+.residual {
+	background-color: red;
+	width: 4px;
+}
+
+.medio {
+	background-color: orange;
+}
+
+.normal {
+	background-color: green;
+}
+
+.perdido {
+	background-color: lightgray;
+}
+
+.nuevo {
+	background-color: gray;
+	color: white;
+	cursor: pointer;
+}
+
+.ordenar {
+	cursor: pointer;
+	vertical-align: bottom;
+	padding: 0;
+}
+.span_ordenar {
+	color: #e2eff8;
+}
+
+.boton_menu {
+	display:inline-block;
+	background-color: #539bcd; 
+	border: 1px solid #1d4866;
+	border-radius: 2px;
+	cursor: pointer;
+	min-height: 50px;
+	min-width: 50px;
+	vertical-align: top;
+	padding: 1px;
+	padding-bottom: 5px;
+	text-decoration: none;
+	color: white;
+}
+.boton_menu:hover {
+	opacity: 0.6;
+}
+
+.boton_minutos {
+	cursor: pointer;
+	color: darkblue;
+	vertical-align: top;
+}
+
+.talento {
+	cursor: pointer;	
+	opacity: 1;
+	color: lightblue;
+}
+.etiqueta {
+	min-width: 95px;
+	font-weight: bold;
+	display: inline-block;
+}
+.avanzado {
+	color: crimson;
+}
+.warning {
+	color: red;
+	font-weight: bolder;
+}
+@media only screen and (max-width: 800px) {
+	.solo_pc {
+		display: none;
+	}
+}
+.borde-blanco {
+	text-shadow: -1.2px 0px white, 0px 1.2px white, 1.2px 0px white, 0px -1.2px white, 2.2px 2.2px black;
+}
+.borde-morado {
+	text-shadow: -2px 0px purple, 0px 2px purple, 2px 0px purple, 0px -2px purple, -2px -2px purple, 2px 2px purple, 2px -2px purple, -2px 2px purple;
+}
+.borde-negro {
+	text-shadow: -1.5px 0px black, 0px 1.5px black, 1.5px 0px black, 0px -1.5px black, -1.5px -1.5px black, 1.5px 1.5px black, 1.5px -1.5px black, -1.5px 1.5px black;
+}
+.sombra_corta {
+	box-shadow: 0.05em 0.05em 0.05em black;
+}
+.borde-cuadrado {
+	box-shadow: 0px 0px 0px 2px black;
+}
+.help {
+	margin: 5px;
+}

@@ -1,0 +1,102 @@
+4. The players
+Each player has 8 basic skills. 7 of these skills (Pace, Passing, Playmaking, Defending, Scoring, Technique and Keeper) range from tragic to divine. Stamina ranges from tragic to formidable. The higher the level of each skill, the better the player will perform in a given discipline.
+
+Basic skills
+
+Pace
+
+Determines how fast the player is. This impacts the speed a player runs after the ball, and speed of movement with the ball. Faster players have a better chance of running away from the opponent, as well as catching him. Additionally keepers with a higher pace skill are more effective at challenging strikers.
+
+Passes
+
+This skill determines the accuracy of player’s passes (both kicks and headers). The accuracy means both the right direction and power, so that the team-mate will be able to receive the ball as easily as possible.
+
+Playmaking
+
+Players with high playmaking skill make their decisions who to pass to quicker, as well as choosing the best positioned player to pass the ball to. If your player’s playmaking skill is poor, he may start to look around for someone to pass to causing him to lose pace and therefore will be easier to tackle. Higher playmaking skill also increases a players ability to make running passes.
+
+Defending
+
+The higher the defending skill, the greater the chance of tackling an opponent, and the greater the distance from the opponent that a defender will be able to make a tackle. This is the skill most desirable for defenders. However both the midfielders and strikers may, thanks to their high defending skills, create an opportunity by intercepting the ball from opponent in his half. Whether a player is able to make a tackle or not is also dependent on the other player's technique. The greater their technique, the more chance they have of dribbling past the player.
+
+Striker
+
+Determines the accuracy and the force of kicks. Players with higher striker skill mis-kick the ball less often (e.g. sending the ball high over the bar) and their strikes are more difficult to save. This skill is important for all players that are likely to have a striking opportunity, not just forwards.
+
+Technique
+
+Many of the game aspects depend on technical skills.
+- skill of controlling a pass; a player with a low level of technique may fail to control even the simplest balls.
+- pace of dribbling; players with poor technical skills significantly lose pace whilst moving with the ball
+- skill of passing a defender with a one on one duel and controlling the ball during a feint
+- chance of mis-kicking while trying to make a one-touch pass.
+
+Goalkeeping
+
+This skill is only useful for keepers. It determines effectiveness of saves and their quality. The higher the skill, the more often the keepers catch the ball or clears it cleverly (away from the strikers).
+
+Stamina
+
+During the match, the players get tired. When this occurs they become less accurate as they lose some of their skills. Only playmaking remains unchanged throughout the match. The degree of fatigue is not directly dependent on length of play but on the activity of the given player. The more he runs and participates in the game the more he gets tired. Players with higher stamina will suffer less fatigue than others. Also be aware that untrained stamina goes down in time.
+
+Additional players’ parameters
+
+Form
+
+Determines whether the player can take advantage of his skills in full. Players that are out of form will perform worse than they would if they were in a higher level of form.
+
+Tactical Discipline
+
+It reflects how accurately the player will follow the tactic during the match. Tactical Discipline is based on two subskills: Experience and Team-work.
+
+Experience:
+Experience is gained by playing matches. The experience level depends on the number of matches played, the percentage of activity during the matches, and the type of the match (friendly, official, national team). Players at lower levels of experience will increase the skill faster than players with higher levels.
+
+Depending on their experience level, defenders could slightly block, or at least slow down, their opponents while running to the ball. However, they will not be able to block while heading duels.
+
+Team-work:
+- Represents how well a coach can teach tactics and how much the player has learned with that club
+- Changes during training each week like other skills, independent of the training type selected. The growth depends primarily on head coach's general appraisal. This means that it could even drop if you change to a coach with lower general appraisal.
+- Depends on time played in week matches like any other skills
+- Assistants help to increase team-work, but their influence is lower than on other skills
+- Older players' team-work increases and decreases in slower (they are more "change resistant")
+- After every transfer, team-work of the transferred player drops down to the lowest value
+
+Talent
+
+Hidden ability of the player to enhance his skills. Determines the efficiency of training for both a first team player and a junior training in the sub junior school.
+
+Age
+
+After each season your players get older by one year. Younger players enhance their skills faster. As a player approaches his 30's, his skills may begin to gradually deteriorate. The older a player the faster the deterioration.
+
+Value
+
+Approximate value of the player dependent on his skills. This value does not represent the market value for the player if he is sold.
+
+Earnings
+
+Specified in the contract weekly wage, also dependent on player’s skills. At the beginning of each season, the contracts are renegotiated and a new wage is determined.
+
+Height
+
+Taller players will have better chances to win aerial duels when heading the ball. However, shorter players will be quicker in speeding up from a standing start (maximum speed will still be the same for players of all heights and is dependent on actual pace skill).
+
+Weight
+
+Player weight is visible in the 3d match viewer along with height, with taller players appearing taller and heavier players being bigger than lighter ones.
+
+If a player is too light, they will speed up slower, as they have a lower muscle mass. In addition a player with a high weight will speed up slower, as they are too heavy. Heavy players will tire more quickly, compared to lighter players. The weight of a player will change depending on training, matches played and injury, although this has not been implemented yet.
+
+Weight is calculated using Body Mass Index (BMI), which takes weight and height into consideration, where;
+BMI = weight / (height*height)
+
+The ideal BMI for a Sokker player is set to 23.75.
+
+Sacking Players
+
+If a player is not up to scratch, and you believe he isn't worth transfer listing, you may sack him. If you sack a player, they will no longer play for your team and will not be available for any other teams either. They effectively will have left the Sokker World!
+
+Players that are current members of a national team cannot be sacked. Players who are not on a national team may still be sacked, even if they are of NT-caliber quality.
+
+NT players from bot teams will be released to the transfer list (if they are active national squad members and have played at least once for that team) prior to a new user being allocated the team slot with a new set of players.

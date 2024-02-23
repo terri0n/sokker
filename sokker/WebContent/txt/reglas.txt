@@ -1,0 +1,157 @@
+Reglas de Sokker:
+
+Bancarrota
+Los equipos que están a punto de ser declarados en bancarrota (con una deuda que supere los 500 000 €) podrán entrar a Sokker durante 72 horas a partir de la última visita.
+
+Esta norma permite a los equipos corregir su cuenta bancaria mediante la venta de jugadores, despido de técnicos, etc. Tras esas 72 horas ya no podrán volver a entrar hasta que el saldo mejore lo suficiente (que la deuda esté dentro del límite de 500 000 €). Si la deuda en la cuenta pasa a estar dentro del límite permitido el acceso al equipo volverá a ser normal. No obstante, si el saldo de la cuenta excede el límite de deuda permitido durante un período superior a 14 días, el equipo será formalmente declarado en bancarrota de acuerdo a lo establecido bajo el título Manejo de la Cuenta en la Sección I de estas reglas.
+
+Cada jugador tiene ocho habilidades básicas, siete de ellas (rapidez, técnica, pases, portería, defensa, creación y anotación) están delimitadas dentro del rango trágico - divino. La máxima condición para un jugador es formidable. Cuanto más alto sea el nivel de cada habilidad mejor lo hará el jugador en cada posición o función dentro del campo.
+
+Habilidades básicas
+
+Rapidez
+
+Determina la rapidez del jugador. Es decir, la velocidad con la que un jugador corre tras la pelota, y la velocidad del movimiento con ella. Jugadores rápidos tienen mayores posibilidades de alejarse del contrario, así como de alcanzarlo. Además los porteros cuanto más alto es su nivel de rapidez más eficientemente interceptan a los delanteros.
+
+Pases
+
+Esta habilidad determina la exactitud de los pases del jugador, tanto patadas como cabezazos. La exactitud significa tanto dirección correcta como la fuerza del pase, y por lo tanto que el compañero tenga menos problemas al recibir la pelota.
+
+Creación
+
+Los jugadores con alta creación deciden a quien pasarle el balón de manera más rápida y por lo general escogen al compañero mejor colocado. Si la creación de tu jugador es baja, puede darse el caso de que comience a mirar alrededor sin saber qué hacer, perdiendo velocidad y siendo fácilmente despojado de la pelota por un rival. Niveles altos de creación también aumentan la posibilidad de hacer pases en carrera.
+
+Defensa
+
+Cuanto mayor sea, mayor probabilidad de robar el balón a un oponente, y mayor será la distancia a la que podrá intentar hacer una entrada. Es la habilidad más deseable para los defensores; sin embargo, es muy útil también tanto para centrocampistas como para delanteros, ya que podrían, gracias a sus altas habilidades de defensa, crear ocasiones al robarle la pelota a un rival cuando está cerca de su portería (por ejemplo un delantero a un defensa). Por lo general cuanto más alta sea la capacidad de defensa mayor será la probabilidad de detener al oponente. La defensa se enfrenta directamente contra la técnica del jugador rival, cuanta más alta sea la técnica, mayor probabilidad de evitar la entrada del defensa.
+
+Anotación
+
+Determina la exactitud y la fuerza de los tiros. Si se tiene alta, es muy difícil que el jugador mande la pelota a las gradas, y además sus disparos son más difíciles de parar por los porteros. Importante por tanto para todos los jugadores que tienen la oportunidad de chutar a puerta, no sólo para los delanteros.
+
+Técnica
+
+Muchos de los aspectos del juego dependen de las habilidades técnicas:
+- La habilidad de controlar un pase: un jugador con una técnica baja puede controlar mal incluso los balones más simples y suaves.
+- Rapidez con balón dominado: un jugador con poca técnica se moverá más lentamente cuando vaya con el balón.
+- Fintar y evitar entradas: en un duelo mano a mano, se enfrentan la técnica del delantero (o jugador que sea) contra la defensa del defensor (o jugador que sea).
+- Exactitud: con técnica baja, aumenta la posibilidad de pasar mal al intentar hacer un pase de primera.
+
+Portería
+
+Habilidad útil sólo para los porteros, determina la eficacia de llegar a la pelota y su calidad - cuanto más alta sea más a menudo los porteros atrapan la pelota o la desvían inteligentemente (lejos de los delanteros).
+
+Condición
+
+Durante el partido los jugadores se cansan, son menos precisos (simplemente pierden algunas de sus habilidades, salvo la creación, que es la única habilidad que permanece inalterada a lo largo de un partido). El grado de fatiga no depende tanto de la duración del partido como de la actividad que el jugador realice, es decir, cuanto más corra y participe en el partido un jugador, más cansado estará. Además, la condición es una habilidad que disminuye con el tiempo, y que como máximo puede ser de formidable.
+
+Forma
+
+Determina si un jugador puede usar sus habilidades al 100%. Los jugadores con baja forma rinden poco durante los partidos, por debajo de sus habilidades y posibilidades.
+
+Salud
+
+Determina si un jugador está sano o lesionado, si puede jugar un partido o no. Durante los partidos, lo jugadores pueden lesionarse. La duración de la lesión se expresa en “días de lesión” y los jugadores no podrán entrenar ni jugar partidos mientras tengan 8 o más días de lesión. En caso de que su lesión sea menor a 7 días, se dice que el jugador está “levemente lesionado” y en tal caso puede participar del entrenamiento así como también ser alineado en los partidos (aunque su rendimiento se verá afectado por esto).
+
+Disciplina Táctica
+
+Determina la precisión con que un jugador seguirá la táctica durante el partido, y aumenta o desciende independientemente del entrenamiento del resto de habilidades. La Disciplina Táctica, a su vez, se compone de los siguientes dos atributos del jugador:
+
+Experiencia
+
+La experiencia se gana en base a los partidos jugados. Los jugadores ganan diferentes cantidades de experiencia dependiendo de su actividad durante los partidos y del tipo de partidos que juegan (amistoso, partido oficial o partido de selecciones nacionales). Este parámetro es acumulativo (es decir que el nivel de experiencia nunca decrece). Así mismo, los niveles más bajos de experiencia se ganan más rápido que los niveles más altos.
+
+Dependiendo de su nivel de experiencia, un defensa podrá bloquear ligeramente o al menos reducir la velocidad de un jugador rival mientras corre en busca del balón. Sin embargo, en los duelos aéreos no se pueden hacer bloqueos.
+
+Juego en Equipo
+
+Representa cuánto ha aprendido un jugador de su entrenador y su club. Este parámetro se actualiza semanalmente junto con el entrenamiento, independientemente del tipo de entrenamiento elegido. El nivel del juego en equipo depende primeramente del nivel general del entrenador principal, y puede incluso decrecer si se cambia de entrenador principal por uno con menor nivel general. También depende del tiempo jugado en los partidos cada semana, como ocurre con cualquier otra habilidad. El juego en equipo de los jugadores más veteranos crece y decrece más despacio (se dice que son “más resistentes al cambio”). Después de cada transferencia, el juego en equipo del jugador baja a su mínima expresión.
+
+Talento
+
+Es una habilidad oculta del jugador sobre el desarrollo de sus habilidades. Determina la eficacia del entrenamiento tanto para un jugador del primer equipo como para un jugador entrenando en la escuela de juveniles. Es decir, cuanto mayor sea el talento de un jugador, menos entrenamientos necesitará para subir de categoría sus habilidades. El talento no cambia (es el mismo durante toda la vida del jugador).
+
+Edad
+
+Después de cada temporada tus jugadores se vuelven un año más viejos (lógicamente). Los jugadores más jóvenes mejoran sus habilidades más rápido. Si un jugador alcanza la avanzada edad de 30, sus habilidades disminuirán poco a poco. Cuanto más viejo sea un jugador más rápida la bajada. Las bajadas pueden empezar a partir de los 28, aunque a esta edad son muy raras.
+
+Valor
+
+Valor aproximado de un jugador dependiendo de sus habilidades. Puede diferir de su precio en el mercado de transferencias.
+
+Salario
+
+Sueldo semanal especificado en el contrato, también depende de las habilidades del jugador. Al inicio de cada temporada los contratos son renegociados, estableciéndose nuevos sueldos.
+
+Altura
+
+Los jugadores más altos tendrán más probabilidades de ganar duelos aéreos y dirigir la pelota. Sin embargo, los jugadores más bajos serán más rápidos en acelerar desde una posición estática (la velocidad máxima seguirá siendo la misma para jugadores de todas las alturas y depende de la habilidad rapidez).
+
+Peso
+
+El peso del jugador es visible en el visor de partidos en 3D junto con la altura, con jugadores con más altura que parecen ser más altos y más pesados que los más ligeros.
+
+Si un jugador pesa poco, acelerará más lentamente, ya que tiene una masa muscular más baja. Sin embargo, un jugador con un peso elevado también acelerará más lentamente, ya que es demasiado pesado. Los jugadores pesados se cansarán más rápidamente en comparación con los jugadores más ligeros. El peso de un jugador cambiará según el entrenamiento, los partidos jugados y las lesiones, aunque esto aún no se ha implementado.
+
+El peso se calcula utilizando el índice de masa corporal (IMC), que tiene en cuenta el peso y la altura, donde;
+IMC = peso / (altura * altura)
+
+El IMC ideal para un jugador de Sokker se establece en 23'75.
+
+Tus entrenadores mejoran las habilidades de los jugadores durante los entrenamientos, ayudan en los entrenamientos y cuidan del equipo juvenil.
+
+Entrenamiento de habilidades
+
+Cada entrenador tiene marcada la efectividad de su entrenamiento para cada una de las ocho habilidades de juego. Estas calificaciones son válidas solamente para el entrenador principal. Dependiendo de lo que tú entrenes, deberías tener un entrenador principal que entrene lo mejor posible la habilidad individual seleccionada.
+
+Valoración general
+
+La valoración general de un entrenador depende de la suma de las calificaciones individuales para entrenar cada habilidad. Esto es muy importante para los entrenadores auxiliares, ya que cuanto mayor sea su valoración general, más eficientemente ayudarán al entrenador principal. También para tu escuela juvenil deberías elegir a un entrenador con una valoración general lo más alta posible, ya que cuanto más alta sea la valoración del entrenador, más rápido es el progreso de tus juveniles.
+
+Sueldos
+
+A mejor entrenador, mayor salario. Al principio es habitual no poder afrontar un entrenador excesivamente bueno, a no ser que quieras que tu club se arruine. El salario del entrenador no es renegociable, se mantiene en el mismo nivel temporada tras temporada.
+
+Edad
+
+Tu entrenador es un ser humano, en algún momento puede finalizar su carrera como entrenador.
+
+Para poder desarrollar y mejorar tu equipo, los jugadores necesitan ser entrenados apropiadamente. Cada semana puedes escoger una habilidad para ser practicada durante el entrenamiento individual. También puedes elegir una orden de juego para que sean los jugadores con dicha orden los que entrenen. La mayor parte de los tipos de entrenamiento exigen que el jugador juegue algún partido durante la semana con la misma orden de juego que la seleccionada para el entrenamiento.
+
+Un jugador que jugó con la misma orden dos veces durante la semana se entrena mejor que el que jugó solamente una vez. Igualmente, el jugador que jugara en un partido oficial va a entrenar mejor que el que solamente jugó en un amistoso. Si un jugador jugara durante la semana con dos órdenes de juego diferentes, el que cuenta es el último partido (la orden que en él tuviera). La diferencia entre jugar con la misma orden en uno o dos partidos es pequeña, jugando un partido completo el jugador recibe entrenamiento casi al 100%. Los jugadores que jueguen con su selección un partido completo y no jueguen otro partido con su club recibirán algo menos del 50% del entrenamiento normal (un 50% del entrenamiento de un partido oficial, es decir más o menos el 45% del entrenamiento total (sobre el posible) de la semana). Los jugadores no reciben entrenamiento adicional por jugar en tiempos extra o prórrogas pues están demasiado cansados.
+
+En realidad la diferencia en la eficacia del entrenamiento resultante de las apariciones del jugador durante la semana es pequeña, ya que un jugador que jugara en un amistoso sólo recibe un poco menos de entrenamiento que el que jugara en un partido oficial. De hecho será más pequeña la diferencia entre los jugadores que jugaron en dos y un partido oficial respectivamente.
+
+Una característica individual de cada jugador es su talento. Cuanto más talento tenga el jugador, más aprovecha el entrenamiento y más rápido mejora sus habilidades. Con la edad la capacidad de mejorar se disminuye, así que cuanto más viejo sea el jugador, más difícil resulta mejorar sus habilidades. Además del entrenamiento individual, también se efectúa una sesión de entrenamiento general, en la que participan todos los jugadores que jugaron en los partidos de la semana. La eficacia del entrenamiento general es mucho más pequeña que la individual.
+
+Entrenamiento de condición
+
+Esta habilidad es la más rápida en entrenarse. Todos los jugadores en el equipo lo entrenan independientemente de si jugaron partidos esa semana o no. Los jugadores se entrenan con la misma eficacia independientemente de la edad y el talento. Pero ten cuidado, pues no entrenar condición puede disminuirla incluyendo a los jugadores más jóvenes. El máximo nivel de condición al que un jugador puede llegar es formidable.
+
+Entrenamiento de rapidez
+
+La rapidez es entrenada por todos los jugadores que jugaron al menos una vez durante la semana. Los jugadores entrenarán sea cual sea la orden de juego que se les asigne, pero si juegan 2 o más partidos en la semana con órdenes distintas, solamente contará para el entrenamiento el tiempo jugado con la última orden. Además, al contrario que con la condición aquí ya sí cuentan tanto la edad como el talento.
+
+Entrenamiento de anotación
+
+Las delanteros (ATT) entrenan más eficientemente, un poco más lento los medios (MID) y sólo un poco los defensores (DEF) y porteros (GK).
+
+Entrenamiento de pases
+
+Los pases son entrenados con mayor eficacia por los medios (MID), las formaciones restantes se entrenan más despacio. Si quieres mejorar el efecto del entrenamiento para otras órdenes de juego, puedes hacerlo, sin embargo esto causará la disminución de la eficacia de entrenamiento para los MID.
+
+Entrenamiento de creación
+
+El entrenamiento de creación es similar al de pases. La orden de juego que se beneficia más de su entrenamiento es la de los centrocampistas (MID). Al igual que con el entrenamiento de pases, también puedes mejorar la eficacia para otras órdenes de juego, pero esto también causará la disminución de la eficacia de entrenamiento para los medios.
+
+Entrenamiento de defensa
+
+Puedes seleccionar la orden de juego que entrenará defensa con mayor eficacia durante la semana, puedes escoger entre ATT, MID Y DEF. Las formaciones que no hayas escogido se entrenarán más despacio.
+
+Entrenamiento de técnica
+
+De modo similar al anterior, es entrenado más intensamente por la orden de juego seleccionada para la semana en cuestión.
+
+Entrenamiento de portería
+
+Sólo los porteros (GK) que hayan jugado durante la semana participan en el entrenamiento.

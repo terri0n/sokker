@@ -1,0 +1,60 @@
+13. The week in Sokker
+Each season has 16 weeks numbered from 0 to 15. Depending on the day of a week, various events take place. Some events occur only on specific weeks. This is a list of the main events:
+
+Every day
+
+- Medical check-ups of the injured players.
+- Revision of building works on stadiums.
+- Value of players are updated.
+- The weather forecast for the given day is published.
+
+Saturday
+
+- Pay day for salaries and stadium costs.
+- New youths may join the junior school.
+- Weekly money transfers from sponsors are received on club’s account.
+- Senior NT matches take place.
+- (Week 0) The draw of rounds of WC qualifyings.
+- (Week 1) The draw of rounds of WC finals.
+
+Sunday
+
+- Skill update for older players.
+- (Week 1) - NT elections end.
+- (Weeks 1 - 14) League matches take place.
+- (Week 15) Qualification matches (see Chapter 12. League system)
+- Note: on week 0 there are no matches on Sunday.
+
+Monday
+
+- The draw of rounds for approved friendly leagues.
+- Supporters’ clubs update number of subscribers.
+- Players’ form update.
+- League tables update (press in newsagents’).
+- (Week 0) after season payments (supporter renewal and sponsor bonus)
+- (Week 15) NT elections start.
+
+Tuesday
+
+- (Weeks 1-14) Junior league matches.
+
+Wednesday
+
+- The draw of rounds for junior leagues.
+- Information on proposed friendly matches is deleted
+- Note: the friendlies cannot be arranged on Wednesday.
+- Friendly/Cup matches take place. Cup starts on week 0.
+
+Thursday
+
+- Sokker Champions Cup matches. The Champions Cup starts on week 15.
+- Draw of the next cup round (if the cup has not finished yet).
+- Table and friendly league status update .
+- Junior training progress update, including pulls from the junior squad.
+- Updating of players’ training progress and their form.
+
+Friday
+
+- Draw of the next Champions Cup round (if the cup has not finished yet).
+- U21 NT matches take place.
+- (Week 15) players get older and their wages are updated.
