@@ -1,0 +1,381 @@
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+@media only screen and (max-width: 800px) {
+	.solo_pc {
+		display: none !important;
+	}
+	h1 {
+		font-size: 11vw;
+	}
+}
+@media only screen and (min-width: 801px) {
+	.solo_movil {
+		display: none !important;
+	}
+	h1 {
+		font-size: 8vw;
+	}
+}
+h1 {
+    text-align: center;
+    font-weight: bolder;
+	cursor: default;
+}
+h1 img {
+	vertical-align: bottom;
+	margin-left: 8px;
+}
+nav {
+	background-color: rgba(0,0,0,0.4);
+}
+section {
+	margin-left: 10px;
+	margin-right: 10px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 90%);
+    border-radius: 30px 30px 0px 0px;
+	display: inline-block;
+	vertical-align: top;
+}
+h2 {
+    color: rgba(0,0,0,0.3);
+    cursor: default;
+    background: linear-gradient(to bottom, rgba(255,255,255,1) 0%, rgba(255,255,255,0.3) 100%);
+    border-radius: 30px 30px 0px 0px;
+	padding: 8px;
+	font-weight: bolder;
+}
+
+.puntero {
+	cursor: pointer;
+}
+
+/* Botones */
+
+button, .button {
+	border: 1px solid black;
+	border-radius: 15px;
+	font-size: 18px;
+	transition: all 0.5s ease;
+	padding: 3px 10px 3px 10px;
+}
+
+button:not(:disabled):hover, .button:not(:disabled):hover {
+	color: white;
+    box-shadow: 0 0 20px 5px rgba(255, 255, 255, 0.8);
+	border: 0;
+	transform: scale(1.2);
+}
+
+button:disabled, .button:disabled {
+	color: white;
+    background: linear-gradient(to bottom, white, gray);
+}
+
+button:disabled:hover, .button:disabled:hover {
+	color: gray;
+}	
+
+button, .button, .sombra, .modal-content {
+    box-shadow: 4px 4px 8px rgba(0,0,0,0.5);
+}
+
+/* COLORES */
+
+.rojo, .principiante {
+    background: linear-gradient(to bottom, white, red);
+    color: black;
+}
+button:hover:not(:disabled).rojo {
+	background: linear-gradient(to bottom, white, pink, white);
+}
+.naranja, .aficionado {
+    background: linear-gradient(to bottom, white, orange);
+    color: black;
+}
+button:hover:not(:disabled).naranja {
+	background: linear-gradient(to bottom, white, yellow, white);
+}
+.amarillo, .experto {
+    background: linear-gradient(to bottom, white, yellow);
+    color: black;
+}
+.verde, .maestro {
+    background: linear-gradient(to bottom, white, Lime);
+    color: black;
+}
+.verde_oscuro {
+    background: linear-gradient(to bottom, white, green);
+    color: white;
+}
+button:hover:not(:disabled).verde {
+	background: linear-gradient(to bottom, white, lightgreen, white);
+}
+.azul, .maestro_internacional {
+    background: linear-gradient(to bottom, white, deepskyblue);
+    color: black;
+}
+button:hover:not(:disabled).azul {
+	background: linear-gradient(to bottom, white, #AAEEFF, white);
+}
+.anyil, .gran_maestro {
+    background: linear-gradient(to bottom, white, blue);
+    color: black;
+}
+.violeta, .campeon_del_mundo {
+    background: linear-gradient(to bottom, white, purple);
+    color: black;
+}
+.negro {
+    background: linear-gradient(to bottom, gray, black);
+    color: lightgray;
+}
+button:hover:not(:disabled).negro {
+	background: linear-gradient(to bottom, white, darkgray, white);
+}
+.gris {
+    background: linear-gradient(to bottom, white, gray);
+    color: black;
+}
+.blanco {
+    background: linear-gradient(to bottom, white, lightgray);
+    color: black;
+}
+.marron {
+    background: linear-gradient(to bottom, #d14a41, #401401);
+    color: white;
+}
+.gris_claro {
+	background-color: #fafafa;
+}
+
+.borde-negro {
+    text-shadow: -1.5px 0px black, 0px 1.5px black, 1.5px 0px black, 0px -1.5px black, -1.5px -1.5px black, 1.5px 1.5px black, 1.5px -1.5px black, -1.5px 1.5px black;
+}
+.borde-blanco {
+    text-shadow: -1.5px 0px white, 0px 1.5px white, 1.5px 0px white, 0px -1.5px white, -1.5px -1.5px white, 1.5px 1.5px white, 1.5px -1.5px white, -1.5px 1.5px white;
+}
+
+/* Texto */
+
+.texto {	/* Debe estar después de los colores */
+    -webkit-background-clip: text;
+    color: transparent;
+	display: inline-block;
+	transition: transform 1s ease-in-out;
+}
+.letra_impar {
+	transform: rotate(6deg);
+}
+.letra_par {
+	transform: rotate(-6deg);
+}
+
+/* SALA */
+
+.jugador {
+	color: white;
+	font-size: 20px;
+	font-weight: bold;
+    text-shadow: -0.5px 0px black, 0px 0.5px black, 0.5px 0px black, 0px -0.5px black, -0.5px -0.5px black, 0.5px 0.5px black, 0.5px -0.5px black, -0.5px 0.5px black;
+}
+section li div {
+	display: inline-block;
+	width: 300px;
+	text-align: left;
+}
+.jugador img {
+	border: 1px solid black;
+}
+.info_jugador {
+	border-radius: 5px;
+	line-height: 1;
+	font-size: 10px;
+	font-weight: bold;
+	padding-right: 2px;
+	margin: 2px 4px 2px 2px;
+	border: 1px solid black;
+	display: inline-block;
+	vertical-align: text-top;
+	overflow: hidden;
+}
+.puntos {
+	vertical-align: text-bottom;
+}
+.away { 
+    vertical-align: super; 
+    font-size: 8px;
+    color: blue;
+    display: inline-block;
+    font-weight: bold;
+}
+#partidos li .material-icons {
+	vertical-align: sub;
+}
+.bandera {
+	vertical-align: inherit;
+}
+
+/* JUEGO */
+
+#juego {
+	position: absolute;
+	min-width: 100%;
+	min-height: 100%;
+	background-color: rgba(0,0,0,0.6); 
+	z-index: 100;
+	transition: all 1s;
+	text-align: center;
+}
+#juego.hidden {
+	opacity: 0;
+	pointer-events: none;
+}
+@media only screen and (min-width: 960px) {
+	#juego > div {
+	    position: absolute;
+		top: 50%; 
+		width: 100%;
+		transform: translate(0%, -50%);
+	}
+}
+.reloj {
+	display: inline-block;
+	color: white;
+	position: absolute;
+	pointer-events: none;
+	font-size: small;
+	border-radius: 5px;
+	padding: 1px;
+	z-index: -1;
+}
+.reloj span {
+	display: inline-block;
+	vertical-align: middle;
+}
+.reloj .material-icons {
+	font-size: small;
+}
+
+/* CHAT */
+
+#contenedor_chat {
+	width: 450px;
+	height: 520px;
+    background: linear-gradient(to bottom, rgba(100,155,100,0.6) 0%, rgba(20,41,20,0.5) 100%);
+	border-radius: 30px;
+	padding: 10px;
+	padding-bottom: 45px; /* Espacio para el input */
+	margin-left: 10px;
+	margin-right: 10px;
+	margin-top: 30px;
+	color: white;
+    box-sizing: border-box;
+    overflow: hidden;
+    display: inline-block;
+    position: relative;
+}
+#chat {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    text-align: left;
+}
+#contenedor_chat input[type='text'] {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: calc(100%);
+    background-color: rgba(255,255,255,0.1);
+    border: none;
+    outline: none;
+    padding: 10px;
+    padding-left: 20px;
+    color: white;
+}
+#contenedor_chat button {
+    position: absolute;
+    bottom: 8px;
+    right: 10px;
+}
+#chat small {
+	font-weight: bold;
+	padding: 2px;
+	border-radius: 3px;
+}
+.mensaje {
+	clear: both;
+}
+.mensaje_mio {
+	position: relative;
+	float: right;
+	margin-left: 50px;
+	background-color: SeaGreen;
+	border-radius: 10px;
+	padding: 5px;
+}
+.mensaje_rival {
+	position: relative;
+    float: left;
+	margin-right: 50px;
+    background-color: DimGray;
+	border-radius: 10px;
+	padding: 5px;
+}
+
+/* BootBox */
+
+input:invalid {
+	border-color: red;
+	background-image: linear-gradient(to right, pink, white);
+}
+.nav-link {
+	color: black;
+}
+.nav-item .active {
+	color: #007bff !important;
+}
+.modal-content {
+	background-color: rgba(240, 240, 250, 0.9) !important;
+}
+.modal-footer, .modal-header {
+	background-color: rgba(240, 240, 250, 0.8) !important;
+}
+.modal-header {
+	color: darkblue;
+}
+.modal-title .material-icons {
+	vertical-align: sub;
+}
+.tab-content {
+	border: solid#dee2e6;
+	border-width: 0px 1px 1px 1px;
+	padding: 15px;
+}
+
+/* Bootstrap */
+
+.btn:disabled,
+.btn[disabled] {
+    background-color: #ccc;
+    border-color: gray;
+    color: #555;
+    opacity: 0.7;
+}
+
+/* Material Icons */
+
+.material-icons.md-12 { font-size: 12px; }
+.material-icons.md-18 { font-size: 18px; }
+.material-icons.md-24 { font-size: 24px; }
+.material-icons.md-36 { font-size: 36px; }
+.material-icons.md-48 { font-size: 48px; }
+button .material-icons {
+	vertical-align: sub;
+}
+.modal-body .material-icons {
+	vertical-align: text-top;
+}

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+    <style>
+        * {
+            fill: none;
+            stroke: white;
+            stroke-width: 5;
+        }
+    </style>
+
+    <g transform="translate(5, 47) scale(0.94)">
+        <!-- Rectángulo del campo -->
+        <rect x="0" y="0" width="450" height="450" />
+        
+        <!-- Línea central -->
+        <line x1="0" y1="225" x2="450" y2="225" />
+        
+        <!-- Círculo central -->
+        <circle cx="225" cy="225" r="35" />
+        
+        <!-- Punto central -->
+        <circle cx="225" cy="225" r="2" fill="white" />
+        
+        <!-- Polilínea superior -->
+        <polyline points="100,0 100,50 350,50 350,0" />
+        
+        <!-- Polilínea inferior -->
+        <polyline points="100,450 100,400 350,400 350,450" />
+        
+        <!-- Corner superior izquierdo -->
+        <path d="M0,10 A10,10 0 0,0 10,0" />
+        
+        <!-- Corner inferior izquierdo -->
+        <path d="M0,440 A10,10 0 0,1 10,450" />
+        
+        <!-- Corner superior derecho -->
+        <path d="M450,10 A10,10 0 0,1 440,0" />
+        
+        <!-- Corner inferior derecho -->
+        <path d="M450,440 A10,10 0 0,0 440,450" />
+        
+        <!-- Semicircunferencia superior -->
+        <path d="M200,50 A30,30 0 0,0 250,50" />
+        
+        <!-- Semicircunferencia inferior -->
+        <path d="M200,400 A30,30 0 0,1 250,400" />
+	</g>
+</svg>

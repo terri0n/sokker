@@ -1,0 +1,46 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=0.82" />
+
+<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js'></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.js"></script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7610610063984650" crossorigin="anonymous"></script>
+<script src="${pageContext.request.contextPath}/js/bootbox.all.min.js"></script>
+<script src="${pageContext.request.contextPath}/js/util.js"></script>
+<script src="${pageContext.request.contextPath}/js/showToast.js"></script>
+<script src="${pageContext.request.contextPath}/js/login.js.jsp?id=${param.id}"></script>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/showToast.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/estilo.css">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3T1HMWSP1R"></script>
+<script>
+  // Google Analytics
+
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-3T1HMWSP1R');
+
+  // Movimiento letras
+  function animateLetters() {
+      $('.texto').each(function(index) {
+          if ($(this).hasClass('letra_impar')) {
+              $(this).addClass('letra_par').removeClass('letra_impar');
+          } else {
+              $(this).addClass('letra_impar').removeClass('letra_par');
+          }
+      });
+  }
+      
+  $(function() {
+      animateLetters();
+      setInterval(animateLetters, 1000);
+  });
+</script>
