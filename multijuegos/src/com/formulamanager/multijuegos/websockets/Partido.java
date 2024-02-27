@@ -2,6 +2,7 @@ package com.formulamanager.multijuegos.websockets;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -11,8 +12,8 @@ import javax.websocket.Session;
 import com.formulamanager.multijuegos.util.Util;
 import com.formulamanager.multijuegos.websockets.EndpointBase.COLOR;
 import com.formulamanager.multijuegos.websockets.Movimiento.FIGURA;
+import com.formulamanager.multijuegos.websockets.Movimiento.TIPO_FIGURA;
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 
 public class Partido {
@@ -112,7 +113,9 @@ public class Partido {
 		colocar_figura(FIGURA.whiteKnight1, 1, 8);
 		colocar_figura(FIGURA.whiteKnight2, 7, 8);
 		colocar_figura(FIGURA.whiteQueen, 4, 7);
-		
+
+		colocar_figura(FIGURA.pelota, 4, 5);
+
 		if (duracion != null) {
 			tiempo_blancas = new Date(0, 0, 0, 0, duracion);
 			tiempo_negras = new Date(0, 0, 0, 0, duracion);
@@ -134,19 +137,74 @@ public class Partido {
 		}
 	}
 	
-	public void anyadir_movimiento(String mov, Session sesion) {
-		HashMap<FIGURA, Movimiento> hashmap = jsonToHashmap(mov);
+	public void hacer_movimiento(String mov, Session sesion) {
+		List<Movimiento> lista = jsonToList(mov);
 		
-		if (validar_movimientos(hashmap)) {
-			tablero.putAll(hashmap);
+		if (validar_movimientos(lista)) {
+			for (Movimiento m : lista) {
+				anyadir_movimiento(m);
+			}
 			actualizar_cronometro();
-			turno = getColor(sesion).cambiar();
+			if (turno == null) {
+				// Saque inicial, sacaban las blancas
+				turno = COLOR.negras;
+			} else {
+				turno = getColor(sesion).cambiar();
+			}
 		}
 	}
 
-	private HashMap<FIGURA, Movimiento> jsonToHashmap(String mov) {
+	private void anyadir_movimiento(Movimiento m) {
+		if (m.id != FIGURA.pelota ) {
+			Movimiento old_m = tablero.get(m.id);
+			Movimiento t = getFigureInCell(m.getCasilla());
+			
+			if (t != null) {
+				Movimiento p = tablero.get(FIGURA.pelota);
+				boolean con_pelota = p.getCasilla().equals(old_m.getCasilla()) || p.getCasilla().equals(t.getCasilla());
+				
+				if (m.id.getTipo() == TIPO_FIGURA.ROOK) {
+					// Si es torre, la empujamos
+					int newX = t.x * 2 - old_m.x;
+					int newY = t.y * 2 - old_m.y;
+					t.setCasilla(newX, newY);
+				} else {
+					// Si no es torre, intercambiamos las piezas
+					t.setCasilla(old_m.getCasilla());
+				}
+				
+				// Si alguna de las dos figuras tenía la pelota, se la queda la pieza que tiene el turno
+				if (con_pelota) {
+					p.setCasilla(m.getCasilla());
+				}
+			}
+		}
+
+		// Por último colocamos la pieza en el tablero
+		tablero.put(m.id, m);
+	}
+
+	// Devuelve la pieza del tablero que se encuentra en la casilla indicada, o null si no hay ninguna
+	// NOTA: no tenemos en cuenta la pelota
+	private Movimiento getFigureInCell(int casilla) {
+		for (Movimiento t : tablero.values()) {
+			if (t.id != FIGURA.pelota) {
+				if (t.getCasilla().equals(casilla)) {
+					return t;
+				}
+			}
+		}
+		return null;
+	}
+
+	private List<Movimiento> jsonToList(String mov) {
 		Type fooType = new TypeToken<ArrayList<Movimiento>>() {}.getType();
 		List<Movimiento> lista = new Gson().fromJson(mov, fooType);
+		return lista;
+	}
+	
+	private HashMap<FIGURA, Movimiento> jsonToHashmap(String mov) {
+		List<Movimiento> lista = jsonToList(mov);
 		
 		HashMap<FIGURA, Movimiento> hashmap = new HashMap<>();
 		for (Movimiento m : lista) {
@@ -155,8 +213,8 @@ public class Partido {
 		return hashmap;
 	}
 	
-	private boolean validar_movimientos(HashMap<FIGURA, Movimiento> mov) {
-		for (Movimiento m : mov.values()) {
+	private boolean validar_movimientos(Collection<Movimiento> lista) {
+		for (Movimiento m : lista) {
 			if (m.id == FIGURA.pelota && (m.y == 0 || m.y == 10)) {
 				ganador = m.y == 0 ? COLOR.blancas : COLOR.negras;
 			}
@@ -204,7 +262,7 @@ public class Partido {
 	public void setTactica(COLOR color, String tactica) {
 		HashMap<FIGURA, Movimiento> hashmap = jsonToHashmap(tactica);
 		
-		if (validar_movimientos(hashmap)) {
+		if (validar_movimientos(hashmap.values())) {
 			if (color == COLOR.blancas) {
 				tactica_blancas = hashmap;
 			} else {
@@ -230,7 +288,7 @@ public class Partido {
 			return 0;		// sin iniciar
 		} else if (tactica_blancas == null || tactica_negras == null) {
 			return 1;		// táctica mandada
-		} else if (turno != null) {
+		} else if (turno == null) {
 			return 2;		// esperando saque inicial 
 		} else if (turno == COLOR.blancas) {
 			return 3;		// partido iniciado, turno blancas

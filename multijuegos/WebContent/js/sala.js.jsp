@@ -232,26 +232,6 @@ class Sala {
 		this.juego.timer = null;
 	}
 
-	// El partido del jugador/observador
-	fin_partido(victoria) {
-		clearInterval(this.juego.timer);
-		this.juego.timer = null;
-
-		if (this.juego.color) {
-			this.juego.escribir_servidor(victoria ? '<fmt:message key="msg.youWin" />' : '<fmt:message key="msg.youLose" />');
-			
-			$('#finalizar').prop('disabled', true);
-			$('#finalizar').hide();
-			$('#boton_otro').prop('disabled', false);
-			$('#boton_otro').text('<fmt:message key="menu.playAgain" />');
-			$('#boton_otro').show();
-			$('#boton_cancelar').show();
-			$('#boton_cancelar').prop('disabled', false);
-		} else {
-			this.juego.escribir_servidor('<fmt:message key="msg.endOfGame" />'.replace('{0}', victoria ? $('#jugador1').html() : $('#jugador2').html()));
-		}
-	}
-	
 	limpiar_botones() {	
 		this.actualizar_nombres('', '');
 		$('#finalizar').hide();

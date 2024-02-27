@@ -51,8 +51,8 @@ public class SystemUtil {
 		c.add(Calendar.DAY_OF_YEAR, 7);
 		
 		String salida = "<b>Certificado:</b> ";
-		if (c.after(fecha)) {
-			salida += renewCertificate(DOMINIO);
+		if (c.getTime().after(fecha)) {
+//			salida += renewCertificate(DOMINIO);
 			salida += "<span style='color: red'>" + Util.dateToString(fecha) + "</span><br />";
 		} else {
 			salida += Util.dateToString(fecha);
@@ -60,7 +60,12 @@ public class SystemUtil {
 		
 		return salida;
 	}
-	
+
+	/**
+	 * Requiere permisos de root. Creo que mejor lo ejecuto a mano cada vez
+	 * @param domain
+	 * @return
+	 */
 	public static String renewCertificate(String domain) {
         try {
         	StringBuilder result = new StringBuilder();
@@ -76,14 +81,14 @@ public class SystemUtil {
 
             int exitCode = process.waitFor();
             if (exitCode == 0) {
-                result.append("Certificado renovado exitosamente.");
+                result.append("Certificado renovado exitosamente. ");
             } else {
-                result.append("Error al renovar el certificado. Código de salida: ").append(exitCode);
+                result.append("Error al renovar el certificado. Código de salida: ").append(exitCode).append("<br />");
             }
             return result.toString();
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
-            return e.getMessage();
+            return e.getMessage() + "</br>";
         }
     }
 

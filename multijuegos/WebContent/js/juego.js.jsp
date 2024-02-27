@@ -64,7 +64,7 @@ class Juego {
 		
 		const ganan_blancas = tiempo_blancas > 0;
 
-		this.sala.fin_partido(this.color == 'negras' ^ ganan_blancas);
+		this.fin_partido(this.color == 'negras' ^ ganan_blancas);
 	}
 	
 	actualizar_tiempos(tiempo_blancas, tiempo_negras) {
@@ -138,9 +138,9 @@ class Juego {
 			// Si el partido aún no ha empezado no decimos nada. Lo escribiremos cuando se manden las tácticas y empiece de verdad
 			if (this.estado >= 2) {
 				if (this.nombre == blancas || this.nombre == negras) {
-					this.escribir_servidor('<fmt:message key="connection.resuming" /> ' + this.mostrar_jugador(blancas) + ' vs ' + this.mostrar_jugador(negras));
+					this.escribir_servidor('<fmt:message key="connection.resuming" /> ' + this.mostrar_jugador(blancas, false) + ' vs ' + this.mostrar_jugador(negras, false));
 				} else {
-					this.escribir_servidor('<fmt:message key="msg.watching" /> ' + this.mostrar_jugador(blancas) + ' vs ' + this.mostrar_jugador(negras));
+					this.escribir_servidor('<fmt:message key="msg.watching" /> ' + this.mostrar_jugador(blancas, false) + ' vs ' + this.mostrar_jugador(negras, false));
 				}
 			}
 			$('#boton_nuevo').hide();
@@ -157,6 +157,10 @@ class Juego {
 				// Hasta que no empieza el partido no hay turno
 				this.actualizar_texto_turno();
 				this.habilitar_color(this.estado == 0);
+			} else if (this.estado == 2) {
+				this.pintar_tiempos();
+				this.actualizar_texto_turno();
+				this.habilitar_color(this.color == 'blancas');
 			} else {
 				this.pintar_tiempos();
 				this.actualizar_turno(this.estado == 2 || this.estado == 3 ? 'blancas' : 'negras', true);
@@ -177,14 +181,27 @@ class Juego {
 		}
 	}
 
-	actualizar_ranking(usuario1, puntos1, usuario2, puntos2) {
-		var mensaje1 = this.mostrar_jugador(usuario1);
-		this.puntos[usuario1] = puntos1;
-		mensaje1 += ' pasa a ' + this.mostrar_jugador(usuario1);
+	// El partido del jugador/observador
+	fin_partido(victoria) {
+		clearInterval(this.juego.timer);
+		this.juego.timer = null;
 
-		var mensaje2 = this.mostrar_jugador(usuario2);
+		if (this.juego.color) {
+			this.juego.escribir_servidor(victoria ? '<fmt:message key="msg.youWin" />' : '<fmt:message key="msg.youLose" />');
+			actualizar_texto_turno();
+		} else {
+			this.juego.escribir_servidor('<fmt:message key="msg.endOfGame" />'.replace('{0}', victoria ? $('#jugador1').html() : $('#jugador2').html()));
+		}
+	}
+
+	actualizar_ranking(usuario1, puntos1, usuario2, puntos2) {
+		var mensaje1 = this.mostrar_jugador(usuario1, false);
+		this.puntos[usuario1] = puntos1;
+		mensaje1 += ' pasa a ' + this.mostrar_jugador(usuario1, false);
+
+		var mensaje2 = this.mostrar_jugador(usuario2, false);
 		this.puntos[usuario2] = puntos2;
-		mensaje2 += ' pasa a ' + this.mostrar_jugador(usuario2);
+		mensaje2 += ' pasa a ' + this.mostrar_jugador(usuario2, false);
 
 		if (usuario1 == this.nombre || usuario1 == this.nombre_rival) {
 			this.escribir_servidor(mensaje1);
@@ -203,8 +220,9 @@ class Juego {
 		this.sala.crear_usuario(usuario2, puntos2);
 	}
 	
-	mostrar_jugador(jugador, puntos) {
+	mostrar_jugador(jugador, derecha, puntos) {
 		var s = '';
+		var t = '';
 		if (jugador) {
 			const p = parseInt(puntos || this.puntos[jugador]);
 			if (p) {
@@ -227,11 +245,11 @@ class Juego {
 				s = `<span class="info_jugador ` + nivel + `" title="` + this.traducir(nivel) + `">
 						<img class="bandera" src="img/banderas/ES.png" /><span class="puntos">` + p.toLocaleString('de-DE') + `</span>
 					</span>`;
-				s += `<span class="jugador" id="nombre_` + jugador + `">` + jugador + `</span>
-					<span class="away" style="display:none" title="Away">zZZ</span>`;
+				t = `<span class="jugador" id="nombre_` + jugador + `">` + jugador + `</span>
+					<div class="away" style="display:none" title="Away">zZ<span>Z</span></div>`;
 			}
 		}
-		return s;
+		return derecha ? t + s : s + t;
 	}
 
 	mostrar_ranking_click() {
@@ -241,7 +259,7 @@ class Juego {
 	mostrar_ranking(ranking) {
 		var mensaje = ' <ol id="lista_ranking" style="padding-left: 5px; list-style: decimal inside;">';
 		ranking.forEach(j => {
-	    	mensaje += '<li style="display: list-item;">' + this.mostrar_jugador(j.nombre, j.puntos) + '</li>';
+	    	mensaje += '<li style="display: list-item;">' + this.mostrar_jugador(j.nombre, false, j.puntos) + '</li>';
 	    });
 		mensaje += '</ol>';			
 		
@@ -313,7 +331,7 @@ class Juego {
 	}
 
 	escribir_observador(quien, mensaje) {
-		this.escribir(this.mostrar_jugador(quien) + ' ' + mensaje, 'mensaje_observador', 'gris');
+		this.escribir(this.mostrar_jugador(quien, false) + ' ' + mensaje, 'mensaje_observador', 'gris');
 	}
 
 	escribir_servidor(mensaje) {

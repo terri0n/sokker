@@ -8,13 +8,15 @@
 		<b>Multi<span class="material-icons md-24">casino</span>Juegos</b>
 	</button>
 
-	<span class="solo_pc" style="opacity: 0.8">${param.nombre}</span>
+	<c:if test="${not empty param.id}">
+		<span class="solo_pc" style="opacity: 0.8"><fmt:message key="games.game${param.id}" /></span>
+	</c:if>
 	
 	<div style="display: inline-block;" class="justify-content-end">
 		<fmt:message key="connection.hello" />&nbsp;<span id="nombre"><c:out value="${jugador.nombre}" /></span>!&nbsp;
 	
 		<div id="desconectado" style="display: inline-block; <c:if test="${!jugador.invitado}">display: none;</c:if>">
-			<button class="azul pt-0 pb-0" title="" onclick="login_click()">Login</button>
+			<button class="azul pt-0 pb-0 mr-2" title="" onclick="login_click()">Login</button>
 		</div>
 	
 		<div id="conectado" style="display: inline-block; <c:if test="${jugador.invitado}">display: none;</c:if>">

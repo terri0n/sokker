@@ -39,7 +39,7 @@ public class Endpoint extends EndpointBase {
 		super.open(sesion, config);
 
 	    if (httpSession.getAttribute("jugador") == null) {
-	    	// LOGIN/REGISTRO: lo comento. Mejor que esté por separado
+	    	// Ha habido algún error, esto no debería pasar
 	    	httpSession.invalidate();
 	    	cerrar_sesion(sesion, "Error: sesión sin jugador");
 	    } else {
@@ -139,7 +139,7 @@ public class Endpoint extends EndpointBase {
 
 	@OnMessage
 	public String onMessage(String message) {
-		System.out.println(getNombre(sesion) + "> Text message: " + message);
+		System.out.println(getNombre(sesion) + " -> " + message);
 		
 		// Actualizo el tiempo de la sesión
         long lastAccessedTime = httpSession.getLastAccessedTime();
@@ -295,15 +295,14 @@ public class Endpoint extends EndpointBase {
 				mandar_observadores("observar_partido", partido.getId() + "," + partido.getTiempos() + "," + partido.duracion + "," + partido.getEstado(sesion) + "@" + partido.toString());
 				
 				partido.ultimo_movimiento = new Date();
-				partido.turno = COLOR.blancas;
 			}
 		}
 	}
 
 	private void finalizar_turno(String params) {
 		synchronized (partido) {
-			partido.anyadir_movimiento(params, sesion);
-
+			partido.hacer_movimiento(params, sesion);
+			
 			// Añadimos la información sobre los tiempos
 			String nuevo_mensaje = partido.getTiempos() + "@" + params;
 			enviar(getRival(), "movimiento_rival", nuevo_mensaje);
@@ -433,8 +432,8 @@ public class Endpoint extends EndpointBase {
 							p.negras = sesion;
 						}
 						
-						if (p.turno == null && p.getTactica(p.getColor(sesion)) != null) {
-							// Si el partido no ha empezado y ya había mandado la táctica, se la recuerdo
+						if (p.turno == null && p.getTactica(p.getColor(sesion)) != null && p.getTactica(p.getColor(sesion).cambiar()) == null) {
+							// Si el partido no ha empezado y ya había mandado la táctica (pero el rival no), se la recuerdo (aún no está en el tablero)
 							enviar(sesion, "observar_partido", p.getId() + "," + p.getTiempos() + "," + p.duracion + "," + p.getEstado(sesion) + "@" + p.getTactica(p.getColor(sesion)));
 						} else {
 							// Si no, mando el tablero completo

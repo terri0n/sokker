@@ -42,7 +42,7 @@
 		    background-size: 78px 78px;
 		}
 		h1 {
-		    background: linear-gradient(to bottom, rgba(0,0,255,0.3) 0%, rgba(0, 0, 255, 0.3) 80%, rgba(0, 0, 255, 0) 100%);
+		    background: linear-gradient(to bottom, rgba(31,31,63,0.3) 0%, rgba(31, 31, 63, 0.3) 80%, rgba(31, 31, 63, 0) 100%);
 		    padding: 20px 20px 40px 20px;
 		}
         .juego {
@@ -50,6 +50,7 @@
             margin-top: 5px;
             margin-left: 30px;
             margin-right: 30px;
+            margin-bottom: 10px;
             background-color: #fafafa;
             display: inline-block;
             border: 2px outset;
@@ -174,7 +175,7 @@
     	<h2>JUEGOS DE MESA</h2>
 
 	    <div class="juego verde_oscuro sombra" style="border-color: OliveDrab;" onclick="location.href='chessgoal'">
-	        <img width=130 src="${pageContext.request.contextPath}/img/chessgoal/chessgoal.png" /><br />
+	        <img width=120 src="${pageContext.request.contextPath}/img/chessgoal/chessgoal.png" /><br />
 	        <b>ChessGoal</b><br />
 	        <small>(<%= EndpointBase.getSesiones() %>)</small>
 	    </div>

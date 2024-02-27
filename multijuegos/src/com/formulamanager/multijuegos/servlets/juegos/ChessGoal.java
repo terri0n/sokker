@@ -26,7 +26,7 @@ public class ChessGoal extends HttpServlet {
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		request.getRequestDispatcher("/jsp/sala.jsp?nombre=ChessGoal&id=1").forward(request, response);
+		request.getRequestDispatcher("/jsp/sala.jsp?id=1").forward(request, response);
 	}
 	 
 	/**

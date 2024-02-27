@@ -42,7 +42,8 @@ public class SessionListener implements HttpSessionListener {
     	synchronized (sesiones) {
         	sesiones.remove(se.getSession());
         }
-        System.out.println("Sale " + ((Jugador)se.getSession().getAttribute("jugador")).getNombre());
+        if (se.getSession().getAttribute("jugador") != null) {
+        	System.out.println("Sale " + ((Jugador)se.getSession().getAttribute("jugador")).getNombre());
+        }
     }
-	
 }

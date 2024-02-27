@@ -76,7 +76,7 @@ public class EndpointBase {
 	protected static void enviar(Session s, String accion, String params) {
 		try {
 			if (s != null && s.isOpen()) {
-System.out.println(getNombre(s) + " -> " + accion + "," + Util.nvl(params));
+System.out.println(getNombre(s) + " <- " + accion + "," + Util.nvl(params));
 				s.getBasicRemote().sendText(accion + "," + Util.nvl(params));
 			}
 		} catch (IOException e) {

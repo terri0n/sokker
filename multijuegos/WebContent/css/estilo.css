@@ -148,9 +148,6 @@ button:hover:not(:disabled).negro {
     background: linear-gradient(to bottom, #d14a41, #401401);
     color: white;
 }
-.gris_claro {
-	background-color: #fafafa;
-}
 
 .borde-negro {
     text-shadow: -1.5px 0px black, 0px 1.5px black, 1.5px 0px black, 0px -1.5px black, -1.5px -1.5px black, 1.5px 1.5px black, 1.5px -1.5px black, -1.5px 1.5px black;
@@ -177,10 +174,10 @@ button:hover:not(:disabled).negro {
 /* SALA */
 
 .jugador {
-	color: white;
+	color: darkslategray;
 	font-size: 20px;
 	font-weight: bold;
-    text-shadow: -0.5px 0px black, 0px 0.5px black, 0.5px 0px black, 0px -0.5px black, -0.5px -0.5px black, 0.5px 0.5px black, 0.5px -0.5px black, -0.5px 0.5px black;
+	vertical-align: sub !important;
 }
 section li div {
 	display: inline-block;
@@ -199,7 +196,7 @@ section li div {
 	margin: 2px 4px 2px 2px;
 	border: 1px solid black;
 	display: inline-block;
-	vertical-align: text-top;
+	vertical-align: middle;
 	overflow: hidden;
 }
 .puntos {
@@ -211,6 +208,9 @@ section li div {
     color: blue;
     display: inline-block;
     font-weight: bold;
+}
+.away > span {
+	font-size: 9px;
 }
 #partidos li .material-icons {
 	vertical-align: sub;
@@ -244,12 +244,12 @@ section li div {
 }
 .reloj {
 	display: inline-block;
-	color: white;
 	position: absolute;
 	pointer-events: none;
 	font-size: small;
 	border-radius: 5px;
-	padding: 1px;
+	padding-left: 1px;
+	padding-bottom: 1px;
 	z-index: -1;
 }
 .reloj span {
@@ -258,6 +258,9 @@ section li div {
 }
 .reloj .material-icons {
 	font-size: small;
+}
+.reloj > .jugador {
+	color: white;
 }
 
 /* CHAT */

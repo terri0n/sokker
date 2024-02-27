@@ -62,6 +62,12 @@
 	
 	/* CHESSGOAL */
 
+	.texto {
+	    /*background: linear-gradient(to bottom, rgb(255,255,255) 25%, rgb(127,255,127) 50%, rgb(95,195,95) 75%, rgb(63,127,63) 100%);*/
+	    background: linear-gradient(to bottom, rgb(255,255,255) 30%, rgb(195,255,195) 55%, rgb(63,127,63) 100%);
+	    -webkit-background-clip: text;
+	}
+
 	#chess_board_border {
 	    background: linear-gradient(to bottom, rgba(191,63,63,0.6) 0%, rgba(63,0,0,0.5) 100%);
 		width: 473px;
@@ -195,18 +201,18 @@
 	</div>
 </div>
 
-<div style="padding-top: 0; background: linear-gradient(to bottom, rgba(0, 127, 0, 0.3) 0%, rgba(0, 127, 0, 0.3) 80%, rgba(0, 127, 0, 0) 100%); text-align: center;">
+<div style="padding-top: 0; background: linear-gradient(to bottom, rgba(31, 63, 31, 0.3) 0%, rgba(31, 63, 31, 0.3) 80%, rgba(31, 63, 31, 0) 100%); text-align: center;">
 	<h1>
-	    <span class="texto verde letra_impar">C</span
-	    ><span class="texto verde letra_par">H</span
-	    ><span class="texto verde letra_impar">E</span
-	    ><span class="texto verde letra_par">S</span
-	    ><span class="texto verde letra_impar">S</span
+	    <span class="texto letra_impar">C</span
+	    ><span class="texto letra_par">H</span
+	    ><span class="texto letra_impar">E</span
+	    ><span class="texto letra_par">S</span
+	    ><span class="texto letra_impar">S</span
 	    ><img width="130" src="${pageContext.request.contextPath}/img/chessgoal/chessgoal.png" 
-	    /><span class="texto verde letra_par">G</span
-	    ><span class="texto verde letra_impar">O</span
-	    ><span class="texto verde letra_par">A</span
-	    ><span class="texto verde letra_impar">L</span>
+	    /><span class="texto letra_par">G</span
+	    ><span class="texto letra_impar">O</span
+	    ><span class="texto letra_par">A</span
+	    ><span class="texto letra_impar">L</span>
 	</h1>
 
 	<button class="verde" id="boton_nuevo" onclick="juego.sala.nuevo_click()">

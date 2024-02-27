@@ -140,15 +140,15 @@ class ChessGoal extends Juego {
 		}
 		
 		// Rival
-		$("#chess_board_border").append(`<div class="reloj negro" style="left: 0px; top: -32px;"><span class="material-icons">timer</span><span id="tiempo_negras"></span> ` + this.mostrar_jugador(this.nombre_rival) + `</div>`);
+		$("#chess_board_border").append(`<div class="reloj negro" style="left: 0px; top: -32px;"><span class="material-icons">timer</span><span id="tiempo_negras"></span> ` + this.mostrar_jugador(this.nombre_rival, true) + `</div>`);
 
 		// Jugador
-		$("#chess_board_border").append(`<div class="reloj negro" style="left: 0px; bottom: -32px;"><span class="material-icons">timer</span><span id="tiempo_blancas"></span> ` + this.mostrar_jugador(this.nombre) + `</div>`);
+		$("#chess_board_border").append(`<div class="reloj negro" style="left: 0px; bottom: -32px;"><span class="material-icons">timer</span><span id="tiempo_blancas"></span> ` + this.mostrar_jugador(this.nombre, true) + `</div>`);
 
 		// Botones
-		$("#chess_board_border").append('<button style="right: 18px; bottom: -30px; display: block; position: absolute;" class="verde" id="finalizar" onclick="juego.finalizar_click()"></button>');
-		$("#chess_board_border").append('<button title="Abandonar" style="right: -2px; top: -2px; display: block; position: absolute; font-size: 0.9em; padding: 0;" class="rojo" id="finalizar" onclick="juego.abandonar_click()"><span class="material-icons md-18">close</span></button>');
+		$("#chess_board_border").append('<button title="Abandonar" style="right: -4px; top: -6px; display: block; position: absolute; font-size: 0.9em; padding: 3px;" class="rojo" onclick="juego.abandonar_click()"><span class="material-icons md-18">close</span></button>');
 		$("#chess_board_border").append(`<div style="right: 18px; bottom: -30px; display: block; position: absolute;">
+				<button class="verde" id="finalizar" onclick="juego.finalizar_click()"></button>
 				<button style="display: none;" class="verde" id="boton_otro" onclick="juego.sala.otro_click()"><fmt:message key="menu.playAgain" /></button>
 				<button style="display: none;" class="rojo" id="boton_otro_cancelar" onclick="juego.sala.cancelar_click()"><fmt:message key="menu.cancel" /></button>
 			</div>`);
@@ -204,7 +204,7 @@ class ChessGoal extends Juego {
 	checkValidMove(figura, newX, newY) {
 	    var invalid = false;
 
-	    if (this.turno == null) {
+	    if (this.estado < 2) {
 	    	// Sin iniciar
 	    	if (!figura.data) {
 	    		// La pelota no puede moverse
@@ -217,15 +217,24 @@ class ChessGoal extends Juego {
 	    			invalid = true;
 	    		}
 	    	}
+	    } else if (this.estado == 2) {
+console.log('checkValidMove');
+	    	if (figura.data) {
+	    		// Comprobar si es una figura blanca
+	        	invalid |= figura.data != 'blancas';
+
+	        	// La figura que saca no puede moverse hasta que saque
+	        	if (figura.x == (CASILLAS - 1) / 2 && figura.y == (CASILLAS + 1) / 2 && this.getPelota().x == (CASILLAS - 1) / 2 && this.getPelota().y == (CASILLAS + 1) / 2) {
+	        		invalid = true;
+	        	}
+	    	} else {
+		    	//check figure can move
+			    invalid |= !this.movimiento_correcto(figura, newX, newY);
+	    	}
 	    } else if (this.turno == this.color) {
 	    	if (figura.data) {
 	    		// Comprobar si es su turno
 	        	invalid |= this.turno != figura.data;
-
-	        	// La figura que saca no puede moverse hasta que saque
-	        	if (!this.estado < 3 && figura.x == (CASILLAS - 1) / 2 && figura.y == (CASILLAS + 1) / 2 && this.getPelota().x == (CASILLAS - 1) / 2 && this.getPelota().y == (CASILLAS + 1) / 2) {
-	        		invalid = true;
-	        	}
 	    	} else {
 	    		// Comprobar fuera de juego
 	    		const figura_con_pelota = this.getFigureInCell(figura.x, figura.y);
@@ -335,7 +344,7 @@ class ChessGoal extends Juego {
 			// La pelota solo se puede mover si la tiene una pieza del jugador que tiene el turno
 			const figura_con_pelota = this.getFigureInCell(figura.x, figura.y);
 
-			if (!figura_con_pelota || figura_con_pelota.data != this.turno) {
+			if (!figura_con_pelota || this.estado != 2 && figura_con_pelota.data != this.turno) {
 				return false;	
 			} else {
 				switch (figura_con_pelota.name) {
@@ -435,6 +444,12 @@ class ChessGoal extends Juego {
         if (juego.checkValidMove(figura, newX, newY)) {
   		  	return false;
         } else {
+			// Saque inicial
+			if (this.estado == 2 && figura.name == 'pelota') {
+				this.estado = 4;
+				juego.turno = juego.color;
+			}
+
         	// ¿Parada del portero?
         	const figureInCell = juego.getFigureInCell(newX, newY);
         	const parada = juego.comprobar_parada(figura, newX, newY, juego.portero[juego.cambiar_color(juego.color)]);
@@ -454,7 +469,7 @@ class ChessGoal extends Juego {
         	});
 
             // Si la partida ya ha comenzado...
-            if (juego.turno) {
+            if (juego.estado >= 2) {
             	$(figura.figureHTML).find('img:first').removeClass("figura_rival_movida");
             	
             	if (figura.data || $(figura.figureHTML).hasClass("pelota_movida")) {
@@ -497,7 +512,7 @@ class ChessGoal extends Juego {
 		if (!ignorar_tamanyo) {
 			if (figura.name == 'pelota') {
 				$(figura.figureHTML).find('img').delay(duration).animate({
-					"width" : figura_destino ? "20px" : "50px"
+					"width" : figura_destino ? "20px" : CELL_WIDTH + "px"
 				}, {
 					duration: duration,
 					queue: false
@@ -524,7 +539,7 @@ class ChessGoal extends Juego {
 			} else if (this.turno == null && tiene_pelota) {
 				// La partida no ha empezado, se coloca una figura en el centro y luego se quita
 				$(pelota.figureHTML).find('img').delay(duration).animate({
-					"width" : "50px"
+					"width" : CELL_WIDTH + "px"
 				}, {
 					duration: duration,
 					queue: false
@@ -581,7 +596,7 @@ class ChessGoal extends Juego {
 			const victoria = newY == 0 ^ this.color == 'negras';
 			setTimeout(() => {
 				showToast.show("<fmt:message key="msg.goal" />");
-				this.sala.fin_partido(victoria);
+				this.fin_partido(victoria);
 			}, 500);
 			return true;
 		} else {
@@ -766,10 +781,10 @@ class ChessGoal extends Juego {
 
 	hacer_parada(newX, quien, duracion) {
 		if (newX < this.portero[quien].x ^ this.color == 'negras') {
-			this.portero[quien].figureHTML.find('.guante:first').animate({width: "50px", left: "-90px"}, duracion);
+			this.portero[quien].figureHTML.find('.guante:first').animate({width: CELL_WIDTH + "px", left: "-90px"}, duracion);
 			this.portero[quien].figureHTML.find('.guante:last').animate({left: "-60px"}, duracion);
 		} else {
-			this.portero[quien].figureHTML.find('.guante:last').animate({width: "50px", left: "-30px"}, duracion);
+			this.portero[quien].figureHTML.find('.guante:last').animate({width: CELL_WIDTH + "px", left: "-30px"}, duracion);
 		}
 
 		setTimeout(() => {
@@ -792,7 +807,7 @@ class ChessGoal extends Juego {
 				case 2:	// Esperando saque inicial
 				case 3: // partido iniciado, turno blancas
 				case 4: // partido iniciado, turno negras
-					if (this.turno == this.color) {
+					if (this.turno == this.color || this.turno == null && this.color == 'blancas') {
 						$('#finalizar').text('<fmt:message key="msg.endTurn" />');
 						$('#finalizar').prop('disabled', false);
 					} else {

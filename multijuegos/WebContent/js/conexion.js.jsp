@@ -39,9 +39,7 @@ class Conexion {
 	    $("#texto").focus();
 	}
 
-	wsOpen(message) {
-//		this.sala.juego.escribir_servidor("<fmt:message key="connection.connected" />");
-	}
+	wsOpen(message) {}
 	
 	// mensaje.data = '<acción>,<parámetros>';
 	wsGetMessage(message) {
