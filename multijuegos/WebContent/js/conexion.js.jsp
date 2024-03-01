@@ -150,12 +150,14 @@ class Conexion {
 				// Volver a jugar
 				this.sala.volver_a_jugar();
 				break;
+			default:
+				alert('Acción incorrecta: ' + accion);
 		}
 	}
 	
 	wsClose(message) {
 		showToast.show(message.reason, 4000);
-		this.sala.juego.escribir_servidor('<fmt:message key="connection.disconnected" />');
+		this.sala.juego.escribir_servidor(null, '<fmt:message key="connection.disconnected" />');
 	
 		console.log(message.code);
 		if (message.code == 1002 || message.code == 1003 || message.code == 1008) {
@@ -170,7 +172,9 @@ class Conexion {
 	}
 	
 	wsError(message) {
-		this.sala.juego.escribir_servidor('Error ... ');
+		showToast.show(message.reason, 4000);
+		console.log('Error: ' + message);
+		reconectar();
 	}
 	
 	enviar(accion, params) {

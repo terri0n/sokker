@@ -138,9 +138,9 @@ class Juego {
 			// Si el partido aún no ha empezado no decimos nada. Lo escribiremos cuando se manden las tácticas y empiece de verdad
 			if (this.estado >= 2) {
 				if (this.nombre == blancas || this.nombre == negras) {
-					this.escribir_servidor('<fmt:message key="connection.resuming" /> ' + this.mostrar_jugador(blancas, false) + ' vs ' + this.mostrar_jugador(negras, false));
+					this.escribir_servidor(null, '<fmt:message key="connection.resuming" /> ' + blancas + ' vs ' + negras);
 				} else {
-					this.escribir_servidor('<fmt:message key="msg.watching" /> ' + this.mostrar_jugador(blancas, false) + ' vs ' + this.mostrar_jugador(negras, false));
+					this.escribir_servidor(null, '<fmt:message key="msg.watching" /> ' + blancas + ' vs ' + negras);
 				}
 			}
 			$('#boton_nuevo').hide();
@@ -187,10 +187,10 @@ class Juego {
 		this.juego.timer = null;
 
 		if (this.juego.color) {
-			this.juego.escribir_servidor(victoria ? '<fmt:message key="msg.youWin" />' : '<fmt:message key="msg.youLose" />');
+			this.juego.escribir_servidor(null, victoria ? '<fmt:message key="msg.youWin" />' : '<fmt:message key="msg.youLose" />');
 			actualizar_texto_turno();
 		} else {
-			this.juego.escribir_servidor('<fmt:message key="msg.endOfGame" />'.replace('{0}', victoria ? $('#jugador1').html() : $('#jugador2').html()));
+			this.juego.escribir_servidor(null, '<fmt:message key="msg.endOfGame" />'.replace('{0}', victoria ? $('#jugador1').html() : $('#jugador2').html()));
 		}
 	}
 
@@ -204,8 +204,8 @@ class Juego {
 		mensaje2 += ' pasa a ' + this.mostrar_jugador(usuario2, false);
 
 		if (usuario1 == this.nombre || usuario1 == this.nombre_rival) {
-			this.escribir_servidor(mensaje1);
-			this.escribir_servidor(mensaje2);
+			this.escribir_servidor(null, mensaje1);
+			this.escribir_servidor(null, mensaje2);
 			this.sala.actualizar_nombres(usuario1, usuario2);
 		}
 		
@@ -331,11 +331,11 @@ class Juego {
 	}
 
 	escribir_observador(quien, mensaje) {
-		this.escribir(this.mostrar_jugador(quien, false) + ' ' + mensaje, 'mensaje_observador', 'gris');
+		this.escribir('<span class="jugador">' + quien + '</span><span class="span_texto">' + mensaje + '</span>', 'mensaje_observador', 'gris');
 	}
 
-	escribir_servidor(mensaje) {
-		this.escribir('<b><i>' + mensaje + '</i></b>', 'mensaje_servidor', 'rojo');
+	escribir_servidor(quien, mensaje) {
+		this.escribir('<b><i>' + (quien ? '<span class="jugador">' + quien + '</span>' : '') + ' <span class="span_texto">' + mensaje + '</span></i></b>', 'mensaje_servidor', 'rojo');
 	}
 
 	////////////

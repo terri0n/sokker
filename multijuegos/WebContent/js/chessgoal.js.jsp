@@ -227,10 +227,10 @@ console.log('checkValidMove');
 	        	if (figura.x == (CASILLAS - 1) / 2 && figura.y == (CASILLAS + 1) / 2 && this.getPelota().x == (CASILLAS - 1) / 2 && this.getPelota().y == (CASILLAS + 1) / 2) {
 	        		invalid = true;
 	        	}
-	    	} else {
-		    	//check figure can move
-			    invalid |= !this.movimiento_correcto(figura, newX, newY);
 	    	}
+
+	    	//check figure can move
+		    invalid |= !this.movimiento_correcto(figura, newX, newY);
 	    } else if (this.turno == this.color) {
 	    	if (figura.data) {
 	    		// Comprobar si es su turno
@@ -620,7 +620,7 @@ console.log('checkValidMove');
 		this.actualizar_turno(null, false);
 		this.pintar_tiempos();
 
-		this.escribir_servidor('<fmt:message key="msg.chooseTactic" />');
+		this.escribir_servidor(null, '<fmt:message key="msg.chooseTactic" />');
 		showToast.show('<fmt:message key="msg.chooseTactic" />');
 
 		// Actualizamos nombres
@@ -675,7 +675,7 @@ console.log('checkValidMove');
 		}
 		this.actualizar_turno('blancas', true);
 		this.iniciar_cronometros();
-		this.escribir_servidor('<fmt:message key="msg.gameStarts" />');
+		this.escribir_servidor(null, '<fmt:message key="msg.gameStarts" />');
 		
 		this.pintar_movimientos(movs, 0, 1000, () => {
 			this.habilitar_color(this.color == 'blancas');
@@ -801,7 +801,7 @@ console.log('checkValidMove');
 					$('#finalizar').prop('disabled', false);
 					break;
 				case 1: // Táctica mandada
-					$('#finalizar').text('<fmt:message key="msg.waitingTactic" />');
+					$('#finalizar').html('<div class="loader"></div><fmt:message key="msg.waitingTactic" />');
 					$('#finalizar').prop('disabled', true);
 					break;
 				case 2:	// Esperando saque inicial
@@ -811,7 +811,7 @@ console.log('checkValidMove');
 						$('#finalizar').text('<fmt:message key="msg.endTurn" />');
 						$('#finalizar').prop('disabled', false);
 					} else {
-						$('#finalizar').text('<fmt:message key="msg.opponentTurn" />');
+						$('#finalizar').html('<div class="loader"></div><fmt:message key="msg.opponentTurn" />');
 						$('#finalizar').prop('disabled', true);
 					}
 					break;
@@ -884,11 +884,11 @@ console.log('checkValidMove');
 		if (this.turno) {
 			this.actualizar_turno(this.cambiar_color(this.turno), true);
 			this.sala.conexion.enviar('fin_turno', this.getMovimientos());
-			this.movimientos = [];	// Vacío los movimientos
 		} else {
 			this.actualizar_texto_turno();
 		}
 
+		this.movimientos = [];	// Vacío los movimientos
 		this.limpiar_tablero();
 		this.habilitar_color(false);
 	}

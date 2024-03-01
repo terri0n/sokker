@@ -61,6 +61,9 @@
             transition: all 0.5s ease;
         	line-height: 0.7;
         }
+        .juego > div {
+ 			height: 120px;
+        }
         .juego small {
         	display: inline-block;
         	font-size: 50%;
@@ -76,6 +79,11 @@
             filter: brightness(1.5);
 			transform: scale(1.2);
         }
+        .juego img {
+			position: relative;
+		    top: 50%;
+		    transform: translate(0%, -50%);
+		}
 
 		/* FIGURAS */
 
@@ -162,7 +170,7 @@
 	    ><span class="texto amarillo letra_impar">L</span
 	    ><span class="texto verde letra_par">T</span
 	    ><span class="texto azul letra_impar">I</span
-	    ><img width="130" src="${pageContext.request.contextPath}/img/multijuegos.png"
+	    ><img width="130" style="margin-left: 8px;" src="${pageContext.request.contextPath}/img/multijuegos.png"
 	    /><span class="texto anyil letra_par">J</span
 	    ><span class="texto violeta letra_impar">U</span
 	    ><span class="texto rojo letra_par">E</span
@@ -174,14 +182,18 @@
     <section>
     	<h2>JUEGOS DE MESA</h2>
 
-	    <div class="juego verde_oscuro sombra" style="border-color: OliveDrab;" onclick="location.href='chessgoal'">
-	        <img width=120 src="${pageContext.request.contextPath}/img/chessgoal/chessgoal.png" /><br />
+	    <div class="juego verde_oscuro sombra" style="border-color: #008040;" onclick="location.href='chessgoal'">
+	        <div>
+		        <img width=120 src="${pageContext.request.contextPath}/img/chessgoal/chessgoal.png" /><br />
+		    </div>
 	        <b>ChessGoal</b><br />
 	        <small>(<%= EndpointBase.getSesiones() %>)</small>
 	    </div>
 	
 	    <div class="juego marron sombra" style="border-color: #88362c;" onclick="location.href='multicatan'">
-	        <img width=130 src="${pageContext.request.contextPath}/img/multicatan/multicatan.png" /><br />
+	        <div>
+		        <img width=120 src="${pageContext.request.contextPath}/img/multicatan/multicatan.png" /><br />
+		    </div>
 	        <b>MultiCatan</b><br />
 	        <small>(En construcción)</small>
 	    </div>

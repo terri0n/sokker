@@ -241,7 +241,7 @@ public class Endpoint extends EndpointBase {
 
 		synchronized (sesiones) {
 			// Cancelar partido
-			enviar(sesiones.get(usuario), "cancelar_partido", usuario);
+			enviar(sesiones.get(usuario), "partido_cancelado", usuario);
 		}
 	}
 

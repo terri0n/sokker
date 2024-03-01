@@ -27,7 +27,6 @@ h1 {
 }
 h1 img {
 	vertical-align: bottom;
-	margin-left: 8px;
 }
 nav {
 	background-color: rgba(0,0,0,0.4);
@@ -108,7 +107,7 @@ button:hover:not(:disabled).naranja {
     color: black;
 }
 .verde_oscuro {
-    background: linear-gradient(to bottom, white, green);
+    background: linear-gradient(to bottom, white, #008040);
     color: white;
 }
 button:hover:not(:disabled).verde {
@@ -263,6 +262,82 @@ section li div {
 	color: white;
 }
 
+/* LOADER */
+
+.loader {
+  margin-right: 5px;
+  box-sizing: border-box;
+  display: inline-block;
+  width: 15px; /* Ancho mantenido */
+  height: 19px; /* Altura ajustada */
+  border-top: 1.5px solid #222; /* Borde superior oscurecido */
+  border-bottom: 1.5px solid #222; /* Borde inferior oscurecido */
+  position: relative;
+  background: linear-gradient(rgb(70, 70, 70) 7.5px, transparent 0) no-repeat; /* Fondo oscurecido */
+  background-size: 0.75px 7.5px; /* Tamaño del fondo ajustado */
+  background-position: 50% 0px;
+  animation: spinx 5s linear infinite;
+}
+.loader:before, .loader:after {
+  content: "";
+  width: 12px; /* Ancho del elemento :before y :after */
+  left: 50%;
+  height: 7.5px; /* Altura del elemento :before y :after ajustada */
+  position: absolute;
+  top: 0;
+  transform: translatex(-50%);
+  background: rgba(0, 0, 0, 0.3); /* Fondo oscurecido */
+  border-radius: 0 0 3.75px 3.75px; /* Borde del elemento :before y :after ajustado */
+  background-size: 100% auto;
+  background-repeat: no-repeat;
+  background-position: 0 0px;
+  animation: lqt 5s linear infinite;
+}
+.loader:after {
+  top: auto;
+  bottom: 0;
+  border-radius: 3.75px 3.75px 0 0; /* Borde del elemento :after ajustado */
+  animation: lqb 5s linear infinite;
+}
+@keyframes lqt {
+  0%, 100% {
+    background-image: linear-gradient(rgb(70, 70, 70) 7.5px, transparent 0); /* Fondo oscurecido */
+    background-position: 0% 0px;
+  }
+  50% {
+    background-image: linear-gradient(rgb(70, 70, 70) 7.5px, transparent 0); /* Fondo oscurecido */
+    background-position: 0% 7.5px; /* Posición del fondo ajustada */
+  }
+  50.1% {
+    background-image: linear-gradient(rgb(70, 70, 70) 7.5px, transparent 0); /* Fondo oscurecido */
+    background-position: 0% -7.5px; /* Posición del fondo ajustada */
+  }
+}
+@keyframes lqb {
+  0% {
+    background-image: linear-gradient(rgb(70, 70, 70) 7.5px, transparent 0); /* Fondo oscurecido */
+    background-position: 0 7.5px; /* Posición del fondo ajustada */
+  }
+  100% {
+    background-image: linear-gradient(rgb(70, 70, 70) 7.5px, transparent 0); /* Fondo oscurecido */
+    background-position: 0 -7.5px; /* Posición del fondo ajustada */
+  }
+}
+@keyframes spinx {
+  0%, 49% {
+    transform: rotate(0deg);
+    background-position: 50% 6.75px; /* Posición del fondo ajustada */
+  }
+  51%, 98% {
+    transform: rotate(180deg);
+    background-position: 50% 0.75px; /* Posición del fondo ajustada */
+  }
+  100% {
+    transform: rotate(360deg);
+    background-position: 50% 6.75px; /* Posición del fondo ajustada */
+  }
+}
+
 /* CHAT */
 
 #contenedor_chat {
@@ -307,10 +382,17 @@ section li div {
 #chat small {
 	font-weight: bold;
 	padding: 2px;
+	padding-top: 1px;
 	border-radius: 3px;
 }
 .mensaje {
 	clear: both;
+}
+.mensaje .jugador {
+	color: white !important;
+}
+.mensaje .span_texto {
+	vertical-align: sub;
 }
 .mensaje_mio {
 	position: relative;
@@ -319,6 +401,7 @@ section li div {
 	background-color: SeaGreen;
 	border-radius: 10px;
 	padding: 5px;
+	padding-top: 4px;
 }
 .mensaje_rival {
 	position: relative;
@@ -327,6 +410,7 @@ section li div {
     background-color: DimGray;
 	border-radius: 10px;
 	padding: 5px;
+	padding-top: 4px;
 }
 
 /* BootBox */

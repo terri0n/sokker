@@ -96,7 +96,7 @@ class Sala {
 		this.crear_usuario(jugador.nombre, jugador.puntos);
 
 		if (jugador.nombre == this.juego.nombre_rival) {
-			this.juego.escribir_servidor(this.juego.mostrar_jugador(jugador.nombre) + ' <fmt:message key="msg.enteredGame" />');
+			this.juego.escribir_servidor(jugador.nombre, '<fmt:message key="msg.enteredGame" />');
 			$('#boton_cancelar').hide();
 			this.juego.actualizar_texto_turno();
 			//this.juego.iniciar_cronometros();
@@ -109,7 +109,7 @@ class Sala {
 			if (quien == this.juego.nombre || quien == this.juego.nombre_rival) {
 				if (quien == this.juego.nombre_rival) {
 					showToast.show('<fmt:message key="msg.gameAborted" />');
-					this.juego.escribir_servidor('<fmt:message key="msg.gameAborted" />');
+					this.juego.escribir_servidor(null, '<fmt:message key="msg.gameAborted" />');
 					this.conexion.enviar('rival_cancela', null);
 				}
 				this.finalizar_partido(partido.attr('id'));
@@ -194,7 +194,7 @@ class Sala {
 			$('#finalizar').text('<fmt:message key="msg.waitingOpponent" />');
 			$('#boton_cancelar').show();
 			$('#boton_cancelar').prop('disabled', false);
-			this.juego.escribir_servidor(this.juego.mostrar_jugador(usuario) + ' <fmt:message key="connection.disconnected" />'.toLowerCase());
+			this.juego.escribir_servidor(usuario, '<fmt:message key="connection.disconnected" />'.toLowerCase());
 			clearInterval(this.juego.timer);
 			this.juego.timer = null;
 		}
@@ -253,7 +253,7 @@ class Sala {
 	}
 
 	nuevo_observador(quien) {
-		this.juego.escribir_servidor(this.juego.mostrar_jugador(quien) + ' <fmt:message key="msg.enteredGame" />');
+		this.juego.escribir_servidor(quien, '<fmt:message key="msg.enteredGame" />');
 	}
 
 	actualizar_numero(id) {
@@ -338,7 +338,7 @@ class Sala {
 
 	partido_privado(color, duracion, rival) {
 		if (!this.juego.nombre_rival) {
-			this.opciones_partido(rival, color, duracion, '<fmt:message key="menu.invitationFrom" /></h5> '.replace('{0}', this.juego.mostrar_jugador(rival)), 'disabled="disabled "', () => {
+			this.opciones_partido(rival, color, duracion, '<fmt:message key="menu.invitationFrom" /></h5> '.replace('{0}', rival), 'disabled="disabled "', () => {
 				// Aceptar partido
 				this.partido_click(rival);
 			}, () => {
@@ -349,17 +349,19 @@ class Sala {
 
 	// El rival
 	partido_cancelado(quien) {
-		bootbox.alert({
-			message: '<span class="material-icons">info</span> <fmt:message key="msg.gameAborted" />',
-		    locale: '${pageContext.request.locale.language}',
-			backdrop: true,
-			closeButton: false,
-			buttons: {
-				ok: {
-					className: 'button azul'
+		if (this.juego.estado) {
+			bootbox.alert({
+				message: '<span class="material-icons">info</span> <fmt:message key="msg.gameAborted" />',
+			    locale: '${pageContext.request.locale.language}',
+				backdrop: true,
+				closeButton: false,
+				buttons: {
+					ok: {
+						className: 'button azul'
+					}
 				}
-			}
-		});
+			});
+		}
 		this.juego.cancelar_partido(quien);
 	}
 
@@ -387,7 +389,7 @@ class Sala {
 	}
 
 	invitar_click(usuario) {
-		this.opciones_partido(usuario, 'blancas', 20, '<fmt:message key="menu.newGame" /> <fmt:message key="menu.against" /> ' + this.juego.mostrar_jugador(usuario), '', (color, duracion) => {
+		this.opciones_partido(usuario, 'blancas', 20, '<fmt:message key="menu.newGame" /> <fmt:message key="menu.against" /> <span id="jugador">' + usuario + '</span>', '', (color, duracion) => {
 			this.conexion.enviar('partido_privado', color + ',' + duracion + ',' + usuario);
 			this.borrar_partido('partido_' + this.juego.nombre);
 			this.botones_nuevo_partido();

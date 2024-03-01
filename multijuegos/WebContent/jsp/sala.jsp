@@ -25,7 +25,7 @@
 	<style>
 	@media only screen and (max-width: 800px) {
 	    h1 img {
-			width: 13%;
+			width: 16%;
 		}
 		section {
 			width: 95%;
@@ -33,7 +33,7 @@
 	}
 	@media only screen and (min-width: 801px) {
 	    h1 img {
-			width: 8%; 
+			width: 11%;
 		}
 		section {
 			width: 47%;
@@ -195,7 +195,7 @@
 		</div>
 		<div id="contenedor_chat">
 			<div id="chat"></div>
-			<input type="text" id="texto" onkeypress="texto_keypress(event)" />
+			<input type="text" id="texto" onkeypress="texto_keypress(event)" placeholder="<fmt:message key="menu.send_message" />" />
 			<button class="azul" onclick="juego.sala.conexion.enviar_mensaje();"><fmt:message key="connection.send" /></button>
 		</div>
 	</div>
@@ -208,7 +208,7 @@
 	    ><span class="texto letra_impar">E</span
 	    ><span class="texto letra_par">S</span
 	    ><span class="texto letra_impar">S</span
-	    ><img width="130" src="${pageContext.request.contextPath}/img/chessgoal/chessgoal.png" 
+	    ><img src="${pageContext.request.contextPath}/img/chessgoal/chessgoal.png" 
 	    /><span class="texto letra_par">G</span
 	    ><span class="texto letra_impar">O</span
 	    ><span class="texto letra_par">A</span

@@ -175,14 +175,6 @@ public class Util {
 	}
 
 	public static String getTexto(String lang, String key) {
-////		Locale locale = (Locale)Config.get(request.getSession(), Config.FMT_LOCALE);
-//		Locale locale = (Locale)request.getSession().getAttribute("javax.servlet.jsp.jstl.fmt.locale.session");
-//		if (locale == null) {
-//			locale = request.getLocale();
-//		}
-//		ResourceBundle rb = ResourceBundle.getBundle(Util.ApplicationResources, locale);
-//		return rb.getString(key);
-
 		Locale locale = new Locale(lang.toLowerCase());
 		ResourceBundle rb = ResourceBundle.getBundle(Idiomas.APPLICATION_RESOURCES, locale);
 		return rb.getString(key);
