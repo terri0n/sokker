@@ -1,10 +1,8 @@
 package com.formulamanager.multijuegos.websockets;
 
-import java.util.HashMap;
-
 import com.formulamanager.multijuegos.websockets.EndpointBase.COLOR;
 
-public class Movimiento {
+public class Movimiento implements Comparable<Movimiento> {
 	public static Integer CASILLAS = 9;
 	public static enum TIPO_FIGURA { KING, PAWN, BISHOP, ROOK, KNIGHT, QUEEN, PELOTA }
 	public static enum FIGURA { blackKing(TIPO_FIGURA.KING, COLOR.negras),
@@ -73,5 +71,11 @@ public class Movimiento {
 	public void setCasilla(int x, int y) {
 		this.x = x;
 		this.y = y;
+	}
+
+	@Override
+	public int compareTo(Movimiento m) {
+		// Lo importante es que la pelota llegue la última para que se dibuje correctamente
+		return this.id == FIGURA.pelota ? 1 : m.id == FIGURA.pelota ? -1 : this.id.name().compareTo(m.id.name());
 	}
 }

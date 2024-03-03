@@ -719,6 +719,10 @@ console.log('checkValidMove');
 	}
 
 	movimiento_rival(tiempo_blancas, tiempo_negras, movs) {
+		if (this.estado == 2) {	// Saque inicial
+			this.estado = 4;	// Turno negras
+		}
+
 		this.tiempo['blancas'] = tiempo_blancas;
 		this.tiempo['negras'] = tiempo_negras;
 

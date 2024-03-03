@@ -546,16 +546,17 @@ public class Endpoint extends EndpointBase {
     }
 
 	public void fin_partido() {
-	    double myChanceToWin = 1D / (1D + Math.pow(10D, (getPuntos(partido.negras) - getPuntos(partido.blancas)) / 400D));
+	    // Actualización del ELO
+		double myChanceToWin = 1D / (1D + Math.pow(10D, (getPuntos(partido.negras) - getPuntos(partido.blancas)) / 400D));
 
 	    int ratingDelta = (int) Math.round(32D * ((partido.ganador == COLOR.blancas ? 1 : 0) - myChanceToWin));
 
-	    setPuntos(partido.blancas, getPuntos(partido.blancas) + ratingDelta);
-	    setPuntos(partido.negras, getPuntos(partido.negras) - ratingDelta);
-
+	    setPuntos(partido.blancas, getPuntos(partido.blancas) + ratingDelta, partido.oficial);
+	    setPuntos(partido.negras, getPuntos(partido.negras) - ratingDelta, partido.oficial);
+	    
 	    synchronized (EndpointBase.sesiones) {
 	    	for (Session s : sesiones.values()) {
-	    		enviar(s, "Actualizar ranking", partido.nombre_blancas + "," + getPuntos(partido.blancas) + "," + partido.nombre_negras + "," + getPuntos(partido.negras));
+	    		enviar(s, "actualizar_ranking", partido.nombre_blancas + "," + getPuntos(partido.blancas) + "," + partido.nombre_negras + "," + getPuntos(partido.negras));
 	    	}
 	    }
 	}

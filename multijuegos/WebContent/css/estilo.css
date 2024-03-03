@@ -217,6 +217,9 @@ section li div {
 .bandera {
 	vertical-align: inherit;
 }
+.texto_mensaje {
+	vertical-align: sub;
+}
 
 /* JUEGO */
 
@@ -384,6 +387,7 @@ section li div {
 	padding: 2px;
 	padding-top: 1px;
 	border-radius: 3px;
+	vertical-align: sub;
 }
 .mensaje {
 	clear: both;

@@ -12,7 +12,7 @@ import com.formulamanager.multijuegos.websockets.Jugador;
 
 public class JugadoresDao extends DaoBase {
 	public static Jugador obtener(String nombre, String contrasenya, String email) throws SQLException, ParseException {
-        String sql = "select * from jugadores";
+        String select = "select * from jugadores";
         String where = "";
         if (nombre != null) {
         	where = " where nombre = ?";
@@ -23,7 +23,8 @@ public class JugadoresDao extends DaoBase {
         if (email != null) {
         	where += (where.equals("") ? " where " : " and ") + "email = ?";
         }
-		PreparedStatement ps = getConnection().prepareStatement(sql + where);
+        String sql = select + where;
+		PreparedStatement ps = getConnection().prepareStatement(sql);
 
 		try {
 			int i = 1;
@@ -38,6 +39,7 @@ public class JugadoresDao extends DaoBase {
 	        }
 
 	        ResultSet rs = ps.executeQuery();
+
 	        if (rs.next()) {
 	        	return new Jugador(
 	        		rs.getString("nombre"), 
@@ -73,7 +75,8 @@ public class JugadoresDao extends DaoBase {
 
         String limit = limite != null ? " limit " + limite : "";
 
-        PreparedStatement ps = getConnection().prepareStatement(select + where + orderBy + limit);
+        String sql = select + where + orderBy + limit;
+        PreparedStatement ps = getConnection().prepareStatement(sql);
         List<Jugador> lista = new ArrayList<Jugador>();
 
 		try {
@@ -89,6 +92,7 @@ public class JugadoresDao extends DaoBase {
 	        }
 
 	        ResultSet rs = ps.executeQuery();
+
 	        while (rs.next()) {
 	        	lista.add(new Jugador(
 	        		rs.getString("nombre"), 
@@ -120,6 +124,7 @@ public class JugadoresDao extends DaoBase {
 	        ps.setString(i++, j.email);
 	        ps.setString(i++, getDateFormat().format(j.fecha_alta));
         
+	        System.out.println(sql + " [" + j + "]");
 			ps.executeUpdate();
 		} finally {
 			ps.close();
@@ -138,11 +143,10 @@ public class JugadoresDao extends DaoBase {
 			ps.setString(i++, j.contrasenya);
 	        ps.setString(i++, j.nombre);
         
+	        System.out.println(sql + " [" + j + "]");
 			ps.executeUpdate();
 		} finally {
 			ps.close();
 		}
 	}
-
-
 }

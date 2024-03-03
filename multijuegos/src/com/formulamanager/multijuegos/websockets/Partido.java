@@ -3,6 +3,7 @@ package com.formulamanager.multijuegos.websockets;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +34,7 @@ public class Partido {
 	public Integer duracion;
 	public boolean privado;	// La invitación es privada pero el partido es público
 	public COLOR ganador;
+	public boolean oficial;	// Solo si los dos jugadores están registrados
 	
 	public Partido(COLOR color, Integer duracion, String nombre, Session sesion, boolean privado) {
 		this.duracion = duracion;
@@ -45,6 +47,13 @@ public class Partido {
 			this.negras = sesion;
 			this.nombre_negras = nombre;
 		}
+		
+		actualizar_oficial(sesion);
+	}
+	
+	private void actualizar_oficial(Session s) {
+		Jugador j = (Jugador)s.getUserProperties().get("jugador");
+		oficial &= !j.invitado;
 	}
 	
 	public COLOR getColor(Session sesion) {
@@ -158,9 +167,10 @@ public class Partido {
 		if (m.id != FIGURA.pelota ) {
 			Movimiento old_m = tablero.get(m.id);
 			Movimiento t = getFigureInCell(m.getCasilla());
+			Movimiento p = tablero.get(FIGURA.pelota);
 			
 			if (t != null) {
-				Movimiento p = tablero.get(FIGURA.pelota);
+				// Si hay una pieza en la casilla de destino...
 				boolean con_pelota = p.getCasilla().equals(old_m.getCasilla()) || p.getCasilla().equals(t.getCasilla());
 				
 				if (m.id.getTipo() == TIPO_FIGURA.ROOK) {
@@ -177,6 +187,9 @@ public class Partido {
 				if (con_pelota) {
 					p.setCasilla(m.getCasilla());
 				}
+			} else if (p.getCasilla().equals(old_m.getCasilla())) {
+				// Si la figura lleva la pelota...
+				p.setCasilla(m.getCasilla());
 			}
 		}
 
@@ -244,6 +257,7 @@ public class Partido {
 			this.negras = sesion;
 			this.nombre_negras = nombre;
 		}
+		actualizar_oficial(sesion);
 	}
 
 	public String getTactica(COLOR color) {
@@ -299,7 +313,10 @@ public class Partido {
 
 	@Override
 	public String toString() {
-		return new Gson().toJson(tablero.values());
+		List<Movimiento> lista = new ArrayList<>();
+		lista.addAll(tablero.values());
+		Collections.sort(lista);
+		return new Gson().toJson(lista);
 	}
 }
 

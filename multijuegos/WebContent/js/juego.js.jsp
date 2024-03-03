@@ -197,11 +197,11 @@ class Juego {
 	actualizar_ranking(usuario1, puntos1, usuario2, puntos2) {
 		var mensaje1 = this.mostrar_jugador(usuario1, false);
 		this.puntos[usuario1] = puntos1;
-		mensaje1 += ' pasa a ' + this.mostrar_jugador(usuario1, false);
+		mensaje1 += '<span class="texto_mensaje"> pasa a </span>' + this.mostrar_jugador(usuario1, false);
 
 		var mensaje2 = this.mostrar_jugador(usuario2, false);
 		this.puntos[usuario2] = puntos2;
-		mensaje2 += ' pasa a ' + this.mostrar_jugador(usuario2, false);
+		mensaje2 += '<span class="texto_mensaje"> pasa a </span>' + this.mostrar_jugador(usuario2, false);
 
 		if (usuario1 == this.nombre || usuario1 == this.nombre_rival) {
 			this.escribir_servidor(null, mensaje1);

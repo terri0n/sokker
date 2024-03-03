@@ -62,14 +62,17 @@ public class EndpointBase {
 		return j == null ? null : j.puntos;
 	}
 
-	protected static void setPuntos(Session s, Integer puntos) {
+	protected static void setPuntos(Session s, Integer puntos, boolean oficial) {
 		Jugador j = (Jugador)s.getUserProperties().get("jugador");
 		j.puntos = puntos;
 		j.num_partidos++;
-		try {
-			JugadoresDao.actualizar(j);
-		} catch (SQLException e) {
-			e.printStackTrace();
+
+		if (oficial) {
+			try {
+				JugadoresDao.actualizar(j);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
