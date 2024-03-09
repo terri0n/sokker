@@ -1,9 +1,3 @@
-<%@page import="com.formulamanager.multijuegos.idiomas.Idiomas"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
-
-<fmt:setBundle basename="<%= Idiomas.APPLICATION_RESOURCES %>" />
-
 class Conexion {
 	constructor(url, sala) {
 		this.sala = sala;
@@ -65,8 +59,8 @@ class Conexion {
 				this.sala.juego.actualizar_tiempos(parseInt(tiempos[0]), parseInt(tiempos[1]));
 				break;
 			case 'conexion_abierta':
-				// Conexión abierta { jugadores, partidos, nombre_rival }
-				this.sala.conectado(JSON.parse(params));
+				// Conexión abierta { jugadores, partidos, jugador, rival, color }
+				this.sala.accion_conexion_abierta(JSON.parse(params));
 				break;
 			case 'movimiento_rival':
 				// Fin de turno (tiempo_blancas-tiempo_negras@moviomientos)
@@ -88,7 +82,7 @@ class Conexion {
 				this.sala.nuevo_partido(split[0], split[1], split[2]);
 				break;
 			case 'nuevo_usuario':
-				this.sala.nuevo_usuario(JSON.parse(params));
+				this.sala.accion_nuevo_usuario(JSON.parse(params));
 				break;
 			case 'observar_partido':
 				// Observar partido (blancas-negras, tiempo_blancas-tiempo_negras, duracion@tablero)
@@ -113,9 +107,8 @@ class Conexion {
 				this.sala.juego.partido_cancelado(params);
 				break;
 			case 'partido_privado':
-				// Partido privado (color, duracion, rival)
-				var split = params.split(',');
-				this.sala.partido_privado(split[0], split[1], split[2]);
+				// Partido privado { color, duracion, rival }
+				this.sala.partido_privado(JSON.parse(params));
 				break;
 			case 'poner_away':
 				// Poner away
@@ -125,14 +118,14 @@ class Conexion {
 				// Quitar away
 				this.sala.quitar_away(params);
 				break;
-			case 'ranking':
+			case 'mostrar_ranking':
 				// Ranking
-				this.sala.juego.mostrar_ranking(JSON.parse(params));
+				this.sala.juego.accion_mostrar_ranking(JSON.parse(params));
 				break;
 			case 'texto':
 				// Texto (quien, mensaje)
 				var split = params.split(',');
-				if (split[0] == this.sala.juego.nombre_rival) {
+				if (split[0] == this.sala.juego.rival.nombre) {
 					this.sala.juego.escribir_mensaje(decodeURIComponent(split[1]), false);
 				} else {
 					this.sala.juego.escribir_observador(split[0], split[1]);
@@ -148,7 +141,7 @@ class Conexion {
 				break;
 			case 'volver_a_jugar':
 				// Volver a jugar
-				this.sala.volver_a_jugar();
+				this.sala.juego.volver_a_jugar();
 				break;
 			default:
 				alert('Acción incorrecta: ' + accion);
@@ -178,7 +171,15 @@ class Conexion {
 	}
 	
 	enviar(accion, params) {
-		this.webSocket.send(accion + ',' + (params || ''));
+		this.enviar_sin_timeout(accion, params);
 		this.sala.iniciar_timeout(false);
+	}
+	
+	enviar_sin_timeout(accion, params) {
+		var data = {
+        	accion: accion,
+        	params: params
+    	};
+		this.webSocket.send(JSON.stringify(data));
 	}
 }

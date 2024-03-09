@@ -10,6 +10,8 @@ import java.util.List;
 
 import javax.websocket.Session;
 
+import com.formulamanager.multijuegos.entity.EntityBase;
+import com.formulamanager.multijuegos.entity.Jugador;
 import com.formulamanager.multijuegos.util.Util;
 import com.formulamanager.multijuegos.websockets.EndpointBase.COLOR;
 import com.formulamanager.multijuegos.websockets.Movimiento.FIGURA;
@@ -17,7 +19,7 @@ import com.formulamanager.multijuegos.websockets.Movimiento.TIPO_FIGURA;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-public class Partido {
+public class Partido extends EntityBase {
 	public Session blancas = null;
 	public Session negras = null;
 	public List<Session> observadores = new ArrayList<Session>();
@@ -25,8 +27,8 @@ public class Partido {
 	private HashMap<FIGURA, Movimiento> tactica_negras;
 	private HashMap<FIGURA, Movimiento> tablero = new HashMap<FIGURA, Movimiento>();
 	public boolean rival_quiere_otra = false;
-	public String nombre_blancas = null;
-	public String nombre_negras = null;
+	private Jugador jugador_blancas = null;
+	private Jugador jugador_negras = null;
 	public Date tiempo_blancas;
 	public Date tiempo_negras;
 	public Date ultimo_movimiento;
@@ -34,18 +36,18 @@ public class Partido {
 	public Integer duracion;
 	public boolean privado;	// La invitación es privada pero el partido es público
 	public COLOR ganador;
-	public boolean oficial;	// Solo si los dos jugadores están registrados
+	public boolean oficial = true;	// Solo si los dos jugadores están registrados
 	
-	public Partido(COLOR color, Integer duracion, String nombre, Session sesion, boolean privado) {
+	public Partido(COLOR color, Integer duracion, Jugador jugador, Session sesion, boolean privado) {
 		this.duracion = duracion;
 		this.privado = privado;
 
 		if (color == COLOR.blancas) {
 			this.blancas = sesion;
-			this.nombre_blancas = nombre;
+			this.jugador_blancas = jugador;
 		} else {
 			this.negras = sesion;
-			this.nombre_negras = nombre;
+			this.jugador_negras = jugador;
 		}
 		
 		actualizar_oficial(sesion);
@@ -67,15 +69,19 @@ public class Partido {
 	}
 	
 	public String getId() {
-    	String s = nombre_blancas;
-    	if (negras != null) {
-    		s += "-" + nombre_negras;
+    	String s = jugador_blancas.nombre;
+    	if (jugador_negras != null) {
+    		s += "-" + jugador_negras.nombre;
     	}
     	return s;
 	}
+
+	public Jugador getJugador(COLOR color) {
+		return color == COLOR.blancas ? jugador_blancas : jugador_negras;
+	}
 	
 	public String getRespuesta() {
-		return Util.nvl(duracion) + "," + Util.nvl(nombre_blancas) + "-" + Util.nvl(nombre_negras);
+		return Util.nvl(duracion) + "," + Util.nvl(jugador_blancas.nombre) + "-" + Util.nvl(jugador_negras.nombre);
 	}
 	
 	public String getTiempos() {
@@ -249,13 +255,13 @@ public class Partido {
 		}
 	}
 
-	public void anyadir_jugador(String nombre, Session sesion) {
+	public void anyadir_jugador(Jugador jugador, Session sesion) {
 		if (blancas == null) {
 			this.blancas = sesion;
-			this.nombre_blancas = nombre;
+			this.jugador_blancas = jugador;
 		} else {
 			this.negras = sesion;
-			this.nombre_negras = nombre;
+			this.jugador_negras = jugador;
 		}
 		actualizar_oficial(sesion);
 	}
@@ -312,7 +318,7 @@ public class Partido {
 	}
 
 	@Override
-	public String toString() {
+	public String toJson() {
 		List<Movimiento> lista = new ArrayList<>();
 		lista.addAll(tablero.values());
 		Collections.sort(lista);

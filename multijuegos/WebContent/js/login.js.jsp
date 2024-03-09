@@ -1,10 +1,14 @@
+<%@page import="com.formulamanager.multijuegos.util.Util"%>
+<%@page import="java.util.Locale"%>
+<%@page import="java.util.Enumeration"%>
+<%@page import="java.util.Iterator"%>
 <%@ page language="java" contentType="text/html" pageEncoding="UTF-8"%>
 <%@page import="com.formulamanager.multijuegos.idiomas.Idiomas"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <fmt:setBundle basename="<%= Idiomas.APPLICATION_RESOURCES %>" />
-
 let box;
 function login_click() {
 	box = bootbox.confirm({
@@ -32,7 +36,7 @@ function login_click() {
 			<div class="tab-pane show active" id="tab_login" role="tabpanel">\
 				<form id="form_login">\
 					<h4>Nombre</h4>\
-					<input type="text" name="login_nombre" class="form-control" maxlength="16" required="required" value="" onkeypress="input_keypress(event)" />\
+					<input type="text" name="login_nombre" class="form-control" maxlength="16" required="required" value="" onkeypress="input_keypress(event)" pattern="[0-9a-zA-Z_]+$" oninput="validarInput(event, this)" />\
 					<h4>Contraseña</h4>\
 					<input type="password" name="login_contrasenya" class="form-control" required="required" onkeypress="input_keypress(event)" />\
 				</form>\
@@ -40,7 +44,7 @@ function login_click() {
 			<div class="tab-pane" id="tab_registro" role="tabpanel">\
 				<form id="form_registro">\
 					<h4>Nombre</h4>\
-					<input type="text" name="registro_nombre" class="form-control" maxlength="16" required="required" pattern="^[0-9a-zA-Z_]+$" onkeypress="input_keypress(event)" />\
+					<input type="text" name="registro_nombre" class="form-control" maxlength="16" required="required" onkeypress="input_keypress(event)" pattern="^[0-9a-zA-Z_]+$" oninput="validarInput(event, this)" />\
 					<h4>Contraseña</h4>\
 					<input type="password" name="registro_contrasenya" class="form-control" required="required" onkeypress="input_keypress(event)" />\
 					<h4>Repite contraseña</h4>\
@@ -48,12 +52,18 @@ function login_click() {
 					<h4>E-mail</h4>\
 					<input type="email" name="registro_email" class="form-control" required="required" onkeypress="input_keypress(event)" />\
 					<span style="color: red;" id="span_email"></span>\
+					<h4>País</h4>\
+					<c:set var="iso" value="<%= Locale.getDefault().getCountry() %>" />\
+					<c:if test="${not empty iso}">\
+						<img src="${pageContext.request.contextPath}/img/banderas/${iso == 'EN' ? 'GB' : iso}.png" class="margin-right"/>\
+						<%= Locale.getDefault().getDisplayCountry() %>\
+					</c:if>\
 				</form>\
 			</div>\
 			<div class="tab-pane" id="tab_cambio" role="tabpanel">\
 				<form id="form_cambio">\
 					<h4>Nombre o e-mail</h4>\
-					<input type="text" name="cambio_nombre_email" class="form-control" required="required" onkeypress="input_keypress(event)" />\
+					<input type="text" name="cambio_nombre_email" class="form-control" required="required" onkeypress="input_keypress(event)" pattern="^[0-9a-zA-Z_]+$" oninput="validarInput(event, this)" />\
 					<h4>Contraseña</h4>\
 					<input type="password" name="cambio_contrasenya" class="form-control" required="required" onkeypress="input_keypress(event)" />\
 					<h4>Repite contraseña</h4>\
@@ -77,10 +87,16 @@ function login_click() {
 		callback: login_callback,
 		onShown: function (e) {
 			tab_click('login');
+			dropdown_init('${fn:toUpperCase(sessionScope['javax.servlet.jsp.jstl.fmt.locale.session'].language)}');
 		}
 	});
-
+ 	
 	box.find('.modal-body').css('padding', '0');
+}
+
+function validarInput(event, input) {
+    // Eliminar caracteres inválidos del valor actual utilizando el patrón definido en el input
+    input.value = input.value.replace(new RegExp('[^0-9a-zA-Z_]', 'g'), '');
 }
 
 function input_keypress(e) {

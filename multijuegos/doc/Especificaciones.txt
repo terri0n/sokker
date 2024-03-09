@@ -8,11 +8,16 @@ sala.js.jsp
 	
 juego.js.jsp
 	Gestiona aspectos comunes de los juegos: turnos, tiempos, puntos, movimientos, chat, etc
-	Ojo con los away, que para no resetear el tiempo de inactividad llama directamente a conexion.webSocket.send
+	Ojo con los away, que para no resetear el tiempo de inactividad llama directamente a conexion.enviar_sin_timeout
 
 chessgoal.js.jsp
 	Lógica específica del ChessGoal
 
+jugador.js.jsp
+	Datos del jugador más lógica asociada
+
+login.js.jsp
+	Funciones de login y registro
 
 SERVIDOR
 --------

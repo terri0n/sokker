@@ -12,8 +12,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.formulamanager.multijuegos.dao.JugadoresDao;
+import com.formulamanager.multijuegos.entity.Jugador;
 import com.formulamanager.multijuegos.websockets.EndpointBase;
-import com.formulamanager.multijuegos.websockets.Jugador;
 
 @WebServlet("/registro/confirmar")
 public class ServletRegistroConfirmar extends HttpServlet {

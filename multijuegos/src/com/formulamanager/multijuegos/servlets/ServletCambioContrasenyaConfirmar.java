@@ -11,8 +11,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.formulamanager.multijuegos.dao.JugadoresDao;
+import com.formulamanager.multijuegos.entity.Jugador;
 import com.formulamanager.multijuegos.websockets.EndpointBase;
-import com.formulamanager.multijuegos.websockets.Jugador;
 
 @WebServlet("/cambio_contrasenya/confirmar")
 public class ServletCambioContrasenyaConfirmar extends HttpServlet {

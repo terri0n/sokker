@@ -1,16 +1,12 @@
-<%@page import="com.formulamanager.multijuegos.idiomas.Idiomas"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
-
-<fmt:setBundle basename="<%= Idiomas.APPLICATION_RESOURCES %>" />
 
 const CELL_WIDTH = 47;
 const CELL_HEIGHT = 47;
 const CASILLAS = 9;
 
 class ChessGoal extends Juego {
-	constructor(nombre, url) {
-		super(nombre, url);
+	constructor(jugador, url) {
+		super(jugador, url);
 		this.portero = {};		// { 'blancas', 'negras' }
 
 		this.chess_figures;
@@ -140,13 +136,15 @@ class ChessGoal extends Juego {
 		}
 		
 		// Rival
-		$("#chess_board_border").append(`<div class="reloj negro" style="left: 0px; top: -32px;"><span class="material-icons">timer</span><span id="tiempo_negras"></span> ` + this.mostrar_jugador(this.nombre_rival, true) + `</div>`);
+		$("#chess_board_border").append(`<div class="reloj" style="left: 0px; top: -32px;">` + this.rival.mostrar_jugador() + `</div>`);
+		$("#chess_board_border").append(`<div class="bloque_tiempo" style="left: 219px; top: -33px;"><span class="material-icons ` + this.cambiar_color(this.color) + `">timer</span><div id="tiempo_` + this.cambiar_color(this.color) + `"></div></div>`);
 
 		// Jugador
-		$("#chess_board_border").append(`<div class="reloj negro" style="left: 0px; bottom: -32px;"><span class="material-icons">timer</span><span id="tiempo_blancas"></span> ` + this.mostrar_jugador(this.nombre, true) + `</div>`);
+		$("#chess_board_border").append(`<div class="reloj" style="left: 0px; bottom: -32px;">` + this.jugador.mostrar_jugador() + `</div>`);
+		$("#chess_board_border").append(`<div class="bloque_tiempo" style="left: 219px; bottom: -33px;"><span class="material-icons ` + this.color + `">timer</span><div id="tiempo_` + this.color + `"></div></div>`);
 
 		// Botones
-		$("#chess_board_border").append('<button title="Abandonar" style="right: -4px; top: -6px; display: block; position: absolute; font-size: 0.9em; padding: 3px;" class="rojo" onclick="juego.abandonar_click()"><span class="material-icons md-18">close</span></button>');
+		$("#chess_board_border").append('<button title="Abandonar" style="right: -4px; top: -6px; display: block; position: absolute;" class="rojo cerrar" onclick="juego.abandonar_click()"><span class="material-icons md-18">close</span></button>');
 		$("#chess_board_border").append(`<div style="right: 18px; bottom: -30px; display: block; position: absolute;">
 				<button class="verde" id="finalizar" onclick="juego.finalizar_click()"></button>
 				<button style="display: none;" class="verde" id="boton_otro" onclick="juego.sala.otro_click()"><fmt:message key="menu.playAgain" /></button>
@@ -463,7 +461,7 @@ console.log('checkValidMove');
         	juego.movimientos.push({id: figura.id, x: newX, y: newY });
          	
         	juego.hacer_movimiento(figura, newX, newY, 250, () => {
-        		if (juego.comprobar_gol(figura.name, newY)) {
+        		if (juego.comprobar_gol(figura, newY)) {
         			juego.finalizar_click();
         		}
         	});
@@ -589,10 +587,13 @@ console.log('checkValidMove');
 		this.mover_figura(figura, x, y, duration, callback, false);
 	}
 
-	// Paso los valores en vez de la figura porque esta función puede haberse llamado cuando figura.y haya cambiado de valor
-	comprobar_gol(nombre_figura, newY) {
+	comprobar_gol(figura, newY) {
+  		const pelota = this.getPelota();
+
 		// Comprobamos si se ha marcado gol
-		if (nombre_figura == 'pelota' && (newY == 0 || newY == CASILLAS + 1)) {
+		// bien porque se mueva la pelota directamente o bien porque se mueva la figura que la posee
+		if ((newY == 0 || newY == CASILLAS + 1)
+			&& (figura.nombre == 'pelota' || pelota.x == figura.x && pelota.y == figura.y) ) {
 			const victoria = newY == 0 ^ this.color == 'negras';
 			setTimeout(() => {
 				showToast.show("<fmt:message key="msg.goal" />");
@@ -606,7 +607,7 @@ console.log('checkValidMove');
 
 	empezar(c, duracion) {
 		super.empezar(c, duracion);
-		 
+		
 		this.duracion = duracion;
 		this.tiempo['blancas'] = duracion * 60;
 		this.tiempo['negras'] = duracion * 60;
@@ -623,9 +624,6 @@ console.log('checkValidMove');
 		this.escribir_servidor(null, '<fmt:message key="msg.chooseTactic" />');
 		showToast.show('<fmt:message key="msg.chooseTactic" />');
 
-		// Actualizamos nombres
-//		this.sala.actualizar_nombres(c == 'blancas' ? this.nombre : this.nombre_rival, c == 'blancas' ? this.nombre_rival : this.nombre);
-		
 		$('#boton_nuevo').prop('disabled', false);
 		$('#boton_nuevo').hide();
 		
@@ -708,7 +706,7 @@ console.log('checkValidMove');
 			this.hacer_movimiento(figura, movs[i].x, movs[i].y, duracion, () => {
 				this.pintar_movimientos(movs, i + 1, duracion, funcion);
 				if (i + 1 == movs.length) {
-					this.comprobar_gol(figura.name, movs[i].y);
+					this.comprobar_gol(figura, movs[i].y);
 				}
 			});
 		} else {
@@ -729,7 +727,7 @@ console.log('checkValidMove');
 		this.limpiar_tablero();
 	
 		this.pintar_movimientos(movs, 0, 1000, () => {
-			if (!this.nombre_rival) {
+			if (!this.rival) {
 				// Los observadores no tienen color pero sí tienen turno
 				this.actualizar_turno(this.cambiar_color(this.turno), false);
 			} else {
@@ -741,8 +739,9 @@ console.log('checkValidMove');
 
 	poner_guantes(quien) {
 		this.portero[quien.data] = quien;
-		quien.figureHTML.append('<img class="guante" style="position: relative; left: -60px;" src="img/chessgoal/guante.png" />');
-		quien.figureHTML.append('<img class="guante invertida_h" style="position: relative; left: -30px;" src="img/chessgoal/guante.png" />');
+		// Es necesario poner el 1er guante como absolute para que el 2º se vea bien en la columna derecha del tablero
+		quien.figureHTML.append('<img class="guante" style="position: absolute; left: -13px; top: 13px" src="img/chessgoal/guante.png" />');
+		quien.figureHTML.append('<img class="guante invertida_h" style="position: relative; left: -7px;" src="img/chessgoal/guante.png" />');
 	}
 
 	// Comprueba si la pelota ha entrado en la portería, y de ser así, si el portero la ha podido parar
@@ -798,7 +797,7 @@ console.log('checkValidMove');
 
 	actualizar_texto_turno() {
 		// Solo si no soy observador
-		if (this.nombre_rival) {
+		if (this.rival) {
 			switch (this.estado) {
 				case 0:	// Sin iniciar
 					$('#finalizar').text('<fmt:message key="msg.sendTactic" />');
@@ -824,7 +823,9 @@ console.log('checkValidMove');
 					$('#boton_otro').show();
 					$('#boton_otro_cancelar').show();
 			}
-		}	
+		} else {
+			alert('Error: no hay rival');
+		}
 	}
 
 	////////////

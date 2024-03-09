@@ -1,18 +1,15 @@
-<%@page import="com.formulamanager.multijuegos.idiomas.Idiomas"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 
-<fmt:setBundle basename="<%= Idiomas.APPLICATION_RESOURCES %>" />
-
 class Juego {
-	constructor(nombre, url) {
-		this.nombre = nombre;
+	constructor(jugador, url) {
+		this.jugador = new Jugador(jugador, this);
+		this.rival;				// Jugador rival, null si soy observador
+
+		this.timer;
 		this.turno;				// Color del jugador que tiene el turno. Al empezar es null, cuando envía la táctica el turno es del rival, a menos que lleve las blancas y sea el 2º en enviar la táctica
 		this.color;				// Color del jugador, si está en una partida pero no como observador
 		this.movimientos = [];	// Lista de movimientos del turno
-		this.nombre_rival;		// Nombre del rival, null si soy observador
 		this.tiempo = [];		// { 'blancas', 'negras' }
-		this.puntos = {};
 		this.duracion;			// Para volver a mostrarla al actualizar el ranking
 		this.estado;			// 0: sin iniciar
 								// 1: táctica mandada
@@ -130,9 +127,6 @@ class Juego {
 		this.tiempo['negras'] = tiempo_negras;
 		this.estado = estado;
 
-		// Actualizamos nombres
-		this.sala.actualizar_nombres(blancas, negras);
-
 		// Si no soy observador...
 		if (this.nombre_rival) {
 			// Si el partido aún no ha empezado no decimos nada. Lo escribiremos cuando se manden las tácticas y empiece de verdad
@@ -183,32 +177,33 @@ class Juego {
 
 	// El partido del jugador/observador
 	fin_partido(victoria) {
-		clearInterval(this.juego.timer);
-		this.juego.timer = null;
+		clearInterval(this.timer);
+		this.timer = null;
+		this.estado = null;
 
-		if (this.juego.color) {
-			this.juego.escribir_servidor(null, victoria ? '<fmt:message key="msg.youWin" />' : '<fmt:message key="msg.youLose" />');
-			actualizar_texto_turno();
+		if (this.color) {
+			this.escribir_servidor(null, victoria ? '<fmt:message key="msg.youWin" />' : '<fmt:message key="msg.youLose" />');
+			this.actualizar_texto_turno();
 		} else {
-			this.juego.escribir_servidor(null, '<fmt:message key="msg.endOfGame" />'.replace('{0}', victoria ? $('#jugador1').html() : $('#jugador2').html()));
+			this.escribir_servidor(null, '<fmt:message key="msg.endOfGame" />'.replace('{0}', victoria ? $('#jugador1').html() : $('#jugador2').html()));
 		}
 	}
 
 	actualizar_ranking(usuario1, puntos1, usuario2, puntos2) {
-		var mensaje1 = this.mostrar_jugador(usuario1, false);
-		this.puntos[usuario1] = puntos1;
-		mensaje1 += '<span class="texto_mensaje"> pasa a </span>' + this.mostrar_jugador(usuario1, false);
-
-		var mensaje2 = this.mostrar_jugador(usuario2, false);
-		this.puntos[usuario2] = puntos2;
-		mensaje2 += '<span class="texto_mensaje"> pasa a </span>' + this.mostrar_jugador(usuario2, false);
-
-		if (usuario1 == this.nombre || usuario1 == this.nombre_rival) {
+		if (this.puntos[usuario1] != puntos1) {
+			var mensaje1 = this.mostrar_jugador(usuario1, false);
+			this.puntos[usuario1] = puntos1;
+			mensaje1 += '<span class="texto_mensaje"> pasa a </span>' + this.mostrar_jugador(usuario1, false);
 			this.escribir_servidor(null, mensaje1);
-			this.escribir_servidor(null, mensaje2);
-			this.sala.actualizar_nombres(usuario1, usuario2);
 		}
 		
+		if (this.puntos[usuario2] != puntos2) {
+			var mensaje2 = this.mostrar_jugador(usuario2, false);
+			this.puntos[usuario2] = puntos2;
+			mensaje2 += '<span class="texto_mensaje"> pasa a </span>' + this.mostrar_jugador(usuario2, false);
+			this.escribir_servidor(null, mensaje2);
+		}
+
 		// Actualizar partido
 		this.sala.borrar_partido('partido_' + usuario1 + '-' + usuario2);
 		this.sala.nuevo_partido(this.duracion, usuario1, usuario2);
@@ -219,47 +214,11 @@ class Juego {
 		this.sala.crear_usuario(usuario1, puntos1);
 		this.sala.crear_usuario(usuario2, puntos2);
 	}
-	
-	mostrar_jugador(jugador, derecha, puntos) {
-		var s = '';
-		var t = '';
-		if (jugador) {
-			const p = parseInt(puntos || this.puntos[jugador]);
-			if (p) {
-				if (p < 1400) {
-					var nivel = 'principiante';
-				} else if (p < 1800) {
-					var nivel = 'aficionado';
-				} else if (p < 2100) {
-					var nivel = 'experto';
-				} else if (p < 2400) {
-					var nivel = 'maestro';
-				} else if (p < 2600) {
-					var nivel = 'maestro_internacional';
-				} else if (p < 2800) {
-					var nivel = 'gran_maestro';
-				} else {
-					var nivel = 'campeon_del_mundo';
-				}
-				// NOTA: no funciona el Locale en español
-				s = `<span class="info_jugador ` + nivel + `" title="` + this.traducir(nivel) + `">
-						<img class="bandera" src="img/banderas/ES.png" /><span class="puntos">` + p.toLocaleString('de-DE') + `</span>
-					</span>`;
-				t = `<span class="jugador" id="nombre_` + jugador + `">` + jugador + `</span>
-					<div class="away" style="display:none" title="Away">zZ<span>Z</span></div>`;
-			}
-		}
-		return derecha ? t + s : s + t;
-	}
 
-	mostrar_ranking_click() {
-		this.sala.conexion.enviar('ranking', null);
-	}
-
-	mostrar_ranking(ranking) {
+	accion_mostrar_ranking(ranking) {
 		var mensaje = ' <ol id="lista_ranking" style="padding-left: 5px; list-style: decimal inside;">';
 		ranking.forEach(j => {
-	    	mensaje += '<li style="display: list-item;">' + this.mostrar_jugador(j.nombre, false, j.puntos) + '</li>';
+	    	mensaje += '<li style="display: list-item;">' + new Jugador(j, this).mostrar_jugador(false) + '</li>';
 	    });
 		mensaje += '</ol>';			
 		
@@ -303,6 +262,14 @@ class Juego {
    		this.sala.partido_cancelado(quien);
 		$('#juego').addClass('hidden');
 	}
+	
+	volver_a_jugar() {
+		$('#boton_otro').hide();
+		$('#boton_cancelar').hide();
+	
+		// Intercambiamos los colores
+		this.empezar(this.cambiar_color(this.color), this.duracion);
+	}
 
 	/////////
 	// CHAT
@@ -324,14 +291,14 @@ class Juego {
 
 	escribir_mensaje(mensaje, mio) {
 		if (mio) {
-			this.escribir(mensaje, 'mensaje_mio', 'verde_oscuro');
+			this.escribir('<span class="span_texto">' + mensaje + '</span>', 'mensaje_mio', 'verde_oscuro');
 		} else {
-			this.escribir(mensaje, 'mensaje_rival', 'gris');
+			this.escribir('<span class="span_texto">' + mensaje + '</span>', 'mensaje_rival', 'gris');
 		}
 	}
 
 	escribir_observador(quien, mensaje) {
-		this.escribir('<span class="jugador">' + quien + '</span><span class="span_texto">' + mensaje + '</span>', 'mensaje_observador', 'gris');
+		this.escribir('<span class="jugador">' + quien + '</span> <span class="span_texto">' + mensaje + '</span>', 'mensaje_observador', 'gris');
 	}
 
 	escribir_servidor(quien, mensaje) {
@@ -342,12 +309,12 @@ class Juego {
 	// EVENTOS
 	////////////
 	
-	texto_keypress(event) {
+/*	texto_keypress(event) {
 		if (event.keyCode === 13) {
 	        this.sala.conexion.enviar_mensaje();
 	    }
 	}
-
+*/
 	abandonar_click() {
 		bootbox.confirm({ 
 			message: '<span class="material-icons">help</span> <fmt:message key="menu.abortGame" />',
@@ -370,6 +337,10 @@ class Juego {
 		    	}
 		    }
 		});
+	}
+
+	mostrar_ranking_click() {
+		this.sala.conexion.enviar('ranking', null);
 	}
 
 	////////////////////////////

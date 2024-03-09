@@ -1,25 +1,21 @@
+<%@page import="com.formulamanager.multijuegos.listeners.SessionListener"%>
 <%@page import="com.formulamanager.multijuegos.idiomas.Idiomas"%>
 <%@page import="java.util.Locale"%>
 <%@ page language="java" contentType="text/html" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 
-<c:if test="${empty sessionScope['javax.servlet.jsp.jstl.fmt.locale.session']}">
-	<fmt:setLocale value="${pageContext.request.locale.language}" scope="session" />
-</c:if>
-
-<fmt:setBundle basename="<%= Idiomas.APPLICATION_RESOURCES %>" />
-
 <!DOCTYPE html>
 <html>
 <head>
+	<%@ include file="/inc/head.jspf" %>
+
 	<title>ChessGoal</title>
 	<link rel="icon" href="img/chessgoal/chessgoal.ico" type="image/x-icon">
-
-	<%@ include file="/inc/head.jspf" %>
 	<script src="${pageContext.request.contextPath}/js/conexion.js.jsp"></script>
 	<script src="${pageContext.request.contextPath}/js/sala.js.jsp"></script>
 	<script src="${pageContext.request.contextPath}/js/juego.js.jsp"></script>
+	<script src="${pageContext.request.contextPath}/js/jugador.js.jsp"></script>
 	<script src="${pageContext.request.contextPath}/js/chessgoal.js.jsp"></script>
 	
 	<style>
@@ -176,7 +172,7 @@
 	<script type="text/javascript">
 		let juego;
 		$(function() {
-			juego = new ChessGoal("${jugador.nombre}", "${pageContext.request.scheme == 'http' ? 'ws' : 'wss'}://${pageContext.request.serverName}:${pageContext.request.serverPort}${pageContext.request.contextPath}/websocket");
+			juego = new ChessGoal(${jugador.toJson()}, "${pageContext.request.scheme == 'http' ? 'ws' : 'wss'}://${pageContext.request.serverName}:${pageContext.request.serverPort}${pageContext.request.contextPath}/websocket");
 		});
 	</script>
 </head>
@@ -195,7 +191,7 @@
 		</div>
 		<div id="contenedor_chat">
 			<div id="chat"></div>
-			<input type="text" id="texto" onkeypress="texto_keypress(event)" placeholder="<fmt:message key="menu.send_message" />" />
+			<input type="text" id="texto" placeholder="<fmt:message key="menu.send_message" />" />
 			<button class="azul" onclick="juego.sala.conexion.enviar_mensaje();"><fmt:message key="connection.send" /></button>
 		</div>
 	</div>

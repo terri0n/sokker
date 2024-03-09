@@ -8,7 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.formulamanager.multijuegos.websockets.Jugador;
+import com.formulamanager.multijuegos.entity.Jugador;
 
 public class JugadoresDao extends DaoBase {
 	public static Jugador obtener(String nombre, String contrasenya, String email) throws SQLException, ParseException {
@@ -45,6 +45,7 @@ public class JugadoresDao extends DaoBase {
 	        		rs.getString("nombre"), 
 	        		rs.getString("contrasenya"), 
 	        		rs.getInt("puntos"), 
+	        		rs.getString("pais"), 
 	        		rs.getInt("num_partidos"), 
 	        		rs.getString("email"), 
 	        		new SimpleDateFormat("yyyy-MM-dd").parse(rs.getString("fecha_alta")),
@@ -98,6 +99,7 @@ public class JugadoresDao extends DaoBase {
 	        		rs.getString("nombre"), 
 	        		rs.getString("contrasenya"), 
 	        		rs.getInt("puntos"), 
+	        		rs.getString("pais"), 
 	        		rs.getInt("num_partidos"), 
 	        		rs.getString("email"), 
 	        		getDateFormat().parse(rs.getString("fecha_alta")),
@@ -111,7 +113,7 @@ public class JugadoresDao extends DaoBase {
 	}
 
 	public static void insertar(Jugador j) throws SQLException {
-		String sql = "insert into jugadores values (?, ?, ?, ?, ?, ?)";
+		String sql = "insert into jugadores values (?, ?, ?, ?, ?, ?, ?)";
 
 		PreparedStatement ps = getConnection().prepareStatement(sql);
 
@@ -120,6 +122,7 @@ public class JugadoresDao extends DaoBase {
 	        ps.setString(i++, j.nombre);
 	        ps.setString(i++, j.contrasenya);
 	        ps.setInt(i++, j.puntos);
+	        ps.setString(i++, j.pais);
 	        ps.setInt(i++, j.num_partidos);
 	        ps.setString(i++, j.email);
 	        ps.setString(i++, getDateFormat().format(j.fecha_alta));

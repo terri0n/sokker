@@ -1,8 +1,4 @@
-<%@page import="com.formulamanager.multijuegos.idiomas.Idiomas"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
-
-<fmt:setBundle basename="<%= Idiomas.APPLICATION_RESOURCES %>" />
 
 class Sala {
 	constructor(juego, url) {
@@ -11,54 +7,19 @@ class Sala {
 		this.timer = null;
 		this.timer_away = null;
 		this.conexion = new Conexion(url, this);
+		this.usuarios = {};		// Usuarios en la sala
 	}
 
-	conectado(resp) {
-		// Si la sesión ha caducado el nombre no coincidirá
-		if (resp.nombre != '${jugador.nombre}') {
-			location.reload();
-		}
-
-		$('.bootbox.modal').modal('hide');
-		
-		this.limpiar_botones();
-		
-		this.juego.nombre_rival = resp.nombre_rival;
-		this.juego.color = resp.color;
-	
-		$('#jugadores').empty();
-		resp.jugadores.forEach(j => {
-			this.nuevo_usuario(j);
-		});
-	
-		$('#partidos').empty();
-		resp.partidos.forEach(p => {
-			const indice = p.indexOf(',');
-			const duracion = p.substring(0, indice);
-			const jugadores = p.substring(indice + 1).split("-");
-			this.nuevo_partido(duracion, jugadores[0], jugadores[1]);
-		});
-
-		this.iniciar_timeout(true);
-		
-		// Si el partido ya se ha iniciado, pido la lista de movimientos (como si aceptara el partido otra vez)
-		// Lo hacemos así para que se cree cada cosa a su tiempo
-		if (this.juego.nombre_rival) {
-			this.conexion.enviar('aceptar_partido', (this.juego.color == 'blancas' ? this.juego.nombre : this.juego.nombre_rival));	
-		}
-	}
-
-	// NOTA: la coma es necesaria para delimitar la acción de los parámetros
 	iniciar_timeout(primero) {
 		if (!this.timer_away && !primero) {
-			this.conexion.webSocket.send("quitar_away,");
+			this.conexion.enviar_sin_timeout("quitar_away", null);
 		} else {
 			clearTimeout(this.timer_away);
 		}
 		
 		this.timer_away = setTimeout(() => {
 			this.timer_away = null;
-			this.conexion.webSocket.send("poner_away,");
+			this.conexion.enviar_sin_timeout("poner_away", null);
 		}, 300000);
 	}
 	
@@ -71,43 +32,32 @@ class Sala {
 	}
 
 	borrar_usuario(usuario) {
-		delete this.juego.puntos[usuario];
+		delete this.usuarios[usuario];
 		$('#jugador_' + usuario).remove();
 		this.actualizar_numero('jugadores');
 	}
 
-	crear_usuario(nombre, puntos) {
-		if (this.juego.puntos[nombre]) {
-			this.borrar_usuario(nombre);
+	crear_usuario(jugador) {
+		if (this.usuarios[jugador.nombre]) {
+			this.borrar_usuario(jugador.nombre);
 		}
+		this.usuarios[jugador.nombre] = jugador;
 
-		this.juego.puntos[nombre] = puntos;
-		const disabled = nombre.toUpperCase() == this.juego.nombre.toUpperCase() || this.juego.nombre_rival ? 'disabled = "disabled"' : '';
+		const disabled = jugador.nombre.toUpperCase() == this.juego.jugador.nombre.toUpperCase() || this.juego.rival ? 'disabled = "disabled"' : '';
 		
-		$('#jugadores').append(`<li id="jugador_` + nombre + `">
-				<div>` + this.juego.mostrar_jugador(nombre) + `</div>
-				<button class="verde" ` + disabled + ` onclick="juego.sala.invitar_click('` + nombre + `')"><fmt:message key="menu.invite" /></button>
+		$('#jugadores').append(`<li id="jugador_` + jugador.nombre + `">
+				<div>` + jugador.mostrar_jugador(false) + `</div>
+				<button class="verde" ` + disabled + ` onclick="juego.sala.invitar_click('` + jugador.nombre + `')"><fmt:message key="menu.invite" /></button>
 			</li>`);
 			
 		this.actualizar_numero('jugadores');
-	}
-
-	nuevo_usuario(jugador) {
-		this.crear_usuario(jugador.nombre, jugador.puntos);
-
-		if (jugador.nombre == this.juego.nombre_rival) {
-			this.juego.escribir_servidor(jugador.nombre, '<fmt:message key="msg.enteredGame" />');
-			$('#boton_cancelar').hide();
-			this.juego.actualizar_texto_turno();
-			//this.juego.iniciar_cronometros();
-		}
 	}
 
 	cancelar_partido(quien) {
 		const partido = $('li[id="partido_' + quien + '"], li[id^="partido_' + quien + '-"], li[id^="partido_"][id$="-' + quien + '"]');
 		if (partido.length > 0) {
 			if (quien == this.juego.nombre || quien == this.juego.nombre_rival) {
-				if (quien == this.juego.nombre_rival) {
+				if (quien == this.juego.rival.nombre) {
 					showToast.show('<fmt:message key="msg.gameAborted" />');
 					this.juego.escribir_servidor(null, '<fmt:message key="msg.gameAborted" />');
 					this.conexion.enviar('rival_cancela', null);
@@ -143,15 +93,15 @@ class Sala {
 	}
 
 	nuevo_partido(duracion, usuario1 /*opcional*/, usuario2 /*opcional*/) {
-		var disabled = this.juego.nombre_rival || this.juego.nombre == usuario1 || this.juego.nombre == usuario2 ? 'disabled = "disabled"' : '';
+		var disabled = this.juego.rival || this.juego.jugador.nombre == usuario1 || this.juego.jugador.nombre == usuario2 ? 'disabled = "disabled"' : '';
 		
 		const join = '<button class="verde" ' + disabled + ' onclick="juego.sala.partido_click(\'' + (usuario1 || usuario2) + '\');"><fmt:message key="menu.join" /></button>';
 
 		const id = "partido_" + (usuario1 || '') + (usuario1 && usuario2 ? '-' : '') + (usuario2 || '');
-		var s = '<li id="' + id + '">' + (this.juego.mostrar_jugador(usuario1) || join);
-		s += ' vs ' + (this.juego.mostrar_jugador(usuario2) || join);
+		var s = '<li id="' + id + '">' + (usuario1 ? this.usuarios[usuario1].mostrar_jugador(false) : join);
+		s += '<span> vs </span>' + (usuario2 ? this.usuarios[usuario2].mostrar_jugador(false) : join);
 		if (duracion) {
-			s += ' <small><span class="material-icons">timer</span> ' + duracion + ' min</small>';
+			s += ' <small><span class="material-icons">timer</span>' + duracion + ' min</small>';
 		}
 		
 		if (usuario1 && usuario2) {
@@ -189,7 +139,7 @@ class Sala {
 	usuario_desconectado(usuario) {
 		this.borrar_partido('partido_' + usuario);
 		
-		if (usuario == this.juego.nombre_rival) {
+		if (this.juego.rival && usuario == this.juego.rival.nombre) {
 			$('#finalizar').prop('disabled', true);
 			$('#finalizar').text('<fmt:message key="msg.waitingOpponent" />');
 			$('#boton_cancelar').show();
@@ -204,7 +154,7 @@ class Sala {
 
 	// El partido se ha aceptado -> empezar (tanto blancas como negras)
 	aceptar_partido(c, duracion, rival) {
-		this.juego.nombre_rival = rival;
+		this.juego.rival = this.usuarios[rival];
 		this.informar_partido(duracion, c == 'blancas' ? this.juego.nombre : rival, c == 'negras' ? this.juego.nombre : rival);
 		this.habilitar_partidos(false);
 		$('#boton_cancelar').hide();
@@ -233,7 +183,6 @@ class Sala {
 	}
 
 	limpiar_botones() {	
-		this.actualizar_nombres('', '');
 		$('#finalizar').hide();
 		$('#boton_otro').hide();
 		$('#boton_cancelar').hide();
@@ -244,14 +193,6 @@ class Sala {
 		this.juego.nombre_rival = null;
 	}
 
-	volver_a_jugar() {
-		$('#boton_otro').hide();
-		$('#boton_cancelar').hide();
-	
-		// Intercambiamos los colores
-		this.juego.empezar(this.juego.cambiar_color(this.juego.color));
-	}
-
 	nuevo_observador(quien) {
 		this.juego.escribir_servidor(quien, '<fmt:message key="msg.enteredGame" />');
 	}
@@ -259,11 +200,6 @@ class Sala {
 	actualizar_numero(id) {
 		const num = $('#' + id + ' li').length;
 		$('#num_' + id).text(num);
-	}
-
-	actualizar_nombres(blancas, negras) {
-		$('#jugador1').html(this.juego.mostrar_jugador(blancas));
-		$('#jugador2').html(this.juego.mostrar_jugador(negras));
 	}
 
 	opciones_partido(usuario, color, duracion, titulo, disabled, funcionOK, funcionKO) {
@@ -336,13 +272,14 @@ class Sala {
 		});
 	}
 
-	partido_privado(color, duracion, rival) {
-		if (!this.juego.nombre_rival) {
-			this.opciones_partido(rival, color, duracion, '<fmt:message key="menu.invitationFrom" /></h5> '.replace('{0}', rival), 'disabled="disabled "', () => {
+	// { color, duracion, rival }
+	partido_privado(resp) {
+		if (!this.juego.rival) {
+			this.opciones_partido(resp.rival, resp.color, resp.duracion, '<fmt:message key="menu.invitationFrom" /></h5> '.replace('{0}', resp.rival), 'disabled="disabled "', () => {
 				// Aceptar partido
-				this.partido_click(rival);
+				this.partido_click(resp.rival);
 			}, () => {
-				this.conexion.enviar('cancelar_invitacion', rival);
+				this.conexion.enviar('cancelar_invitacion', resp.rival.nombre);
 			});
 		}
 	}
@@ -365,6 +302,58 @@ class Sala {
 		this.juego.cancelar_partido(quien);
 	}
 
+	nuevo_usuario(jugador) {
+		this.crear_usuario(jugador);
+
+		if (this.juego.rival && jugador.nombre == this.juego.rival.nombre) {
+			this.juego.escribir_servidor(jugador.nombre, '<fmt:message key="msg.enteredGame" />');
+			$('#boton_cancelar').hide();
+			this.juego.actualizar_texto_turno();
+			//this.juego.iniciar_cronometros();
+		}
+	}
+
+	/** ACCIONES RECIBIDAS DEL SERVIDOR **/
+
+	accion_conexion_abierta(resp) {
+		// Si la sesión ha caducado el nombre no coincidirá
+		if (resp.jugador != '${jugador.nombre}') {
+			location.reload();
+		}
+
+		$('.bootbox.modal').modal('hide');
+		
+		this.limpiar_botones();
+		
+		$('#jugadores').empty();
+		resp.jugadores.forEach(j => {
+			this.nuevo_usuario(new Jugador(j, this.juego));
+		});
+	
+		$('#partidos').empty();
+		resp.partidos.forEach(p => {
+			const indice = p.indexOf(',');
+			const duracion = p.substring(0, indice);
+			const jugadores = p.substring(indice + 1).split("-");
+			this.nuevo_partido(duracion, jugadores[0], jugadores[1]);
+		});
+
+		this.juego.rival = this.usuarios[resp.rival];
+		this.juego.color = resp.color;
+	
+		this.iniciar_timeout(true);
+		
+		// Si el partido ya se ha iniciado, pido la lista de movimientos (como si aceptara el partido otra vez)
+		// Lo hacemos así para que se cree cada cosa a su tiempo
+		if (this.juego.rival) {
+			this.conexion.enviar('aceptar_partido', (this.juego.color == 'blancas' ? this.juego.jugador.nombre : this.juego.rival.nombre));	
+		}
+	}
+
+	accion_nuevo_usuario(jugador) {
+		this.nuevo_usuario(new Jugador(jugador, this.juego));
+	}
+
 	/** EVENTOS **/
 	
 	nuevo_click() {
@@ -383,7 +372,7 @@ class Sala {
 	}
 
 	otro_click() {
-		$('#boton_otro').text('<fmt:message key="msg.waitingOpponent" />');
+		$('#boton_otro').html('<div class="loader"></div><fmt:message key="msg.waitingOpponent" />');
 		$('#boton_otro').prop('disabled', true);
 		this.conexion.enviar('otro_partido', null);
 	}

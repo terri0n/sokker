@@ -6,19 +6,13 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 
-<c:if test="${empty sessionScope['javax.servlet.jsp.jstl.fmt.locale.session']}">
-    <fmt:setLocale value="${pageContext.request.locale.language}" scope="session" />
-</c:if>
-
-<fmt:setBundle basename="<%= Idiomas.APPLICATION_RESOURCES %>" />
-
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
+    <%@ include file="/inc/head.jspf" %>
+
     <title>MultiJuegos</title>
 	<link rel="icon" href="img/multijuegos.ico" type="image/x-icon">
-		
-    <%@ include file="/inc/head.jspf" %>
 
     <style type="text/css">
 		@media only screen and (max-width: 800px) {

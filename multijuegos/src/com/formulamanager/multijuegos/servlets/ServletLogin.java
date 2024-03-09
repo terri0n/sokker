@@ -11,8 +11,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.formulamanager.multijuegos.dao.JugadoresDao;
+import com.formulamanager.multijuegos.entity.Jugador;
 import com.formulamanager.multijuegos.util.Util;
-import com.formulamanager.multijuegos.websockets.Jugador;
 
 @WebServlet("/login")
 public class ServletLogin extends HttpServlet {

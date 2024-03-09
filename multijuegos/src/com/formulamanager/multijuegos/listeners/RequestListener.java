@@ -8,9 +8,9 @@ import javax.servlet.ServletRequestListener;
 import javax.servlet.annotation.WebListener;
 import javax.servlet.http.HttpServletRequest;
 
+import com.formulamanager.multijuegos.entity.Jugador;
 import com.formulamanager.multijuegos.servlets.ServletLogin;
 import com.formulamanager.multijuegos.util.Util;
-import com.formulamanager.multijuegos.websockets.Jugador;
 
 @WebListener
 /**

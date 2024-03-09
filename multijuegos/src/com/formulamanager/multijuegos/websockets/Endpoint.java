@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.servlet.http.Cookie;
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.EndpointConfig;
@@ -16,14 +16,14 @@ import javax.websocket.OnError;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
-import javax.websocket.server.HandshakeRequest;
 import javax.websocket.server.ServerEndpoint;
 
 import org.apache.commons.text.StringEscapeUtils;
 
 import com.formulamanager.multijuegos.dao.JugadoresDao;
+import com.formulamanager.multijuegos.entity.Jugador;
 import com.formulamanager.multijuegos.util.Util;
-import com.google.gson.GsonBuilder;
+import com.google.gson.Gson;
 
 /**
  * https://examples.javacodegeeks.com/enterprise-java/tomcat/apache-tomcat-websocket-tutorial/#toc600
@@ -45,14 +45,14 @@ public class Endpoint extends EndpointBase {
 	    } else {
 	    	// Recuperamos el usuario de la sesión
 	    	sesion.getUserProperties().put("jugador", httpSession.getAttribute("jugador"));
-		    System.out.println("onOpen (vuelve) " + sesion.getUserProperties().get("jugador"));
+		    System.out.println("onOpen " + sesion.getUserProperties().get("jugador"));
 
 		    // Esperamos un poco
 		    thread_sleep(500);
 		    
 		    // CERRAR SESIÓN ANTERIOR
 		    synchronized (sesiones) {
-		    	Session s = (sesiones.get(((Jugador)httpSession.getAttribute("jugador")).nombre));
+		    	Session s = sesiones.get(getJugador(httpSession).nombre);
 		    	if (s != null && s.isOpen()) {
 	    			try {
 	    				s.close(new CloseReason(CloseCodes.CANNOT_ACCEPT, "Nueva conexión desde la misma sesión"));
@@ -65,11 +65,11 @@ public class Endpoint extends EndpointBase {
 		    // CONTINUAR PARTIDO
 		    synchronized (partidos) {
 		    	for (Partido p : partidos) {
-		    		if (p.nombre_blancas != null && p.nombre_blancas.equals(((Jugador)httpSession.getAttribute("jugador")).nombre)) {
+		    		if (getJugador(httpSession).equals(p.getJugador(COLOR.blancas))) {
 		    			partido = p;
 		    			p.blancas = sesion;
 		    			break;
-		    		} else if (p.nombre_negras != null && p.nombre_negras.equals(((Jugador)httpSession.getAttribute("jugador")).nombre)) {
+		    		} else if (getJugador(httpSession).equals(p.getJugador(COLOR.negras))) {
 		    			partido = p;
 		    			p.negras = sesion;
 		    			break;
@@ -80,26 +80,25 @@ public class Endpoint extends EndpointBase {
 		    // Cuando se conecta un usuario le enviamos la lista de usuarios conectados y los partidos abiertos o en juego
 		    // además del nombre de su rival si estaba en mitad de una partida
 		    Respuesta respuesta = new Respuesta();
-		    respuesta.nombre = getNombre(sesion);
+		    respuesta.jugador = getJugador(sesion).nombre;
 		    
 		    Session rival = getRival();
 		    if (rival != null) {
-		    	respuesta.nombre_rival = partido.getColor(sesion) == COLOR.blancas ? partido.nombre_negras : partido.nombre_blancas;
 		    	respuesta.color = partido.getColor(sesion);
+		    	respuesta.rival = getJugador(rival).nombre;
 		    }
 
 		    // ENVIAR MENSAJE DE NUEVO USUARIO
 		    synchronized (sesiones) {
-		    	sesiones.put(getNombre(sesion), sesion);
+		    	sesiones.put(getJugador(sesion).nombre, sesion);
 		    	
 		    	for (Session s : sesiones.values()) {
 		    		if (s.isOpen()) {
-		    			respuesta.jugadores.add((Jugador)s.getUserProperties().get("jugador"));
+		    			Jugador j = getJugador(s);
+		    			respuesta.jugadores.add(j);
 		    			// Nuevo usuario
 		    			if (!equals(sesion, s)) {
-		    				enviar(s, "nuevo_usuario", new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create().toJson(
-	    						sesion.getUserProperties().get("jugador"))
-	    					);
+		    				enviar(s, "nuevo_usuario", getJugador(sesion).toJson());
 		    			}
 		    		}
 		    	}
@@ -119,12 +118,12 @@ public class Endpoint extends EndpointBase {
 		    			if ((p.blancas == null || !p.blancas.isOpen()) && (p.negras == null || !p.negras.isOpen())) {
 		    				itp.remove();
 		    				for (Session s : sesiones.values()) {
-		    					enviar(s, "partido_cancelado", (p.nombre_blancas != null ? p.nombre_blancas : p.nombre_negras));
+		    					enviar(s, "partido_cancelado", (p.getJugador(COLOR.blancas) != null ? p.getJugador(COLOR.blancas).nombre : p.getJugador(COLOR.negras).nombre));
 		    				}
 		    			}
 		    		}
 		    	}
-		    	enviar(sesion, "conexion_abierta", new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create().toJson(respuesta));
+		    	enviar(sesion, "conexion_abierta", new Gson().toJson(respuesta));
 		    }
 	    }
 	}
@@ -139,7 +138,7 @@ public class Endpoint extends EndpointBase {
 
 	@OnMessage
 	public String onMessage(String message) {
-		System.out.println(getNombre(sesion) + " -> " + message);
+		System.out.println(getJugador(sesion).nombre + " \t-> " + message);
 		
 		// Actualizo el tiempo de la sesión
         long lastAccessedTime = httpSession.getLastAccessedTime();
@@ -147,11 +146,11 @@ public class Endpoint extends EndpointBase {
         long durationSinceLastAccess = currentTime - lastAccessedTime;
         long newSessionDuration = durationSinceLastAccess + (30 * 60 * 1000); // 30 minutos en milisegundos
         httpSession.setMaxInactiveInterval((int) (newSessionDuration / 1000)); // Convertir a segundos
-		
-		int indice = message.indexOf(",");
-		String accion = message.substring(0, indice);
-		String params = message.substring(indice + 1);
-		
+
+        HashMap<String, String> hm = new Gson().fromJson(message, HashMap.class);
+		String accion = hm.get("accion");
+		String params = hm.get("params");
+
 		try {
 			switch (accion) {
 				case "aceptar_partido":	// Aceptar partido, tb para reconectar
@@ -210,7 +209,7 @@ public class Endpoint extends EndpointBase {
 	private void ranking() {
 		try {
 			List<Jugador> jugadores = JugadoresDao.buscar(null, null, null, "puntos desc", 50);
-			enviar(sesion, "ranking", new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create().toJson(jugadores));
+			enviar(sesion, "mostrar_ranking", new Gson().toJson(jugadores));
 		} catch (SQLException | ParseException e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
@@ -220,7 +219,7 @@ public class Endpoint extends EndpointBase {
 	private void poner_away() {
 		synchronized (sesiones) {
 			for (Session s : sesiones.values()) {
-				enviar(s, "poner_away", getNombre(sesion));
+				enviar(s, "poner_away", getJugador(sesion).nombre);
 			}
 		}
 	}
@@ -228,7 +227,7 @@ public class Endpoint extends EndpointBase {
 	private void quitar_away() {
 		synchronized (sesiones) {
 			for (Session s : sesiones.values()) {
-				enviar(s, "quitar_away", getNombre(sesion));
+				enviar(s, "quitar_away", getJugador(sesion).nombre);
 			}
 		}
 	}
@@ -250,9 +249,13 @@ public class Endpoint extends EndpointBase {
 			Session rival = sesiones.get(usuario);
 			if (rival != null) {
 				borrar_partido(partido);
-				partido = new Partido(color, duracion, getNombre(sesion), sesion, true);
+				partido = new Partido(color, duracion, getJugador(sesion), sesion, true);
 				partidos.add(partido);
-				enviar(rival, "partido_privado", color.cambiar() + "," + Util.nvl(duracion) + "," + getNombre(sesion));
+				HashMap<String, Object> hm = new HashMap<>();
+				hm.put("color", color.cambiar());
+				hm.put("duracion", Util.nvl(duracion));
+				hm.put("rival", getJugador(sesion).nombre);
+				enviar(rival, "partido_privado", hm);
 			}
 		}
 	}
@@ -292,7 +295,7 @@ public class Endpoint extends EndpointBase {
 				enviar(getRival(), "manda_tactica", partido.getTactica(partido.getColor(sesion)));
 				
 				// Y a los observadores como si acabara de empezar el partido
-				mandar_observadores("observar_partido", partido.getId() + "," + partido.getTiempos() + "," + partido.duracion + "," + partido.getEstado(sesion) + "@" + partido.toString());
+				mandar_observadores("observar_partido", partido.getId() + "," + partido.getTiempos() + "," + partido.duracion + "," + partido.getEstado(sesion) + "@" + partido.toJson());
 				
 				partido.ultimo_movimiento = new Date();
 			}
@@ -324,7 +327,7 @@ public class Endpoint extends EndpointBase {
 	}
 	
 	private void escribir(String texto) {
-		String mensaje = getNombre(sesion) + "," + StringEscapeUtils.escapeEcmaScript(texto);
+		String mensaje = getJugador(sesion).nombre + "," + StringEscapeUtils.escapeEcmaScript(texto);
 		
 		if (partido != null && partido.blancas != null && partido.negras != null) {
 			if (partido.getColor(sesion) != COLOR.blancas) {
@@ -340,27 +343,9 @@ public class Endpoint extends EndpointBase {
 					enviar(s, "texto", mensaje);
 				}
 			}
-		} else {
-			synchronized (sesiones) {
-				for (Session s : sesiones.values()) {
-					if (!esta_en_partido(s) && !equals(s, sesion)) {
-						enviar(s, "texto", mensaje);
-					}
-				}
-			}
 		}
 	}
 
-	private boolean esta_en_partido(Session s) {
-		for (Partido p : partidos) {
-			if (p.getColor(s) != null || p.observadores.contains(s)) {
-				return true;
-			}
-		}
-		
-		return false;
-	}
-	
 	private void otro_partido() {
 		synchronized (partidos) {
 			if (partido != null) {
@@ -374,11 +359,11 @@ public class Endpoint extends EndpointBase {
 					partido.reset();
 					
 					// Y les mandamos un aviso
-					enviar(partido.blancas, "volver_a_jugar", null);
-					enviar(partido.negras, "volver_a_jugar", null);
+					enviar(partido.blancas, "volver_a_jugar", "");
+					enviar(partido.negras, "volver_a_jugar", "");
 					
 					for (Session o : partido.observadores) {
-						enviar(o, "volver_a_jugar", null);
+						enviar(o, "volver_a_jugar", "");
 					}
 				} else {
 					partido.rival_quiere_otra = true;
@@ -391,7 +376,7 @@ public class Endpoint extends EndpointBase {
 		synchronized (sesiones) {
 			for (Session usuario : sesiones.values()) {
 				if (!equals(usuario, sesion)) {
-					enviar(usuario, "partido_cancelado", getNombre(sesion));
+					enviar(usuario, "partido_cancelado", getJugador(sesion).nombre);
 				}
 			}
 		}
@@ -405,28 +390,32 @@ public class Endpoint extends EndpointBase {
 	private void aceptar_partido(String usuario) {
 		synchronized (partidos) {
 			for (Partido p : partidos) {
-				if (usuario.equals(p.nombre_blancas) || usuario.equals(p.nombre_negras)) {
+				if (p.blancas != null && usuario.equals(p.getJugador(COLOR.blancas).nombre) || p.negras != null && usuario.equals(p.getJugador(COLOR.negras).nombre)) {
 					if (p.blancas == null || p.negras == null) {
-						// Acepta el partido
-						borrar_partido(partido);
-						
-						partido = p;
-						p.anyadir_jugador(getNombre(sesion), sesion);
-						p.reset();
-	
-						enviar(p.blancas, "aceptar_partido", "blancas," + Util.nvl(p.duracion) + "," + p.nombre_negras);
-						enviar(p.negras, "aceptar_partido", "negras," + Util.nvl(p.duracion) + "," + p.nombre_blancas);
-						
-						for (Session u : sesiones.values()) {
-							if (!equals(u, p.blancas) && !equals(u, p.negras)) {
-								enviar(u, "partido_aceptado", p.getRespuesta());
+						// Partido esperando rival
+						if (getJugador(sesion).nombre.equals(usuario)) {
+							cerrar_sesion(sesion, "No puedes jugar contigo mismo");
+						} else {
+							// Acepta el partido
+							borrar_partido(partido);
+							
+							partido = p;
+							p.anyadir_jugador(getJugador(sesion), sesion);
+							p.reset();
+		
+							enviar(p.blancas, "aceptar_partido", "blancas," + Util.nvl(p.duracion) + "," + p.getJugador(COLOR.negras).nombre);
+							enviar(p.negras, "aceptar_partido", "negras," + Util.nvl(p.duracion) + "," + p.getJugador(COLOR.blancas).nombre);
+							
+							for (Session u : sesiones.values()) {
+								if (!equals(u, p.blancas) && !equals(u, p.negras)) {
+									enviar(u, "partido_aceptado", p.getRespuesta());
+								}
 							}
 						}
-						return;
-					} else if (p.nombre_blancas.equals(getNombre(sesion)) || p.nombre_negras.equals(getNombre(sesion))) {
+					} else if (p.getJugador(COLOR.blancas).equals(getJugador(sesion)) || p.getJugador(COLOR.negras).equals(getJugador(sesion))) {
 						// Reconecta como jugador (blancas o negras)
 						partido = p;
-						if (p.nombre_blancas.equals(getNombre(sesion))) {
+						if (p.getJugador(COLOR.blancas).equals(getJugador(sesion))) {
 							p.blancas = sesion;
 						} else {
 							p.negras = sesion;
@@ -437,25 +426,25 @@ public class Endpoint extends EndpointBase {
 							enviar(sesion, "observar_partido", p.getId() + "," + p.getTiempos() + "," + p.duracion + "," + p.getEstado(sesion) + "@" + p.getTactica(p.getColor(sesion)));
 						} else {
 							// Si no, mando el tablero completo
-							enviar(sesion, "observar_partido", p.getId() + "," + p.getTiempos() + "," + p.duracion + "," + p.getEstado(sesion) + "@" + p.toString());
+							enviar(sesion, "observar_partido", p.getId() + "," + p.getTiempos() + "," + p.duracion + "," + p.getEstado(sesion) + "@" + p.toJson());
 						}
-						
 					} else {
 						// El partido ya ha empezado. Entra como observador
 						for (Partido p2 : partidos) {
 							p2.observadores.remove(sesion);
 						}
 						
-						enviar(p.blancas, "nuevo_observador", getNombre(sesion));
-						enviar(p.negras, "nuevo_observador", getNombre(sesion));
+						enviar(p.blancas, "nuevo_observador", getJugador(sesion).nombre);
+						enviar(p.negras, "nuevo_observador", getJugador(sesion).nombre);
 						for (Session o : p.observadores) {
-							enviar(o, "nuevo_observador", getNombre(sesion));
+							enviar(o, "nuevo_observador", getJugador(sesion).nombre);
 						}
 
 						partido = p;
 						p.observadores.add(sesion);
-						enviar(sesion, "observar_partido", p.getId() + "," + p.getTiempos() + "," + p.duracion + "," + p.getEstado(sesion) + "@" + p.toString());
+						enviar(sesion, "observar_partido", p.getId() + "," + p.getTiempos() + "," + p.duracion + "," + p.getEstado(sesion) + "@" + p.toJson());
 					}
+					break;	// Ya ha encontrado su partido
 				}
 			}
 		}
@@ -477,20 +466,20 @@ public class Endpoint extends EndpointBase {
 		synchronized (partidos) {
 			if (partido != null) {
 				if (partido.getColor(sesion) != null) {
-					System.out.println(getNombre(sesion) + " intenta crear otro partido");
+					System.out.println(getJugador(sesion).nombre + " intenta crear otro partido");
 					return;
 				} else {
 					partido.observadores.remove(sesion);
 				}
 			}
 			
-			partido = new Partido(color, duracion, getNombre(sesion), sesion, false);
+			partido = new Partido(color, duracion, getJugador(sesion), sesion, false);
 			partidos.add(partido);
 		}
 		
 		synchronized (sesiones) {
 			for (Session s : sesiones.values()) {
-				enviar(s, "nuevo_partido", Util.nvl(duracion) + "," + (color == COLOR.blancas ? getNombre(sesion) : "") + "," + (color == COLOR.negras ? getNombre(sesion) : ""));
+				enviar(s, "nuevo_partido", Util.nvl(duracion) + "," + (color == COLOR.blancas ? getJugador(sesion).nombre : "") + "," + (color == COLOR.negras ? getJugador(sesion).nombre : ""));
 			}
 		}
 	}
@@ -503,12 +492,12 @@ public class Endpoint extends EndpointBase {
 	
 	@OnClose
     public void onClose(Session sesion) {
-		System.out.println("onClose " + getNombre(sesion));
+		System.out.println("onClose " + getJugador(sesion).nombre);
 
 		try {
 			synchronized (partidos) {
 				if (partido != null) {
-					if (getNombre(sesion).equals(partido.nombre_blancas)) {
+					if (getJugador(sesion).equals(partido.getJugador(COLOR.blancas))) {
 						if (partido.negras == null || !partido.negras.isOpen()) {
 							partidos.remove(partido);
 						} else {
@@ -516,10 +505,10 @@ public class Endpoint extends EndpointBase {
 							partido.actualizar_cronometro();
 							partido.blancas = null;
 						}
-					} else if (getNombre(sesion).equals(partido.nombre_negras)) {
+					} else if (getJugador(sesion).equals(partido.getJugador(COLOR.negras))) {
 						if (partido.blancas == null || !partido.blancas.isOpen()) {
 							partidos.remove(partido);
-							System.out.println(getNombre(sesion) + " borra partido");
+							System.out.println(getJugador(sesion).nombre + " borra partido");
 						} else {
 							// Si pierde la conexión le sumamos el tiempo transcurrido desde el último movimiento
 							partido.actualizar_cronometro();
@@ -531,12 +520,12 @@ public class Endpoint extends EndpointBase {
 				}
 			}
 
-			if (getNombre(sesion) != null) {
+			if (getJugador(sesion) != null) {
 				synchronized (sesiones) {
-					sesiones.remove(getNombre(sesion));
+					sesiones.remove(getJugador(sesion).nombre);
 					
 					for (Session usuario : sesiones.values()) {
-						enviar(usuario, "usuario_desconectado", getNombre(sesion));
+						enviar(usuario, "usuario_desconectado", getJugador(sesion).nombre);
 					}
 				}
 			}
@@ -547,19 +536,19 @@ public class Endpoint extends EndpointBase {
 
 	public void fin_partido() {
 	    // Actualización del ELO
-		double myChanceToWin = 1D / (1D + Math.pow(10D, (getPuntos(partido.negras) - getPuntos(partido.blancas)) / 400D));
+		double myChanceToWin = 1D / (1D + Math.pow(10D, (getJugador(partido.negras).puntos - getJugador(partido.blancas).puntos) / 400D));
 
 	    int ratingDelta = (int) Math.round(32D * ((partido.ganador == COLOR.blancas ? 1 : 0) - myChanceToWin));
 
-	    setPuntos(partido.blancas, getPuntos(partido.blancas) + ratingDelta, partido.oficial);
-	    setPuntos(partido.negras, getPuntos(partido.negras) - ratingDelta, partido.oficial);
+	    if (partido.oficial) {
+		    setPuntos(partido.blancas, getJugador(partido.blancas).puntos + ratingDelta);
+		    setPuntos(partido.negras, getJugador(partido.negras).puntos - ratingDelta);
+	    }
 	    
 	    synchronized (EndpointBase.sesiones) {
 	    	for (Session s : sesiones.values()) {
-	    		enviar(s, "actualizar_ranking", partido.nombre_blancas + "," + getPuntos(partido.blancas) + "," + partido.nombre_negras + "," + getPuntos(partido.negras));
+	    		enviar(s, "actualizar_ranking", partido.getJugador(COLOR.blancas).nombre + "," + getJugador(partido.blancas).puntos + "," + partido.getJugador(COLOR.negras) + "," + getJugador(partido.negras).puntos);
 	    	}
 	    }
 	}
-
-
 }

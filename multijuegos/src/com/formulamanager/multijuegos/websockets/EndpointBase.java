@@ -18,8 +18,10 @@ import javax.websocket.EndpointConfig;
 import javax.websocket.Session;
 
 import com.formulamanager.multijuegos.dao.JugadoresDao;
+import com.formulamanager.multijuegos.entity.Jugador;
 import com.formulamanager.multijuegos.idiomas.Idiomas;
 import com.formulamanager.multijuegos.util.Util;
+import com.google.gson.Gson;
 
 public class EndpointBase {
 	protected static enum COLOR { blancas, negras;
@@ -46,40 +48,40 @@ public class EndpointBase {
 
 	protected static boolean equals(Session usuario1, Session usuario2) {
 		if (usuario1.isOpen() && usuario2.isOpen()) {
-			return getNombre(usuario1).equals(getNombre(usuario2));
+			return getJugador(usuario1).equals(getJugador(usuario2));
 		} else {
 			return false;
 		}
 	}
 
-	protected static String getNombre(Session s) {
-		Jugador j = (Jugador)s.getUserProperties().get("jugador");
-		return j == null ? null : j.nombre;
+	protected static Jugador getJugador(HttpSession s) {
+		return (Jugador) s.getAttribute("jugador");
 	}
 
-	protected static Integer getPuntos(Session s) {
-		Jugador j = (Jugador)s.getUserProperties().get("jugador");
-		return j == null ? null : j.puntos;
+	protected static Jugador getJugador(Session s) {
+		return (Jugador)s.getUserProperties().get("jugador");
 	}
 
-	protected static void setPuntos(Session s, Integer puntos, boolean oficial) {
-		Jugador j = (Jugador)s.getUserProperties().get("jugador");
+	protected static void setPuntos(Session s, Integer puntos) {
+		Jugador j = getJugador(s);
 		j.puntos = puntos;
 		j.num_partidos++;
 
-		if (oficial) {
-			try {
-				JugadoresDao.actualizar(j);
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
+		try {
+			JugadoresDao.actualizar(j);
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
+	}
+
+	protected static void enviar(Session s, String accion, HashMap<String, Object> hm) {
+		enviar(s, accion, new Gson().toJson(hm));
 	}
 
 	protected static void enviar(Session s, String accion, String params) {
 		try {
 			if (s != null && s.isOpen()) {
-System.out.println(getNombre(s) + " <- " + accion + "," + Util.nvl(params));
+System.out.println(getJugador(s).nombre + " \t<- " + accion + "," + Util.nvl(params));
 				s.getBasicRemote().sendText(accion + "," + Util.nvl(params));
 			}
 		} catch (IOException e) {

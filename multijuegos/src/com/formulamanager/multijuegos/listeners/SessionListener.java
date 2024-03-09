@@ -8,8 +8,8 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 
+import com.formulamanager.multijuegos.entity.Jugador;
 import com.formulamanager.multijuegos.websockets.EndpointBase;
-import com.formulamanager.multijuegos.websockets.Jugador;
 
 /**
  * Application Lifecycle Listener implementation class SessionListener
@@ -17,19 +17,13 @@ import com.formulamanager.multijuegos.websockets.Jugador;
  */
 @WebListener
 public class SessionListener implements HttpSessionListener {
-	private static int num_invitados = 0;
 	public static List<HttpSession> sesiones = new ArrayList<>();
 
 	/**
      * @see SessionListener#sessionCreated(HttpSessionEvent)
      */
     public void sessionCreated(HttpSessionEvent se)  { 
-    	Jugador j = new Jugador("_Guest" + ++num_invitados + "_", null, 1600, 0, null, null, true);
-        se.getSession().setAttribute("jugador", j);
-        synchronized (sesiones) {
-        	sesiones.add(se.getSession());
-        }
-        System.out.println("Entra " + j.getNombre());
+    	crear_jugador(se.getSession());
     }
 
 	/**
@@ -45,5 +39,14 @@ public class SessionListener implements HttpSessionListener {
         if (se.getSession().getAttribute("jugador") != null) {
         	System.out.println("Sale " + ((Jugador)se.getSession().getAttribute("jugador")).getNombre());
         }
+    }
+
+    public static void crear_jugador(HttpSession s) {
+    	Jugador j = Jugador.getDefault();
+        s.setAttribute("jugador", j);
+        synchronized (sesiones) {
+        	sesiones.add(s);
+        }
+        System.out.println("Creando a " + j.getNombre());
     }
 }
