@@ -47,6 +47,9 @@ public class Movimiento implements Comparable<Movimiento> {
 	public FIGURA id;
 	public Integer x;
 	public Integer y;
+	public boolean movido_blancas;
+	public boolean movido_negras;
+	public boolean pelota_movida;	// Indica que es el 2º movimiento de la pelota. Se habrá marcado tb movido_blancas o movido_negras con el 1er movimiento
 
 	public Movimiento(FIGURA id, Integer x, Integer y) {
 		this.id = id;
@@ -77,5 +80,18 @@ public class Movimiento implements Comparable<Movimiento> {
 	public int compareTo(Movimiento m) {
 		// Lo importante es que la pelota llegue la última para que se dibuje correctamente
 		return this.id == FIGURA.pelota ? 1 : m.id == FIGURA.pelota ? -1 : this.id.name().compareTo(m.id.name());
+	}
+
+	public void setMovido(Partido p) {
+		movido_blancas = p.ultimo_movimiento_blancas.contains(id);
+		movido_negras = p.ultimo_movimiento_negras.contains(id);
+	}
+
+	public void setMovido(COLOR color, boolean movido) {
+		if (color == COLOR.blancas) {
+			movido_blancas = movido;
+		} else {
+			movido_negras = movido;
+		}
 	}
 }

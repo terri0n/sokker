@@ -1,7 +1,7 @@
 package com.formulamanager.multijuegos.listeners;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.servlet.annotation.WebListener;
 import javax.servlet.http.HttpSession;
@@ -17,7 +17,7 @@ import com.formulamanager.multijuegos.websockets.EndpointBase;
  */
 @WebListener
 public class SessionListener implements HttpSessionListener {
-	public static List<HttpSession> sesiones = new ArrayList<>();
+	public static List<HttpSession> sesiones = new CopyOnWriteArrayList<>();
 
 	/**
      * @see SessionListener#sessionCreated(HttpSessionEvent)
@@ -35,7 +35,9 @@ public class SessionListener implements HttpSessionListener {
     	
     	synchronized (sesiones) {
         	sesiones.remove(se.getSession());
+        	EndpointBase.sesion_destruida(se.getSession());
         }
+ 	
         if (se.getSession().getAttribute("jugador") != null) {
         	System.out.println("Sale " + ((Jugador)se.getSession().getAttribute("jugador")).getNombre());
         }

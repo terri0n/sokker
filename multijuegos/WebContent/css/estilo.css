@@ -215,6 +215,9 @@ section li div {
 	vertical-align: middle;
 	overflow: hidden;
 }
+.no_registrado {
+	padding-right: 0px;
+}
 .puntos {
 	vertical-align: text-bottom;
 }
@@ -231,6 +234,34 @@ section li div {
 #partidos li .material-icons {
 	vertical-align: text-bottom;
 	color: lightgray;
+}
+.carousel-inner {
+	width: 76%;
+	margin: auto;
+}
+.modal-dialog-scrollable .modal-body {
+    overflow-y: hidden;
+    height: 100%;
+    padding: 0;
+}
+.modal-dialog-scrollable .bootbox-body {
+	height: 100%;
+}
+.carousel-item {
+	height: 450px;
+}
+.carousel-item img {
+	margin-bottom: 20px;
+}
+.carousel-control-prev:hover, .carousel-control-next:hover {
+    background: linear-gradient(to bottom, white, lightgray);
+	color: white;
+    box-shadow: 0 0 20px 5px rgba(255, 255, 255, 0.8);
+	border: 0;
+	transform: scale(1.2);
+}
+#carouselControls {
+	overflow: hidden;
 }
 
 /* JUEGO */
@@ -283,12 +314,10 @@ section li div {
 	pointer-events: none;
 	font-size: small;
 	border-radius: 5px;
-	padding-left: 3px;
-	padding-right: 3px;
-	padding-bottom: 5px;
+	padding: 3px;
     background: linear-gradient(to bottom, rgba(127,127,127,0.5), rgba(0,0,0,0.5));
     color: white;
-    line-height: 0.5;
+    line-height: 0.7;
 }
 .blancas {
 	color: lightgray;

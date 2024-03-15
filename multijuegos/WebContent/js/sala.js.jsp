@@ -43,10 +43,10 @@ class Sala {
 		}
 		this.usuarios[jugador.nombre] = jugador;
 
-		const disabled = jugador.nombre.toUpperCase() == this.juego.jugador.nombre.toUpperCase() || this.juego.rival ? 'disabled = "disabled"' : '';
+		const disabled = jugador.nombre == this.juego.jugador.nombre || this.juego.rival ? 'disabled = "disabled"' : '';
 		
 		$('#jugadores').append(`<li id="jugador_` + jugador.nombre + `">
-				<div>` + jugador.mostrar_jugador(false) + `</div>
+				<div>` + jugador.mostrar_jugador() + `</div>
 				<button class="verde" ` + disabled + ` onclick="juego.sala.invitar_click('` + jugador.nombre + `')"><fmt:message key="menu.invite" /></button>
 			</li>`);
 			
@@ -56,8 +56,8 @@ class Sala {
 	cancelar_partido(quien) {
 		const partido = $('li[id="partido_' + quien + '"], li[id^="partido_' + quien + '-"], li[id^="partido_"][id$="-' + quien + '"]');
 		if (partido.length > 0) {
-			if (quien == this.juego.nombre || quien == this.juego.nombre_rival) {
-				if (quien == this.juego.rival.nombre) {
+			if (quien == this.juego.jugador.nombre || this.juego.rival && quien == this.juego.rival.nombre) {
+				if (quien != this.juego.jugador.nombre) {
 					showToast.show('<fmt:message key="msg.gameAborted" />');
 					this.juego.escribir_servidor(null, '<fmt:message key="msg.gameAborted" />');
 					this.conexion.enviar('rival_cancela', null);
@@ -78,7 +78,7 @@ class Sala {
 		const partidos = $('li[id^="partido_"]');
 		partidos.get().forEach(p => {
 			const id = p.id.substring("partido_".length).split('-');
-			if (id[0] != this.juego.nombre && (id.length == 1 || id[1] != this.juego.nombre)) {
+			if (id[0] != this.juego.jugador.nombre && (id.length == 1 || id[1] != this.juego.jugador.nombre)) {
 				$(p).find("button").prop("disabled", !habilitar);
 			}
 		});
@@ -86,7 +86,7 @@ class Sala {
 		const jugadores = $('li[id^="jugador_"]');
 		jugadores.get().forEach(j => {
 			const jugador = j.id.substring("jugador_".length);
-			if (jugador != this.juego.nombre) {
+			if (jugador != this.juego.jugador.nombre) {
 				$(j).find("button").prop("disabled", !habilitar);
 			}
 		});
@@ -98,8 +98,8 @@ class Sala {
 		const join = '<button class="verde" ' + disabled + ' onclick="juego.sala.partido_click(\'' + (usuario1 || usuario2) + '\');"><fmt:message key="menu.join" /></button>';
 
 		const id = "partido_" + (usuario1 || '') + (usuario1 && usuario2 ? '-' : '') + (usuario2 || '');
-		var s = '<li id="' + id + '">' + (usuario1 ? this.usuarios[usuario1].mostrar_jugador(false) : join);
-		s += '<span> vs </span>' + (usuario2 ? this.usuarios[usuario2].mostrar_jugador(false) : join);
+		var s = '<li id="' + id + '">' + (usuario1 ? this.usuarios[usuario1].mostrar_jugador() : join);
+		s += '<span> vs </span>' + (usuario2 ? this.usuarios[usuario2].mostrar_jugador() : join);
 		if (duracion) {
 			s += ' <small><span class="material-icons">timer</span>' + duracion + ' min</small>';
 		}
@@ -109,7 +109,7 @@ class Sala {
 			s += ' <button class="azul" ' + disabled + ' onclick="juego.sala.partido_click(\'' + (usuario1 || usuario2) + '\');"><fmt:message key="menu.watch" /></button>';
 		} else {
 			// Si es mi partido
-			if ((usuario1 == this.juego.nombre || usuario2 == this.juego.nombre) && (!usuario1 || !usuario2)) {
+			if ((usuario1 == this.juego.jugador.nombre || usuario2 == this.juego.jugador.nombre) && (!usuario1 || !usuario2)) {
 				this.botones_nuevo_partido();
 			}
 		}
@@ -155,7 +155,7 @@ class Sala {
 	// El partido se ha aceptado -> empezar (tanto blancas como negras)
 	aceptar_partido(c, duracion, rival) {
 		this.juego.rival = this.usuarios[rival];
-		this.informar_partido(duracion, c == 'blancas' ? this.juego.nombre : rival, c == 'negras' ? this.juego.nombre : rival);
+		this.informar_partido(duracion, c == 'blancas' ? this.juego.jugador.nombre : rival, c == 'negras' ? this.juego.jugador.nombre : rival);
 		this.habilitar_partidos(false);
 		$('#boton_cancelar').hide();
 		this.juego.empezar(c, duracion);
@@ -190,7 +190,7 @@ class Sala {
 		$('#boton_nuevo').prop('disabled', false);
 		$('#turno_blancas').hide();
 		$('#turno_negras').hide();
-		this.juego.nombre_rival = null;
+		this.juego.rival = null;
 	}
 
 	nuevo_observador(quien) {
@@ -309,12 +309,21 @@ class Sala {
 			this.juego.escribir_servidor(jugador.nombre, '<fmt:message key="msg.enteredGame" />');
 			$('#boton_cancelar').hide();
 			this.juego.actualizar_texto_turno();
-			//this.juego.iniciar_cronometros();
+			this.juego.iniciar_cronometros();
 		}
+	}
+
+	vaciar_sala() {
+		$('li[id^="partido_"]').remove();
+		$('li[id^="jugador_"]').remove();
+		this.usuarios = {};
+		this.actualizar_numero('jugadores');
+		this.actualizar_numero('partidos');
 	}
 
 	/** ACCIONES RECIBIDAS DEL SERVIDOR **/
 
+	// { jugadores[], partidos[], jugador }
 	accion_conexion_abierta(resp) {
 		// Si la sesión ha caducado el nombre no coincidirá
 		if (resp.jugador != '${jugador.nombre}') {
@@ -367,7 +376,7 @@ class Sala {
 
 	// El propio usuario
 	cancelar_click() {
-		this.juego.cancelar_partido(this.juego.nombre);
+		this.juego.cancelar_partido(this.juego.jugador.nombre);
 		this.conexion.enviar('cancelar_partido', null);
 	}
 
@@ -380,7 +389,7 @@ class Sala {
 	invitar_click(usuario) {
 		this.opciones_partido(usuario, 'blancas', 20, '<fmt:message key="menu.newGame" /> <fmt:message key="menu.against" /> <span id="jugador">' + usuario + '</span>', '', (color, duracion) => {
 			this.conexion.enviar('partido_privado', color + ',' + duracion + ',' + usuario);
-			this.borrar_partido('partido_' + this.juego.nombre);
+			this.borrar_partido('partido_' + this.juego.jugador.nombre);
 			this.botones_nuevo_partido();
 		}, null); 
 	}

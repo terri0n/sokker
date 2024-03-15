@@ -9,8 +9,8 @@ class Juego {
 		this.turno;				// Color del jugador que tiene el turno. Al empezar es null, cuando envía la táctica el turno es del rival, a menos que lleve las blancas y sea el 2º en enviar la táctica
 		this.color;				// Color del jugador, si está en una partida pero no como observador
 		this.movimientos = [];	// Lista de movimientos del turno
-		this.tiempo = [];		// { 'blancas', 'negras' }
-		this.duracion;			// Para volver a mostrarla al actualizar el ranking
+		this.tiempo = [];		// { 'blancas', 'negras' }	// En segundos
+		this.duracion;			// Para usarla al jugar un nuevo partido (en minutos)
 		this.estado;			// 0: sin iniciar
 								// 1: táctica mandada
 								// 2: saque inicial, turno blancas
@@ -54,16 +54,6 @@ class Juego {
 		}
 	}
 
-	tiempo_agotado(tiempo_blancas, tiempo_negras) {
-		this.tiempo['blancas'] = tiempo_blancas;
-		this.tiempo['negras'] = tiempo_negras;
-		this.pintar_tiempos();
-		
-		const ganan_blancas = tiempo_blancas > 0;
-
-		this.fin_partido(this.color == 'negras' ^ ganan_blancas);
-	}
-	
 	actualizar_tiempos(tiempo_blancas, tiempo_negras) {
 		this.tiempo['blancas'] = tiempo_blancas;
 		this.tiempo['negras'] = tiempo_negras;
@@ -108,13 +98,12 @@ class Juego {
 			case 'maestro_internacional': return '<fmt:message key="levels.international_master" />';
 			case 'gran_maestro': return '<fmt:message key="levels.great_master" />';
 			case 'campeon_del_mundo': return '<fmt:message key="levels.world_champion" />';
+			case 'no_registrado': return '<fmt:message key="levels.not_registered" />';
 		}
 	}
 
 	actualizar_turno(c, mostrar_mensaje) {
 		this.turno = c;
-		$('#turno_blancas').css('display', this.turno == 'blancas' ? 'inline' : 'none');
-		$('#turno_negras').css('display', this.turno == 'negras' ? 'inline' : 'none');
 		if (this.turno == this.color && mostrar_mensaje) {
 			showToast.show("<fmt:message key="msg.yourTurn" />");
 		}
@@ -123,102 +112,105 @@ class Juego {
 
 	// Tb se llama al reconectar
 	observar_partido(blancas, negras, tiempo_blancas, tiempo_negras, duracion, estado, tablero) {
+		this.duracion = duracion;
 		this.tiempo['blancas'] = tiempo_blancas;
 		this.tiempo['negras'] = tiempo_negras;
 		this.estado = estado;
 
+		this.pintar_ui();
+		this.actualizar_turno(this.estado == 2 || this.estado == 3 ? 'blancas' : 'negras', true);
+
 		// Si no soy observador...
-		if (this.nombre_rival) {
+		if (this.rival) {
 			// Si el partido aún no ha empezado no decimos nada. Lo escribiremos cuando se manden las tácticas y empiece de verdad
 			if (this.estado >= 2) {
-				if (this.nombre == blancas || this.nombre == negras) {
+				if (this.jugador.nombre == blancas || this.jugador.nombre == negras) {
 					this.escribir_servidor(null, '<fmt:message key="connection.resuming" /> ' + blancas + ' vs ' + negras);
 				} else {
 					this.escribir_servidor(null, '<fmt:message key="msg.watching" /> ' + blancas + ' vs ' + negras);
 				}
 			}
 			$('#boton_nuevo').hide();
-			$('#finalizar').show();
 		}
 	
-		this.pintar_ui();
-
-		this.pintar_movimientos_jugador(tablero, 0, 'blancas', () => {
-			if (this.estado < 2) {
-				this.iniciar_cronometros();
-				this.habilitar_color(this.color == this.turno);
-
-				// Hasta que no empieza el partido no hay turno
-				this.actualizar_texto_turno();
-				this.habilitar_color(this.estado == 0);
-			} else if (this.estado == 2) {
-				this.pintar_tiempos();
-				this.actualizar_texto_turno();
-				this.habilitar_color(this.color == 'blancas');
-			} else {
-				this.pintar_tiempos();
-				this.actualizar_turno(this.estado == 2 || this.estado == 3 ? 'blancas' : 'negras', true);
-				this.habilitar_color(this.turno == this.color);
-			}
-		});
-	}
-
-	// Pinta una lista de movimientos de dos jugadores para el observador
-	// Duracion = 0 para que se pinten instantáneamente
-	pintar_movimientos_jugador(movs, i, c, funcion) {
-		this.pintar_movimientos(movs, 0, 0, () => {
-			this.limpiar_tablero();
-		});
-		
-		if (funcion) {
-			funcion();
+		if (this.estado < 2) {
+			// Hasta que no empieza el partido no hay turno
+			this.pintar_tiempos();
+			this.actualizar_texto_turno();
+			this.habilitar_color(this.estado == 0);
+		} else if (this.estado == 2) {
+			this.iniciar_cronometros();
+			this.actualizar_texto_turno();
+			this.habilitar_color(this.color == 'blancas');
+		} else if (!isNaN(this.estado)) {
+			this.iniciar_cronometros();
+			this.actualizar_texto_turno();
+			this.habilitar_color(this.turno == this.color);
+		} else {
+			// Fin del partido
+			this.pintar_tiempos();
+			this.actualizar_texto_turno();
 		}
+
+		this.pintar_movimientos(tablero, 0, 0, null);
 	}
 
-	// El partido del jugador/observador
-	fin_partido(victoria) {
+	partido_finalizado(tiempo_blancas, tiempo_negras, ganador, puntos_blancas, puntos_negras) {
+		this.tiempo['blancas'] = tiempo_blancas;
+		this.tiempo['negras'] = tiempo_negras;
+		this.pintar_tiempos();
+		
+		setTimeout(() => {
+			if (tiempo_blancas <= 0 || tiempo_negras <= 0) {
+				showToast.show("<fmt:message key="msg.timeOut" />");
+			} else {
+				showToast.show("<fmt:message key="msg.goal" />");
+			}
+
+			if (this.color) {
+				this.escribir_servidor(null, ganador == this.color ? '<fmt:message key="msg.youWin" />' : '<fmt:message key="msg.youLose" />');
+				this.actualizar_texto_turno();
+			} else {
+				this.escribir_servidor(null, '<fmt:message key="msg.endOfGame" />'.replace('{0}', ganador == 'blancas' ? this.jugador.nombre : this.rival.nombre));
+			}
+	
+			let puntos_rival = this.color == 'negras' ? puntos_blancas : puntos_negras;
+			let puntos_jugador = this.color == 'negras' ? puntos_negras : puntos_blancas;
+			
+			if ((this.jugador.puntos || '') != (puntos_jugador || '')) {
+				var mensaje1 = this.jugador.mostrar_jugador();
+				this.jugador.puntos = puntos_jugador;
+				mensaje1 += '<span class="texto_mensaje"> pasa a </span>' + this.jugador.mostrar_jugador();
+				this.escribir_servidor(null, mensaje1);
+			}
+			
+			if ((this.rival.puntos || '') != (puntos_rival || '')) {
+				var mensaje2 = this.rival.mostrar_jugador();
+				this.rival.puntos = puntos_rival;
+				mensaje2 += '<span class="texto_mensaje"> pasa a </span>' + this.rival.mostrar_jugador();
+				this.escribir_servidor(null, mensaje2);
+			}
+	
+			// Actualizar partido
+			this.sala.borrar_partido('partido_' + this.jugador.nombre + '-' + this.rival.nombre);
+			this.sala.nuevo_partido(this.duracion, this.jugador.nombre, this.rival.nombre);
+	
+			// Actualizar usuarios
+			this.sala.borrar_usuario(this.jugador.nombre);
+			this.sala.borrar_usuario(this.rival.nombre);
+			this.sala.crear_usuario(this.jugador);
+			this.sala.crear_usuario(this.rival);
+		}, 500);
+		
 		clearInterval(this.timer);
 		this.timer = null;
 		this.estado = null;
-
-		if (this.color) {
-			this.escribir_servidor(null, victoria ? '<fmt:message key="msg.youWin" />' : '<fmt:message key="msg.youLose" />');
-			this.actualizar_texto_turno();
-		} else {
-			this.escribir_servidor(null, '<fmt:message key="msg.endOfGame" />'.replace('{0}', victoria ? $('#jugador1').html() : $('#jugador2').html()));
-		}
-	}
-
-	actualizar_ranking(usuario1, puntos1, usuario2, puntos2) {
-		if (this.puntos[usuario1] != puntos1) {
-			var mensaje1 = this.mostrar_jugador(usuario1, false);
-			this.puntos[usuario1] = puntos1;
-			mensaje1 += '<span class="texto_mensaje"> pasa a </span>' + this.mostrar_jugador(usuario1, false);
-			this.escribir_servidor(null, mensaje1);
-		}
-		
-		if (this.puntos[usuario2] != puntos2) {
-			var mensaje2 = this.mostrar_jugador(usuario2, false);
-			this.puntos[usuario2] = puntos2;
-			mensaje2 += '<span class="texto_mensaje"> pasa a </span>' + this.mostrar_jugador(usuario2, false);
-			this.escribir_servidor(null, mensaje2);
-		}
-
-		// Actualizar partido
-		this.sala.borrar_partido('partido_' + usuario1 + '-' + usuario2);
-		this.sala.nuevo_partido(this.duracion, usuario1, usuario2);
-
-		// Actualizar usuarios
-		this.sala.borrar_usuario(usuario1);
-		this.sala.borrar_usuario(usuario2);
-		this.sala.crear_usuario(usuario1, puntos1);
-		this.sala.crear_usuario(usuario2, puntos2);
 	}
 
 	accion_mostrar_ranking(ranking) {
 		var mensaje = ' <ol id="lista_ranking" style="padding-left: 5px; list-style: decimal inside;">';
 		ranking.forEach(j => {
-	    	mensaje += '<li style="display: list-item;">' + new Jugador(j, this).mostrar_jugador(false) + '</li>';
+	    	mensaje += '<li style="display: list-item;">' + new Jugador(j, this).mostrar_jugador() + '</li>';
 	    });
 		mensaje += '</ol>';			
 		
@@ -309,12 +301,6 @@ class Juego {
 	// EVENTOS
 	////////////
 	
-/*	texto_keypress(event) {
-		if (event.keyCode === 13) {
-	        this.sala.conexion.enviar_mensaje();
-	    }
-	}
-*/
 	abandonar_click() {
 		bootbox.confirm({ 
 			message: '<span class="material-icons">help</span> <fmt:message key="menu.abortGame" />',
@@ -332,7 +318,7 @@ class Juego {
 			},
 			callback: (result) => { 
 		    	if (result) {
-		    		this.cancelar_partido(this.nombre);
+		    		this.cancelar_partido(this.jugador.nombre);
 					this.sala.conexion.enviar('cancelar_partido', null);
 		    	}
 		    }
@@ -350,7 +336,7 @@ class Juego {
 	pintar_tablero() {}
 	pintar_figuras() {}
 	mostrar_reglas_click() {}
-	movimiento_rival(tiempo_blancas, tiempo_negras, movs) {}
+	movimiento_rival(movs) {}
 	empezar(c, duracion) {
 		this.requestWakelock();
 	}

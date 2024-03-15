@@ -5,11 +5,14 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.servlet.http.HttpSession;
 import javax.websocket.CloseReason;
@@ -30,9 +33,9 @@ public class EndpointBase {
 		}
 	}
 
-	public static List<Partido> partidos = new ArrayList<Partido>();
-	public static Map<String, Session> sesiones = new HashMap<String, Session>();
-	public static Map<String, Jugador> jugadores_en_espera = new HashMap<String, Jugador>();
+	public static List<Partido> partidos = new CopyOnWriteArrayList<>();
+	public static Map<String, Session> sesiones = new ConcurrentHashMap<>();
+	public static Map<String, Jugador> jugadores_en_espera = new ConcurrentHashMap<>();
 
 	protected Session sesion;
 	protected HttpSession httpSession;
@@ -153,5 +156,10 @@ System.out.println(getJugador(s).nombre + " \t<- " + accion + "," + Util.nvl(par
 				e1.printStackTrace();
 			}
 		}
+	}
+
+	// Elimina la sesión del websocket
+	public static void sesion_destruida(HttpSession session) {
+		cerrar_sesion(getJugador(session), "La sesión ha expirado");
 	}
 }

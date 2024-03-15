@@ -102,19 +102,21 @@
 	.chess_figure {
 		position: absolute;
 	}
-	.chess_figure .img {
+	.chess_figure .img, .pelota {
 		width: 47px;
-		height: 47px;
+		height: auto;
 		display: inline-block;
 	}
 
-	.ui-draggable {
-		cursor: grab;
-	}
 	.ui-draggable-dragging {
 		cursor: grabbing;
 	}
- 
+	.ui-draggable:not(.ui-draggable-disabled) :hover {
+		cursor: grab;
+		transform: scale(1.2);
+		transition: transform 0.3s ease;
+	}
+
 	.pelota_movida {
 		background-color: rgba(255, 255, 0, 0.5);
 	}
@@ -154,6 +156,11 @@
 		pointer-events: none;
 		width: 20px;
  	}
+ 	.pequenya {
+		width: 30px;
+		margin: -4px;
+		margin-top: -9px;
+ 	}
  	#red1, #red4 {
  		clip-path: polygon(5px 0, 0 15px, 0 100%, 100% 100%, 100% 0);
  	}
@@ -172,7 +179,7 @@
 	<script type="text/javascript">
 		let juego;
 		$(function() {
-			juego = new ChessGoal(${jugador.toJson()}, "${pageContext.request.scheme == 'http' ? 'ws' : 'wss'}://${pageContext.request.serverName}:${pageContext.request.serverPort}${pageContext.request.contextPath}/websocket");
+			juego = new ChessGoal(${jugador.toJson()}, "${pageContext.request.scheme == 'http' ? 'ws' : 'wss'}://${pageContext.request.serverName}:${pageContext.request.serverPort}${pageContext.request.contextPath}/websocket/chessgoal");
 		});
 	</script>
 </head>

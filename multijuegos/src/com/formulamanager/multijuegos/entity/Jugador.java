@@ -6,7 +6,7 @@ public class Jugador extends EntityBase implements Comparable<Jugador> {
 	public transient static int num_invitados = 0;
 
 	public String nombre;
-	public int puntos;
+	public Integer puntos;	// Solo para usuarios registrados
 	public String pais;
 
 	public transient String contrasenya;
@@ -15,7 +15,7 @@ public class Jugador extends EntityBase implements Comparable<Jugador> {
 	public transient Date fecha_alta;
 	public transient boolean invitado;	// Los invitados no se guardan en la BD
 
-	public Jugador(String nombre, String contrasenya, int puntos, String pais, int num_partidos, String email, Date fecha_alta, boolean invitado) {
+	public Jugador(String nombre, String contrasenya, Integer puntos, String pais, int num_partidos, String email, Date fecha_alta, boolean invitado) {
 		this.nombre = nombre;
 		this.contrasenya = contrasenya;
 		this.puntos = puntos;
@@ -51,6 +51,6 @@ public class Jugador extends EntityBase implements Comparable<Jugador> {
 	}
 
 	public static Jugador getDefault() {
-		return new Jugador("_Guest" + ++num_invitados + "_", null, 1600, "_unknown", 0, null, null, true);
+		return new Jugador("_Guest" + ++num_invitados + "_", null, null, "_unknown", 0, null, null, true);
 	}
 }

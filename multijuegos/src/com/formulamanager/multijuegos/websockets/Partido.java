@@ -1,22 +1,27 @@
 package com.formulamanager.multijuegos.websockets;
 
+import java.awt.PageAttributes.ColorType;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import javax.websocket.Session;
 
 import com.formulamanager.multijuegos.entity.EntityBase;
 import com.formulamanager.multijuegos.entity.Jugador;
+import com.formulamanager.multijuegos.util.CustomTypeAdapterFactory;
 import com.formulamanager.multijuegos.util.Util;
 import com.formulamanager.multijuegos.websockets.EndpointBase.COLOR;
 import com.formulamanager.multijuegos.websockets.Movimiento.FIGURA;
 import com.formulamanager.multijuegos.websockets.Movimiento.TIPO_FIGURA;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
 public class Partido extends EntityBase {
@@ -26,6 +31,9 @@ public class Partido extends EntityBase {
 	private HashMap<FIGURA, Movimiento> tactica_blancas;
 	private HashMap<FIGURA, Movimiento> tactica_negras;
 	private HashMap<FIGURA, Movimiento> tablero = new HashMap<FIGURA, Movimiento>();
+	public HashSet<FIGURA> ultimo_movimiento_blancas = new HashSet<FIGURA>();
+	public HashSet<FIGURA> ultimo_movimiento_negras = new HashSet<FIGURA>();
+	public boolean pelota_movida = false;	// Indica si la pelota se ha movido por 2ª vez
 	public boolean rival_quiere_otra = false;
 	private Jugador jugador_blancas = null;
 	private Jugador jugador_negras = null;
@@ -59,9 +67,9 @@ public class Partido extends EntityBase {
 	}
 	
 	public COLOR getColor(Session sesion) {
-		if (blancas != null && Endpoint.equals(blancas, sesion)) {
+		if (blancas != null && EndpointChessGoal.equals(blancas, sesion)) {
 			return COLOR.blancas;
-		} else if (negras != null && Endpoint.equals(negras, sesion)) {
+		} else if (negras != null && EndpointChessGoal.equals(negras, sesion)) {
 			return COLOR.negras;
 		} else {
 			return null;
@@ -81,7 +89,7 @@ public class Partido extends EntityBase {
 	}
 	
 	public String getRespuesta() {
-		return Util.nvl(duracion) + "," + Util.nvl(jugador_blancas.nombre) + "-" + Util.nvl(jugador_negras.nombre);
+		return Util.nvl(duracion) + "," + (jugador_blancas == null ? "" : Util.nvl(jugador_blancas.nombre)) + "-" + (jugador_negras == null ? "" : Util.nvl(jugador_negras.nombre));
 	}
 	
 	public String getTiempos() {
@@ -101,6 +109,7 @@ public class Partido extends EntityBase {
 		rival_quiere_otra = false;
 		tactica_blancas = null;
 		tactica_negras = null;
+		pelota_movida = false;
 		ganador = null;
 		tablero.clear();
 		turno = null;
@@ -141,52 +150,60 @@ public class Partido extends EntityBase {
 		tablero.put(figura, new Movimiento(figura, x, y));
 	}
 
-	private void sumar_tiempo(Session sesion) {
-		if (duracion != null) {
-			long tiempo = new Date().getTime() - ultimo_movimiento.getTime();
-			if (getColor(sesion) == COLOR.blancas) {
-				tiempo_blancas = new Date(tiempo_blancas.getTime() - tiempo);
-			} else {
-				tiempo_negras = new Date(tiempo_negras.getTime() - tiempo);
-			}
-		}
-	}
-	
-	public void hacer_movimiento(String mov, Session sesion) {
+	public void hacer_movimientos_turno(String mov, Session sesion) throws Exception {
 		List<Movimiento> lista = jsonToList(mov);
 		
-		if (validar_movimientos(lista)) {
+		validar_movimientos(getColor(sesion), lista);
+
+		// Solo se mandan los movimientos completos al enviar la táctica
+		if (lista != null) {
 			for (Movimiento m : lista) {
 				anyadir_movimiento(m);
 			}
-			actualizar_cronometro();
-			if (turno == null) {
-				// Saque inicial, sacaban las blancas
-				turno = COLOR.negras;
-			} else {
-				turno = getColor(sesion).cambiar();
-			}
 		}
+		actualizar_cronometro();
+		turno = turno.cambiar();
+		
+		// Reseteamos los movimientos del turno anterior de este jugador
+		resetear_ultimos_movimientos();
+	}
+
+	// Movimiento antes de finalizar el turno. Si termina el partido no se manda por aquí sino que se finaliza el turno
+	public void hacer_movimiento(String mov, Session sesion) {
+		anyadir_movimiento(jsonToMovimiento(mov));
 	}
 
 	private void anyadir_movimiento(Movimiento m) {
+		Movimiento figura_destino = getFigureInCell(m.getCasilla());
+		HashSet<FIGURA> ultimo = getUltimo_movimiento();
+		if (ultimo != null) {
+			if (m.id == FIGURA.pelota && ultimo.contains(m.id)) {
+				// Si ya ha movido la pelota una vez, marco el 2º movimiento
+				pelota_movida = true;
+			} else {
+				ultimo.add(m.id);
+			}
+		}
+
 		if (m.id != FIGURA.pelota ) {
 			Movimiento old_m = tablero.get(m.id);
-			Movimiento t = getFigureInCell(m.getCasilla());
 			Movimiento p = tablero.get(FIGURA.pelota);
 			
-			if (t != null) {
+			if (figura_destino != null) {
 				// Si hay una pieza en la casilla de destino...
-				boolean con_pelota = p.getCasilla().equals(old_m.getCasilla()) || p.getCasilla().equals(t.getCasilla());
+				if (ultimo != null) {
+					ultimo.add(figura_destino.id);
+				}
+				boolean con_pelota = p.getCasilla().equals(old_m.getCasilla()) || p.getCasilla().equals(figura_destino.getCasilla());
 				
 				if (m.id.getTipo() == TIPO_FIGURA.ROOK) {
 					// Si es torre, la empujamos
-					int newX = t.x * 2 - old_m.x;
-					int newY = t.y * 2 - old_m.y;
-					t.setCasilla(newX, newY);
+					int newX = figura_destino.x * 2 - old_m.x;
+					int newY = figura_destino.y * 2 - old_m.y;
+					figura_destino.setCasilla(newX, newY);
 				} else {
 					// Si no es torre, intercambiamos las piezas
-					t.setCasilla(old_m.getCasilla());
+					figura_destino.setCasilla(old_m.getCasilla());
 				}
 				
 				// Si alguna de las dos figuras tenía la pelota, se la queda la pieza que tiene el turno
@@ -197,10 +214,20 @@ public class Partido extends EntityBase {
 				// Si la figura lleva la pelota...
 				p.setCasilla(m.getCasilla());
 			}
+		} else {
+			if (ultimo != null && figura_destino != null) {
+				// Si muevo la pelota sobre una pieza, marco la pieza
+				ultimo.add(figura_destino.id);
+			}
+			if (turno == null) {
+				// Saque inicial
+				turno = COLOR.blancas;
+			}
 		}
 
-		// Por último colocamos la pieza en el tablero
+		// Colocamos la pieza en el tablero
 		tablero.put(m.id, m);
+System.out.println((turno == null || turno == COLOR.blancas ? COLOR.blancas : COLOR.negras) + ": " + tablero.size());
 	}
 
 	// Devuelve la pieza del tablero que se encuentra en la casilla indicada, o null si no hay ninguna
@@ -231,24 +258,32 @@ public class Partido extends EntityBase {
 		}
 		return hashmap;
 	}
-	
-	private boolean validar_movimientos(Collection<Movimiento> lista) {
-		for (Movimiento m : lista) {
-			if (m.id == FIGURA.pelota && (m.y == 0 || m.y == 10)) {
-				ganador = m.y == 0 ? COLOR.blancas : COLOR.negras;
+
+	private Movimiento jsonToMovimiento(String mov) {
+		Type fooType = new TypeToken<Movimiento>() {}.getType();
+		Movimiento movimiento = new Gson().fromJson(mov, fooType);
+		return movimiento;
+	}
+
+	private void validar_movimientos(COLOR color, Collection<Movimiento> lista) throws Exception {
+		if (lista != null) {
+			for (Movimiento m : lista) {
+				if (m.id.getColor() != color) {
+					throw new Exception("Movimiento incorrecto: " + m);
+				}
 			}
 		}
-		
-		return true;
 	}
 
 	public void actualizar_cronometro() {
 		if (duracion != null) {
-			if (turno != null) {
-				if (turno == COLOR.blancas) {
-					sumar_tiempo(blancas);
+			Short estado = getEstado(null);
+			if (estado != null && estado >= 2) {
+				long tiempo = new Date().getTime() - ultimo_movimiento.getTime();
+				if (turno == null || turno == COLOR.blancas) {
+					tiempo_blancas = new Date(tiempo_blancas.getTime() - tiempo);
 				} else {
-					sumar_tiempo(negras);
+					tiempo_negras = new Date(tiempo_negras.getTime() - tiempo);
 				}
 				ultimo_movimiento = new Date();
 			}
@@ -278,22 +313,38 @@ public class Partido extends EntityBase {
 	 * Convertimos los movimientos a un HashMap para eliminar los duplicados. Tb nos ayudará a validarlos
 	 * @param color
 	 * @param tactica
+	 * 
+	 * @return si los dos jugadores han enviado su táctica
+	 * @throws Exception 
 	 */
-	public void setTactica(COLOR color, String tactica) {
+	public boolean setTactica(COLOR color, String tactica) throws Exception {
 		HashMap<FIGURA, Movimiento> hashmap = jsonToHashmap(tactica);
 		
-		if (validar_movimientos(hashmap.values())) {
-			if (color == COLOR.blancas) {
-				tactica_blancas = hashmap;
-			} else {
-				tactica_negras = hashmap;
+		validar_movimientos(color, hashmap.values());
+		
+		if (color == COLOR.blancas) {
+			tactica_blancas = hashmap;
+		} else {
+			tactica_negras = hashmap;
+		}
+
+		// Si ya tenemos las dos tácticas...
+		if (tactica_blancas != null && tactica_negras != null) {
+			// Las aplicamos al tablero
+			tablero.putAll(tactica_blancas);
+			tablero.putAll(tactica_negras);
+			
+			// Y las guardamos como el último movimiento de las negras (el turno será para las blancas así que empieza de cero)
+			for (Movimiento m : tactica_negras.values()) {
+				ultimo_movimiento_negras.add(m.id);
 			}
 
-			// Si ya tenemos las dos tácticas, las aplicamos al tablero
-			if (tactica_blancas != null && tactica_negras != null) {
-				tablero.putAll(tactica_blancas);
-				tablero.putAll(tactica_negras);
-			}
+			// Fecha de inicio
+			ultimo_movimiento = new Date();
+		
+			return true;
+		} else {
+			return false;
 		}
 	}
 
@@ -303,8 +354,9 @@ public class Partido extends EntityBase {
 
 		if (ganador != null) {
 			return null;	// partido finalizado
-		} else if (getColor(sesion) == COLOR.blancas && tactica_blancas == null
-				|| getColor(sesion) == COLOR.negras && tactica_negras == null) {
+		} else if (sesion != null && (
+				getColor(sesion) == COLOR.blancas && tactica_blancas == null ||
+				getColor(sesion) == COLOR.negras && tactica_negras == null)) {
 			return 0;		// sin iniciar
 		} else if (tactica_blancas == null || tactica_negras == null) {
 			return 1;		// táctica mandada
@@ -322,8 +374,52 @@ public class Partido extends EntityBase {
 		List<Movimiento> lista = new ArrayList<>();
 		lista.addAll(tablero.values());
 		Collections.sort(lista);
-		return new Gson().toJson(lista);
+		
+		Short estado = getEstado(null);
+		if (estado == null || estado >= 2) {
+			for (Movimiento m : lista) {
+				m.setMovido(this);
+				if (m.id == FIGURA.pelota) {
+					m.pelota_movida = pelota_movida;
+				}
+			}
+		}
+
+		// Evito que se manden campos nulos/booleanos falsos
+		Gson gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.TRANSIENT)
+				.registerTypeAdapterFactory(new CustomTypeAdapterFactory())
+				.create();
+		return gson.toJson(lista);
+	}
+
+	public HashSet<FIGURA> getUltimo_movimiento() {
+		Short estado = getEstado(turno == COLOR.blancas ? blancas : negras);
+		
+		if (estado == 2 || estado == 3) {
+			return ultimo_movimiento_blancas;
+		} else if (turno == COLOR.negras) {
+			return ultimo_movimiento_negras;
+		} else {
+			return null;
+		}
+	}
+	
+	public void resetear_ultimos_movimientos() {
+		HashSet<FIGURA> ultimo = getUltimo_movimiento();
+		if (ultimo != null) {
+System.out.println("resetea " + turno);
+			ultimo.clear();
+			pelota_movida = false;
+		}
+	}
+
+	public boolean comprobar_fin() {
+		Movimiento mov = tablero.get(FIGURA.pelota);
+		if (mov.y == 0 || mov.y == 10) {
+			ganador = mov.y == 0 ? COLOR.blancas : COLOR.negras;
+			return true;
+		} else {
+			return false;
+		}
 	}
 }
-
-

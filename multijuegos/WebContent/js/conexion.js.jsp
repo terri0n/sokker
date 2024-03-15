@@ -1,3 +1,5 @@
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+
 class Conexion {
 	constructor(url, sala) {
 		this.sala = sala;
@@ -23,6 +25,7 @@ class Conexion {
 	
 	reconectar() {
 		this.webSocket.close();
+		this.sala.vaciar_sala();
 		this.conectar();
 	}
 
@@ -35,7 +38,7 @@ class Conexion {
 
 	wsOpen(message) {}
 	
-	// mensaje.data = '<acción>,<parámetros>';
+	<%-- mensaje.data = '<acción>,<parámetros>'; --%>
 	wsGetMessage(message) {
 		console.log(message.data);
 		const indice = message.data.indexOf(',');
@@ -48,11 +51,6 @@ class Conexion {
 				var split = params.split(",");
 				this.sala.aceptar_partido(split[0], split[1], split[2]);
 				break;
-			case 'actualizar_ranking':
-				// Actualizar ranking (usuario1, puntos1, usuario2, puntos2)
-				var split = params.split(',');
-				this.sala.juego.actualizar_ranking(split[0], parseInt(split[1]), split[2], parseInt(split[3]));
-				break;
 			case 'actualizar_tiempos':
 				// Actualizar tiempos
 				var tiempos = params.split('-');
@@ -62,15 +60,26 @@ class Conexion {
 				// Conexión abierta { jugadores, partidos, jugador, rival, color }
 				this.sala.accion_conexion_abierta(JSON.parse(params));
 				break;
-			case 'movimiento_rival':
-				// Fin de turno (tiempo_blancas-tiempo_negras@moviomientos)
-				var split = params.split('@');
+			case 'partido_finalizado':
+				// (tiempo_blancas-tiempo_negras, ganador, puntos_blancas, puntos_negras)
+				var split = params.split(',');
 				var tiempos = split[0].split('-');
-				this.sala.juego.movimiento_rival(parseInt(tiempos[0]), parseInt(tiempos[1]), JSON.parse(split[1]));
+				this.sala.juego.partido_finalizado(parseInt(tiempos[0]), parseInt(tiempos[1]), split[1], parseInt(split[2]), parseInt(split[3]));
 				break;
 			case 'manda_tactica':
 				// Rival manda táctica
 				this.sala.juego.manda_tactica(JSON.parse(params));
+				break;
+			case 'movimiento_rival':
+				// Movimiento del rival (moviomiento)
+				this.sala.juego.movimiento_rival(JSON.parse(params));
+				break;
+			case 'movimientos_turno_rival':
+				// Fin de turno (tiempo_blancas-tiempo_negras,estado@moviomientos)
+				var split = params.split('@');
+				var split2 = split[0].split(',');
+				var tiempos = split2[0].split('-');
+				this.sala.juego.movimientos_turno_rival(parseInt(tiempos[0]), parseInt(tiempos[1]), split2[1], JSON.parse(split[1]));
 				break;
 			case 'nuevo_observador':
 				// Nuevo observador (nombre)
@@ -131,11 +140,6 @@ class Conexion {
 					this.sala.juego.escribir_observador(split[0], split[1]);
 				}
 				break;
-			case 'tiempo_agotado':
-				// Tiempo agotado
-				var tiempos = params.split('-');
-				this.sala.juego.tiempo_agotado(parseInt(tiempos[0]), parseInt(tiempos[1]));
-				break;
 			case 'usuario_desconectado':
 				this.sala.usuario_desconectado(params);
 				break;
@@ -151,10 +155,11 @@ class Conexion {
 	wsClose(message) {
 		showToast.show(message.reason, 4000);
 		this.sala.juego.escribir_servidor(null, '<fmt:message key="connection.disconnected" />');
+		this.sala.vaciar_sala();
 	
-		console.log(message.code);
+		console.log(message.code, message.reason);
 		if (message.code == 1002 || message.code == 1003 || message.code == 1008) {
-			// 1002 = Nombre o contraseña incorrectos
+			// 1002 = Nombre o contraseña incorrectos, http 500
 			// 1003 = Se ha realizado otra conexión desde la misma sesión
 			// 1008 = Nombre o contraseña incorrectos
 			$('.modal-footer .bootbox-accept').prop('disabled', false);

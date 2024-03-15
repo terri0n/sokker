@@ -1,4 +1,5 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
 const CELL_WIDTH = 47;
 const CELL_HEIGHT = 47;
@@ -98,7 +99,7 @@ class ChessGoal extends Juego {
 		
 		for (let i = 0; i < this.chess_figures.length; i++) {
 			if (this.chess_figures[i].name == 'pelota') {
-				var figureHTML = '<div class="chess_figure" style="left:' + CELL_WIDTH * this.coordenada_x(this.chess_figures[i].x) + 'px;top:' + CELL_HEIGHT * this.coordenada_y(this.chess_figures[i].y) + 'px" data-figureId="' + this.chess_figures[i].id + '" data-color="' + this.chess_figures[i].data + '"><img src="img/chessgoal/' + this.chess_figures[i].name + '.png" class="pelota" /></div>';
+				var figureHTML = '<div class="chess_figure clip" style="left:' + CELL_WIDTH * this.coordenada_x(this.chess_figures[i].x) + 'px;top:' + CELL_HEIGHT * this.coordenada_y(this.chess_figures[i].y) + 'px" data-figureId="' + this.chess_figures[i].id + '" data-color="' + this.chess_figures[i].data + '"><img src="img/chessgoal/' + this.chess_figures[i].name + '.png" class="pelota" /></div>';
 			} else {
 				var figureHTML = '<div class="chess_figure" style="left:' + CELL_WIDTH * this.coordenada_x(this.chess_figures[i].x) + 'px;top:' + CELL_HEIGHT * this.coordenada_y(this.chess_figures[i].y) + 'px" data-figureId="' + this.chess_figures[i].id + '" data-color="' + this.chess_figures[i].data + '"><img src="img/chessgoal/' + this.chess_figures[i].name + '.png" class="img" /></div>';
 			}
@@ -137,11 +138,11 @@ class ChessGoal extends Juego {
 		
 		// Rival
 		$("#chess_board_border").append(`<div class="reloj" style="left: 0px; top: -32px;">` + this.rival.mostrar_jugador() + `</div>`);
-		$("#chess_board_border").append(`<div class="bloque_tiempo" style="left: 219px; top: -33px;"><span class="material-icons ` + this.cambiar_color(this.color) + `">timer</span><div id="tiempo_` + this.cambiar_color(this.color) + `"></div></div>`);
+		$("#chess_board_border").append(`<div class="bloque_tiempo" style="left: 219px; top: -35px;"><span class="material-icons ` + this.cambiar_color(this.color) + `">timer</span><div id="tiempo_` + this.cambiar_color(this.color) + `"></div></div>`);
 
 		// Jugador
 		$("#chess_board_border").append(`<div class="reloj" style="left: 0px; bottom: -32px;">` + this.jugador.mostrar_jugador() + `</div>`);
-		$("#chess_board_border").append(`<div class="bloque_tiempo" style="left: 219px; bottom: -33px;"><span class="material-icons ` + this.color + `">timer</span><div id="tiempo_` + this.color + `"></div></div>`);
+		$("#chess_board_border").append(`<div class="bloque_tiempo" style="left: 219px; bottom: -35px;"><span class="material-icons ` + this.color + `">timer</span><div id="tiempo_` + this.color + `"></div></div>`);
 
 		// Botones
 		$("#chess_board_border").append('<button title="Abandonar" style="right: -4px; top: -6px; display: block; position: absolute;" class="rojo cerrar" onclick="juego.abandonar_click()"><span class="material-icons md-18">close</span></button>');
@@ -216,7 +217,7 @@ class ChessGoal extends Juego {
 	    		}
 	    	}
 	    } else if (this.estado == 2) {
-console.log('checkValidMove');
+//console.log('checkValidMove');
 	    	if (figura.data) {
 	    		// Comprobar si es una figura blanca
 	        	invalid |= figura.data != 'blancas';
@@ -418,12 +419,15 @@ console.log('checkValidMove');
 		}
 	}
 
+	// Limpio el tablero de figuras movidas, seleccionadas, sombras...
 	limpiar_tablero() {
-		// Limpio el tablero de figuras movidas, seleccionadas, sombras...
-		$('.chess_figure img').removeClass('figura_movida');
-		$('.chess_figure img').removeClass('figura_rival_movida');
+		// Borro las piezas movidas del rival
+		$('.chess_figure, .chess_figure img').removeClass('figura_rival_movida');
+		// Cambio las movidas del jugador
+		$('.chess_figure img.figura_movida, .chess_figure.figura_movida').removeClass('figura_movida').addClass('figura_rival_movida');
+		$('.chess_figure.pelota_movida').removeClass('pelota_movida').addClass('figura_rival_movida');
+
 		$('.chess_figure img').removeClass('seleccion');
-		$('.chess_figure').removeClass('pelota_movida');
 		$('.chess_cell').removeClass('sombra');
 	}
 
@@ -435,6 +439,7 @@ console.log('checkValidMove');
 		}
 	}
 
+	// Acción de mover del usuario
 	mover(figura, newX, newY) {
 		$('.chess_figure img').removeClass('seleccion');
 		$('.chess_cell').removeClass('sombra');
@@ -460,38 +465,35 @@ console.log('checkValidMove');
 
         	juego.movimientos.push({id: figura.id, x: newX, y: newY });
          	
-        	juego.hacer_movimiento(figura, newX, newY, 250, () => {
-        		if (juego.comprobar_gol(figura, newY)) {
-        			juego.finalizar_click();
-        		}
-        	});
+        	juego.hacer_movimiento(figura, newX, newY, 250, null);
 
             // Si la partida ya ha comenzado...
             if (juego.estado >= 2) {
-            	$(figura.figureHTML).find('img:first').removeClass("figura_rival_movida");
-            	
-            	if (figura.data || $(figura.figureHTML).hasClass("pelota_movida")) {
-            		// Las piezas solo se pueden mover una vez por jugada
-	            	$(figura.figureHTML).removeClass("pelota_movida");
-            		$(figura.figureHTML).find('img:first').addClass("figura_movida");
-            		$(figura.figureHTML).draggable("disable");
+            	if (figura.data || figura.figureHTML.hasClass("pelota_movida")) {
+	        		// Las piezas solo se pueden mover una vez por jugada
+            		if (figura.data) {
+		            	figura.figureHTML.find('img:first').removeClass("figura_rival_movida").addClass("figura_movida");
+	            	} else {
+		            	figura.figureHTML.removeClass("pelota_movida").addClass("figura_movida");
+	            	}
+            		figura.figureHTML.draggable("disable");
             		
             		if (figureInCell && figureInCell.data) {
             			// Solo dejamos que se muevan una vez las figuras rivales
-                    	$(figureInCell.figureHTML).find('img:first').removeClass("figura_rival_movida");
-                		$(figureInCell.figureHTML).find('img:first').addClass("figura_movida");
+                    	figureInCell.figureHTML.find('img:first').removeClass("figura_rival_movida").addClass("figura_movida");
             		}
             	} else {
             		// Excepto la pelota
-            		$(figura.figureHTML).addClass("pelota_movida");
+	            	figura.figureHTML.removeClass("figura_rival_movida").addClass("pelota_movida");
             	}
             	
             	if (!figura.data) {
             		// Si movemos la pelota, deshabilitamos a la figura que la recibe
-            		const figura_con_pelota = juego.getFigureInCell(figura.x, figura.y);
-        			if (figura_con_pelota.data == juego.color) {
-	            		$(figura_con_pelota.figureHTML).find('img:first').addClass("figura_movida");
-	            		$(figura_con_pelota.figureHTML).draggable("disable");
+            		const figura_con_pelota = juego.getFigureInCell(newX, newY);
+
+        			if (figura_con_pelota) {
+	            		figura_con_pelota.figureHTML.find('img:first').removeClass("figura_rival_movida").addClass("figura_movida");
+	            		figura_con_pelota.figureHTML.draggable("disable");
         			}
             	}
             }
@@ -499,64 +501,59 @@ console.log('checkValidMove');
         }
 	}
 	
+	// ignorar_tamanyo: si estamos pintando únicamente, no queremos que se produzcan transiciones con el tamaño de la pelota
 	mover_figura(figura, x, y, duration, callback, ignorar_tamanyo) {
-		const figura_destino = this.getFigureInCell(x, y);
+		let figura_destino = this.getFigureInCell(x, y);
+		
 		const pelota = this.getPelota();
 		const tiene_pelota = pelota.x == figura.x && pelota.y == figura.y;
-		
 		figura.x = x;
 		figura.y = y;
 
-		if (!ignorar_tamanyo) {
+		// Solo aplicamos las clases si la figura no está ya en el destino
+		if (!ignorar_tamanyo && (!figura_destino || figura.name != figura_destino.name)) {
 			if (figura.name == 'pelota') {
-				$(figura.figureHTML).find('img').delay(duration).animate({
-					"width" : figura_destino ? "20px" : CELL_WIDTH + "px"
-				}, {
-					duration: duration,
-					queue: false
-				});
+				if (figura_destino) {
+					$(figura.figureHTML).find('img').addClass('pequenya', duration);
+				} else {
+					$(figura.figureHTML).find('img').removeClass('pequenya', duration);
+				}
 				$(figura.figureHTML).animate({
-					"margin-top": figura_destino ? "28px" : "0"
+					"margin-top": figura_destino ? "28px" : "0",
+					"margin-left": figura_destino ? "-2px" : "0"
 				}, {
 					duration: 100,
 					queue: false
 				});
 			} else if (figura_destino && figura_destino.name == 'pelota') {
-				$(figura_destino.figureHTML).find('img').delay(duration).animate({
-					"width" : "20px"
-				}, {
-					duration: duration,
-					queue: false
-				});
+				$(figura_destino.figureHTML).find('img').addClass('pequenya', duration);
 				$(figura_destino.figureHTML).animate({
-					"margin-top": "28px"
+					"margin-top": "28px",
+					"margin-left": "-2px"
 				}, {
 					duration: 100,
 					queue: false
 				});
 			} else if (this.turno == null && tiene_pelota) {
 				// La partida no ha empezado, se coloca una figura en el centro y luego se quita
-				$(pelota.figureHTML).find('img').delay(duration).animate({
-					"width" : CELL_WIDTH + "px"
-				}, {
-					duration: duration,
-					queue: false
-				});
+				$(pelota.figureHTML).find('img').removeClass('pequenya', duration);
 				$(pelota.figureHTML).animate({
-					"margin-top": "0"
+					"margin-top": "0",
+					"margin-left": "0"
 				}, {
 					duration: 100,
 					queue: false
 				});
 			}
 		}
-
+	
 		figura.figureHTML.animate({
 			top: this.coordenada_y(y) * CELL_HEIGHT,
 			left: this.coordenada_x(x) * CELL_WIDTH
 		}, duration, null, callback);
 	}
 		
+	// Aplica las consecuencias de hacer el movimiento (intercambios, empujones...)
 	hacer_movimiento(figura, x, y, duration, callback) {
 		// Si hay una figura en el destino y ninguna de las dos es la pelota...
 		var figureInCell = this.getFigureInCell(x, y);
@@ -585,24 +582,6 @@ console.log('checkValidMove');
 		}
 		
 		this.mover_figura(figura, x, y, duration, callback, false);
-	}
-
-	comprobar_gol(figura, newY) {
-  		const pelota = this.getPelota();
-
-		// Comprobamos si se ha marcado gol
-		// bien porque se mueva la pelota directamente o bien porque se mueva la figura que la posee
-		if ((newY == 0 || newY == CASILLAS + 1)
-			&& (figura.nombre == 'pelota' || pelota.x == figura.x && pelota.y == figura.y) ) {
-			const victoria = newY == 0 ^ this.color == 'negras';
-			setTimeout(() => {
-				showToast.show("<fmt:message key="msg.goal" />");
-				this.fin_partido(victoria);
-			}, 500);
-			return true;
-		} else {
-			return false;
-		}
 	}
 
 	empezar(c, duracion) {
@@ -640,7 +619,8 @@ console.log('checkValidMove');
 		$('.chess_figure').draggable({
 			containment: "parent",
 			zIndex: 1,
-			revert: true
+			revert: true,
+			refreshPositions: true
 		});
 
 		$('.chess_figure').click(function() {
@@ -658,6 +638,10 @@ console.log('checkValidMove');
 		        var newY = parseInt($(this).attr('data-y'));
 	
 		        if (juego.mover(figura, newX, newY)) {
+		        	if (juego.estado != null && juego.estado >= 2) {
+						// Informo al rival y observadores del movimiento
+						juego.sala.conexion.enviar('hacer_movimiento', juego.getUltimoMovimiento());
+					}
 		        	return $(ui.draggable).draggable('option', 'revert', false);
 		        } else {
 		        	return $(ui.draggable).draggable('option', 'revert', true);
@@ -668,9 +652,7 @@ console.log('checkValidMove');
 
 	manda_tactica(movs) {
 		this.estado = 2;
-		if (this.color == 'blancas') {
-			this.limpiar_tablero();
-		}
+		this.limpiar_tablero();
 		this.actualizar_turno('blancas', true);
 		this.iniciar_cronometros();
 		this.escribir_servidor(null, '<fmt:message key="msg.gameStarts" />');
@@ -684,7 +666,53 @@ console.log('checkValidMove');
 		return JSON.stringify(this.movimientos);
 	}
 
-	pintar_movimientos(movs, i, duracion, funcion) {
+	// Devuielve el último movimiento y lo elimina
+	getUltimoMovimiento() {
+		return JSON.stringify(this.movimientos.pop());
+	}
+
+	// Solo pinta los movimientos
+	// Si me acaba de mandar la táctica, sí que movemos las figuras con suavidad 
+	pintar_movimientos(movs, i, duration, funcion) {
+		if (movs.length > i) {
+			var figura = this.getFigure(movs[i].id);
+
+			// Pintamos la figura
+			let mueve_turno = movs[i].movido_blancas && this.turno == 'blancas' ||
+					movs[i].movido_negras && this.turno == 'negras';
+			let mueve_rival = movs[i].movido_blancas && this.turno == 'negras' ||
+					movs[i].movido_negras && this.turno == 'blancas';
+			
+			if (movs[i].id == 'pelota' && !movs[i].pelota_movida && mueve_turno) {
+				figura.figureHTML.addClass('pelota_movida');
+			} else if (mueve_turno) {
+				if (figura.data) {
+					figura.figureHTML.find('img:first').addClass('figura_movida');
+				} else {
+					figura.figureHTML.addClass('figura_movida');
+				}
+				figura.figureHTML.draggable("disable");
+			} else if (mueve_rival) {
+				if (figura.data) {
+					figura.figureHTML.find('img:first').addClass('figura_rival_movida');
+				} else {
+					figura.figureHTML.addClass('figura_rival_movida');
+				}
+			}
+
+			// Llamada recursiva hasta que se acaben los movimientos
+			this.mover_figura(figura, movs[i].x, movs[i].y, duration, () => {
+				this.pintar_movimientos(movs, i + 1, duration, funcion);
+			}, false);
+		} else {
+			if (funcion) {
+				funcion();
+			}
+		}
+	}
+
+	// Pinta los movimientos del rival y aplica las consecuencias (intercambios, empujones...)
+	hacer_movimientos(movs, i, funcion) {
 		if (movs.length > i) {
 			var figura = this.getFigure(movs[i].id);
 
@@ -694,20 +722,30 @@ console.log('checkValidMove');
 	    		movs[i].x = parada.x;
 	    		movs[i].y = parada.y;
 	    		setTimeout(() => {
-	    			this.hacer_parada(movs[i].x, this.color, duracion / 4);
-	    		}, duracion * 3 / 4);
+	    			this.hacer_parada(movs[i].x, this.color, 250);
+	    		}, 750);
 	    	}
 
 			// Pintamos la figura
-			//$($('.chess_cell')[this.coordenada_x(figura.x) + this.coordenada_y(figura.y) * 9]).addClass("sombra");
-			$(figura.figureHTML).find('img:first').addClass('figura_rival_movida');
+			if (figura.data) {
+				figura.figureHTML.find('img:first').removeClass('figura_rival_movida').addClass('figura_movida');
+			} else if (figura.figureHTML.hasClass('pelota_movida')) {
+				// 2º movimiento pelota
+				figura.figureHTML.removeClass('pelota_movida').addClass('figura_movida');
+			} else {
+				// 1er movimiento pelota
+				figura.figureHTML.removeClass('figura_rival_movida').addClass('pelota_movida');
+			}
+	
+			// Si ha habido intercambio o empujón (excluyo la pelota), tb pinto la mía
+			let figura_destino = this.getFigureInCell(movs[i].x, movs[i].y);
+			if (figura_destino && figura_destino.data) {
+				figura_destino.figureHTML.find('img:first').removeClass('figura_rival_movida').addClass('figura_movida');
+			}
 
 			// Llamada recursiva hasta que se acaben los movimientos
-			this.hacer_movimiento(figura, movs[i].x, movs[i].y, duracion, () => {
-				this.pintar_movimientos(movs, i + 1, duracion, funcion);
-				if (i + 1 == movs.length) {
-					this.comprobar_gol(figura, movs[i].y);
-				}
+			this.hacer_movimiento(figura, movs[i].x, movs[i].y, 1000, () => {
+				this.hacer_movimientos(movs, i + 1, funcion);
 			});
 		} else {
 			if (funcion) {
@@ -716,32 +754,31 @@ console.log('checkValidMove');
 		}
 	}
 
-	movimiento_rival(tiempo_blancas, tiempo_negras, movs) {
-		if (this.estado == 2) {	// Saque inicial
-			this.estado = 4;	// Turno negras
-		}
-
+	movimientos_turno_rival(tiempo_blancas, tiempo_negras, estado, movs) {
+		this.estado = parseInt(estado);
 		this.tiempo['blancas'] = tiempo_blancas;
 		this.tiempo['negras'] = tiempo_negras;
 
-		this.limpiar_tablero();
-	
-		this.pintar_movimientos(movs, 0, 1000, () => {
+		this.pintar_movimientos(movs, 0, 0, () => {
 			if (!this.rival) {
 				// Los observadores no tienen color pero sí tienen turno
 				this.actualizar_turno(this.cambiar_color(this.turno), false);
 			} else {
-				this.actualizar_turno(this.color, true);
+				this.actualizar_turno(this.color, this.estado != null);
 				this.habilitar_color(true);
 			}
+			this.limpiar_tablero();
 		});
+	}
+
+	movimiento_rival(mov) {
+		this.hacer_movimientos([mov], 0, null);
 	}
 
 	poner_guantes(quien) {
 		this.portero[quien.data] = quien;
-		// Es necesario poner el 1er guante como absolute para que el 2º se vea bien en la columna derecha del tablero
-		quien.figureHTML.append('<img class="guante" style="position: absolute; left: -13px; top: 13px" src="img/chessgoal/guante.png" />');
-		quien.figureHTML.append('<img class="guante invertida_h" style="position: relative; left: -7px;" src="img/chessgoal/guante.png" />');
+		quien.figureHTML.append('<img class="guante" style="position: absolute; right: 40px; top: 13px" src="img/chessgoal/guante.png" />');
+		quien.figureHTML.append('<img class="guante invertida_h" style="position: absolute; left: 40px; top: 13px;" src="img/chessgoal/guante.png" />');
 	}
 
 	// Comprueba si la pelota ha entrado en la portería, y de ser así, si el portero la ha podido parar
@@ -778,16 +815,15 @@ console.log('checkValidMove');
 	}
 
 	encoger_guantes(duracion) {
-		$('.chess_figure').find('.guante:first').animate({width: "20px", left: '-60px'}, duracion);
-		$('.chess_figure').find('.guante:last').animate({width: "20px", left: '-30px'}, duracion);
+		$('.chess_figure').find('.guante:not(.invertida_h)').animate({width: "20px", right: '40px', top: '13px'}, duracion);
+		$('.chess_figure').find('.guante.invertida_h').animate({width: "20px", left: '40px', top: '13px'}, duracion);
 	}
 
 	hacer_parada(newX, quien, duracion) {
-		if (newX < this.portero[quien].x ^ this.color == 'negras') {
-			this.portero[quien].figureHTML.find('.guante:first').animate({width: CELL_WIDTH + "px", left: "-90px"}, duracion);
-			this.portero[quien].figureHTML.find('.guante:last').animate({left: "-60px"}, duracion);
+		if (newX < this.portero[quien].x) {
+			this.portero[quien].figureHTML.find('.guante:not(.invertida_h)').animate({width: CELL_WIDTH + "px", transformOrigin: "right", top: "-5px"}, duracion);
 		} else {
-			this.portero[quien].figureHTML.find('.guante:last').animate({width: CELL_WIDTH + "px", left: "-30px"}, duracion);
+			this.portero[quien].figureHTML.find('.guante.invertida_h').animate({width: CELL_WIDTH + "px", transformOrigin: "left", top: "-5px"}, duracion);
 		}
 
 		setTimeout(() => {
@@ -823,8 +859,6 @@ console.log('checkValidMove');
 					$('#boton_otro').show();
 					$('#boton_otro_cancelar').show();
 			}
-		} else {
-			alert('Error: no hay rival');
 		}
 	}
 
@@ -875,6 +909,7 @@ console.log('checkValidMove');
 					showToast.show('<fmt:message key="msg.moveTheBall" />');
 					return;
 				} else {
+					// Este caso no debnería darse porque el estado sería el 3 al mover la pelota?
 					this.estado = 4;
 				}
 				break;
@@ -888,7 +923,7 @@ console.log('checkValidMove');
 		
 		if (this.turno) {
 			this.actualizar_turno(this.cambiar_color(this.turno), true);
-			this.sala.conexion.enviar('fin_turno', this.getMovimientos());
+			this.sala.conexion.enviar('fin_turno', null);
 		} else {
 			this.actualizar_texto_turno();
 		}
@@ -897,35 +932,150 @@ console.log('checkValidMove');
 		this.limpiar_tablero();
 		this.habilitar_color(false);
 	}
-
+ 
 	mostrar_reglas_click() {
-		const box = bootbox.alert({ 
-		    title: '<span class="material-icons">help</span> <fmt:message key="rules.title" />',
-		    locale: '${pageContext.request.locale.language}',
-		    scrollable: true,
-			backdrop: true,
-			closeButton: false,
-		    message: '<ol style="padding-left: 25px;">\
-				      	<li><fmt:message key="rules.rule1" /></li>\
-				    	<li><fmt:message key="rules.rule2" /></li>\
-				    	<li><fmt:message key="rules.rule3" /></li>\
-				    	<li><fmt:message key="rules.rule4" /></li>\
-				    	<li><fmt:message key="rules.rule5" /></li>\
-				    	<li><fmt:message key="rules.rule6" /></li>\
-				    	<li><fmt:message key="rules.rule7" /></li>\
-				    	<li><fmt:message key="rules.rule8" /></li>\
-				    	<li><fmt:message key="rules.rule9" /></li>\
-				    	<li><fmt:message key="rules.rule10" /></li>\
-		      		</ol>',
-			buttons: {
-				ok: {
-					className: 'button azul'
-				}
-			}
-		});
-
-		box.on('shown.bs.modal', () => {
-			$('.scroll ol').scrollTop(0);
-		});
+	    let reglasHtml = `<div id="carouselControls" class="carousel slide" data-slide="carousel" data-pause="hover" style="height: 100%;">
+	  <ol class="carousel-indicators">
+	    <li data-target="#carouselControls" data-slide-to="0" class="active"></li>
+	    <li data-target="#carouselControls" data-slide-to="1"></li>
+	    <li data-target="#carouselControls" data-slide-to="2"></li>
+	    <li data-target="#carouselControls" data-slide-to="3"></li>
+	    <li data-target="#carouselControls" data-slide-to="4"></li>
+	    <li data-target="#carouselControls" data-slide-to="5"></li>
+	    <li data-target="#carouselControls" data-slide-to="6"></li>
+	    <li data-target="#carouselControls" data-slide-to="7"></li>
+	    <li data-target="#carouselControls" data-slide-to="8"></li>
+	    <li data-target="#carouselControls" data-slide-to="9"></li>
+	  </ol>
+		<div class="carousel-inner">
+			<div class="carousel-item active">
+			    <div class="d-flex align-items-center h-100">
+			        <div style="text-align: center;">
+			            <img style="width: 80%;" src="${pageContext.request.contextPath}/img/chessgoal/chessgoal_regla1.png" />
+			            <div class="text-left">
+			                <fmt:message key="rules.rule1" />
+			            </div>
+			        </div>
+			    </div>
+			</div>
+             <div class="carousel-item">
+                 <div class="d-flex align-items-center h-100">
+                     <div style="text-align: center;">
+	                     <img style="width: 70%;" src="${pageContext.request.contextPath}/img/chessgoal/chessgoal_regla2.png" />
+			             <div class="text-left">
+		                     <fmt:message key="rules.rule2" />
+		                 </div>
+	                 </div>
+                 </div>
+             </div>
+             <div class="carousel-item">
+                 <div class="d-flex align-items-center h-100">
+                     <div style="text-align: center;">
+	                     <img style="width: 80%;" src="${pageContext.request.contextPath}/img/chessgoal/chessgoal_regla3.png" />
+			             <div class="text-left">
+		                     <fmt:message key="rules.rule3" />
+		                 </div>
+	                 </div>
+                 </div>
+             </div>
+             <div class="carousel-item">
+                 <div class="d-flex align-items-center h-100">
+                     <div style="text-align: center;">
+	                     <img style="width: 70%;" src="${pageContext.request.contextPath}/img/chessgoal/chessgoal_regla4.png" />
+			             <div class="text-left">
+		                     <fmt:message key="rules.rule4" />
+		                 </div>
+	                 </div>
+                 </div>
+             </div>
+             <div class="carousel-item">
+                 <div class="d-flex align-items-center h-100">
+                     <div style="text-align: center;">
+	                     <img style="width: 60%;" src="${pageContext.request.contextPath}/img/chessgoal/chessgoal_regla5.png" />
+			             <div class="text-left">
+		                     <fmt:message key="rules.rule5" />
+		                 </div>
+	                 </div>
+                 </div>
+             </div>
+             <div class="carousel-item">
+                 <div class="d-flex align-items-center h-100">
+                     <div style="text-align: center;">
+	                     <img style="width: 70%;" src="${pageContext.request.contextPath}/img/chessgoal/chessgoal_regla6.png" />
+			             <div class="text-left">
+		                     <fmt:message key="rules.rule6" />
+		                 </div>
+	                 </div>
+                 </div>
+             </div>
+             <div class="carousel-item">
+                 <div class="d-flex align-items-center h-100">
+                     <div style="text-align: center;">
+	                     <img style="width: 70%;" src="${pageContext.request.contextPath}/img/chessgoal/chessgoal_regla7.png" />
+			             <div class="text-left">
+		                     <fmt:message key="rules.rule7" />
+		                 </div>
+	                 </div>
+                 </div>
+             </div>
+             <div class="carousel-item">
+                 <div class="d-flex align-items-center h-100">
+                     <div style="text-align: center;">
+	                     <img style="width: 80%;" src="${pageContext.request.contextPath}/img/chessgoal/chessgoal_regla8.png" />
+			             <div class="text-left">
+		                     <fmt:message key="rules.rule8" />
+		                 </div>
+	                 </div>
+                 </div>
+             </div>
+             <div class="carousel-item">
+                 <div class="d-flex align-items-center h-100">
+                     <div style="text-align: center;">
+	                     <img style="width: 80%;" src="${pageContext.request.contextPath}/img/chessgoal/chessgoal_regla9.png" />
+			             <div class="text-left">
+		                     <fmt:message key="rules.rule9" />
+		                 </div>
+	                 </div>
+                 </div>
+             </div>
+             <div class="carousel-item">
+                 <div class="d-flex align-items-center h-100">
+                     <div style="text-align: center;">
+	                     <img style="width: 60%;" src="${pageContext.request.contextPath}/img/chessgoal/chessgoal_regla10.png" />
+			             <div class="text-left">
+		                     <fmt:message key="rules.rule10" />
+		                 </div>
+	                 </div>
+                 </div>
+             </div>
+        </div>
+	  <a class="carousel-control-prev" href="#carouselControls" role="button" data-slide="prev">
+	    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+	    <span class="sr-only">Previous</span>
+	  </a>
+	  <a class="carousel-control-next" href="#carouselControls" role="button" data-slide="next">
+	    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+	    <span class="sr-only">Next</span>
+	  </a>
+	</div>`;
+	
+	    const box = bootbox.alert({
+	        title: '<span class="material-icons">help</span> <fmt:message key="rules.title" />',
+	        locale: '${pageContext.request.locale.language}',
+	        scrollable: true,
+	        backdrop: true,
+	        closeButton: false,
+	        message: reglasHtml,
+	        buttons: {
+	            ok: {
+	                className: 'button azul'
+	            }
+	        }
+	    });
+	
+	    box.on('shown.bs.modal', () => {
+	        // Inicia el carousel después de que se haya mostrado el diálogo
+	        $('#carouselControls').carousel();
+	    });
 	}
 }

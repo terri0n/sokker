@@ -3,7 +3,6 @@ package com.formulamanager.multijuegos.websockets;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -32,8 +31,8 @@ import com.google.gson.Gson;
  *
  */
 
-@ServerEndpoint(value = "/websocket", configurator = GetHttpSessionConfigurator.class)
-public class Endpoint extends EndpointBase {
+@ServerEndpoint(value = "/websocket/chessgoal", configurator = GetHttpSessionConfigurator.class)
+public class EndpointChessGoal extends EndpointBase {
 	@OnOpen
 	public void open(Session sesion, EndpointConfig config) throws IOException {
 		super.open(sesion, config);
@@ -106,7 +105,10 @@ public class Endpoint extends EndpointBase {
 		   
 		    // CANCELAR PARTIDOS SIN JUGADORES
 		    synchronized (partidos) {
-		    	Iterator<Partido> itp = partidos.iterator();
+/*for (Partido p : partidos) {
+	System.out.println(p.getId() + " " + p.privado);
+}
+*/		    	Iterator<Partido> itp = partidos.iterator();
 		    	while (itp.hasNext()) {
 		    		Partido p = itp.next();
 		    		try {
@@ -114,6 +116,7 @@ public class Endpoint extends EndpointBase {
 		    				respuesta.partidos.add(p.getRespuesta());
 		    			}
 		    		} catch (Exception e) {
+		    			// TODO: mirar cúando puede pasar esto
 		    			// Cancelamos los partidos sin jugadores
 		    			if ((p.blancas == null || !p.blancas.isOpen()) && (p.negras == null || !p.negras.isOpen())) {
 		    				itp.remove();
@@ -162,20 +165,23 @@ public class Endpoint extends EndpointBase {
 				case "cancelar_partido":	// Cancelar partido
 					cancelar_partido();
 					break;
-				case "crear_partido":	// Crear partido (color, duracion)
+				case "crear_partido":		// Crear partido (color, duracion)
 					String[] split = (params + ",*").split(",");
 					crear_partido(COLOR.valueOf(split[0]), Util.stringToInteger(split[1]));
 					break;
-				case "fin_turno":	// Fin de turno
+				case "fin_turno":			// Fin de turno
 					finalizar_turno(params);
 					break;
-				case "mandar_tactica":	// Manda su táctica
-					tactica(params);
+				case "hacer_movimiento":	// Estado >= 2
+					hacer_movimiento(params);
 					break;
-				case "otro_partido":	// Otro partido
+				case "mandar_tactica":		// Manda su táctica
+					manda_tactica(params);
+					break;
+				case "otro_partido":		// Otro partido
 					otro_partido();
 					break;
-				case "partido_privado":	// Partido privado (color, duracion, usuario)
+				case "partido_privado":		// Partido privado (color, duracion, usuario)
 					String[] split2 = params.split(",");
 					partido_privado(COLOR.valueOf(split2[0]), Util.stringToInteger(split2[1]), split2[2]);
 					break;
@@ -201,19 +207,14 @@ public class Endpoint extends EndpointBase {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			throw new RuntimeException(e);
+			cerrar_sesion(sesion, e.getMessage());
 		}
 		return null;
 	}
 
-	private void ranking() {
-		try {
-			List<Jugador> jugadores = JugadoresDao.buscar(null, null, null, "puntos desc", 50);
-			enviar(sesion, "mostrar_ranking", new Gson().toJson(jugadores));
-		} catch (SQLException | ParseException e) {
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		}
+	private void ranking() throws SQLException, ParseException {
+		List<Jugador> jugadores = JugadoresDao.buscar(null, null, null, "puntos desc", 50);
+		enviar(sesion, "mostrar_ranking", new Gson().toJson(jugadores));
 	}
 
 	private void poner_away() {
@@ -265,12 +266,7 @@ public class Endpoint extends EndpointBase {
 			partido.actualizar_cronometro();
 
 			if (partido.getSegundos(partido.tiempo_blancas) <= 0 || partido.getSegundos(partido.tiempo_negras) <= 0) {
-				String params = partido.getTiempos();
-				enviar(partido.blancas, "tiempo_agotado", params);
-				enviar(partido.negras, "tiempo_agotado", params);
-				for (Session s : partido.observadores) {
-					enviar(s, "tiempo_agotado", params);
-				}
+				fin_partido();
 			} else if (primera) {
 				// Esperamos un segundo y lo volvemos a comprobar
 				try {
@@ -279,15 +275,15 @@ public class Endpoint extends EndpointBase {
 					e.printStackTrace();
 				}
 				tiempo_agotado(false);
+			} else {
+				System.out.println("---> Aviso de tiempo agotado incorrecto: " + partido.getTiempos());
 			}
 		}
 	}
 
-	private void tactica(String params) {
+	private void manda_tactica(String params) throws Exception {
 		synchronized (partido) {
-			partido.setTactica(partido.getColor(sesion), params);
-			
-			if (partido.getTactica(COLOR.negras) != null && partido.getTactica(COLOR.blancas) != null) {
+			if (partido.setTactica(partido.getColor(sesion), params)) {
 				// Si ya se han enviado las dos tácticas, empezamos
 				enviar(sesion, "manda_tactica", partido.getTactica(partido.getColor(sesion).cambiar()));
 
@@ -296,23 +292,35 @@ public class Endpoint extends EndpointBase {
 				
 				// Y a los observadores como si acabara de empezar el partido
 				mandar_observadores("observar_partido", partido.getId() + "," + partido.getTiempos() + "," + partido.duracion + "," + partido.getEstado(sesion) + "@" + partido.toJson());
-				
-				partido.ultimo_movimiento = new Date();
 			}
 		}
 	}
 
-	private void finalizar_turno(String params) {
+	private void finalizar_turno(String params) throws Exception {
+		synchronized (partido) {
+			partido.hacer_movimientos_turno(params, sesion);
+			
+			// Añadimos la información sobre los tiempos
+			String nuevo_mensaje = partido.getTiempos() + "," + partido.getEstado(sesion) + "@" + partido.toJson();
+			enviar(getRival(), "movimientos_turno_rival", nuevo_mensaje);
+			enviar(sesion, "actualizar_tiempos", partido.getTiempos());
+			mandar_observadores("movimientos_turno_rival", nuevo_mensaje);
+			
+			if (partido.comprobar_fin()) {
+				fin_partido();
+			}
+		}
+	}
+	
+	private void hacer_movimiento(String params) {
 		synchronized (partido) {
 			partido.hacer_movimiento(params, sesion);
 			
-			// Añadimos la información sobre los tiempos
-			String nuevo_mensaje = partido.getTiempos() + "@" + params;
-			enviar(getRival(), "movimiento_rival", nuevo_mensaje);
-			enviar(sesion, "actualizar_tiempos", partido.getTiempos());
-			mandar_observadores("movimiento_rival", nuevo_mensaje);
+			// Informamos sobre el movimiento
+			enviar(getRival(), "movimiento_rival", params);
+			mandar_observadores("movimiento_rival", params);
 			
-			if (partido.ganador != null) {
+			if (partido.comprobar_fin()) {
 				fin_partido();
 			}
 		}
@@ -535,19 +543,19 @@ public class Endpoint extends EndpointBase {
     }
 
 	public void fin_partido() {
-	    // Actualización del ELO
-		double myChanceToWin = 1D / (1D + Math.pow(10D, (getJugador(partido.negras).puntos - getJugador(partido.blancas).puntos) / 400D));
+		if (partido.oficial) {
+			// Actualización del ELO
+			double myChanceToWin = 1D / (1D + Math.pow(10D, (getJugador(partido.negras).puntos - getJugador(partido.blancas).puntos) / 400D));
+		    int ratingDelta = (int) Math.round(32D * ((partido.ganador == COLOR.blancas ? 1 : 0) - myChanceToWin));
 
-	    int ratingDelta = (int) Math.round(32D * ((partido.ganador == COLOR.blancas ? 1 : 0) - myChanceToWin));
-
-	    if (partido.oficial) {
 		    setPuntos(partido.blancas, getJugador(partido.blancas).puntos + ratingDelta);
 		    setPuntos(partido.negras, getJugador(partido.negras).puntos - ratingDelta);
 	    }
 	    
 	    synchronized (EndpointBase.sesiones) {
+	    	String tiempos = partido.getTiempos();
 	    	for (Session s : sesiones.values()) {
-	    		enviar(s, "actualizar_ranking", partido.getJugador(COLOR.blancas).nombre + "," + getJugador(partido.blancas).puntos + "," + partido.getJugador(COLOR.negras) + "," + getJugador(partido.negras).puntos);
+	    		enviar(s, "partido_finalizado", tiempos + "," + partido.ganador + "," + getJugador(partido.blancas).puntos + "," + getJugador(partido.negras).puntos);
 	    	}
 	    }
 	}

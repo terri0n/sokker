@@ -4,7 +4,6 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib tagdir="/WEB-INF/tags" prefix="xtag" %>
 
 <%--
 <c:if test="${empty sessionScope['javax.servlet.jsp.jstl.fmt.locale.session']}">
@@ -52,8 +51,6 @@
 
  	<section>
 		<div id="container" style="display: inline-block;"></div>
-		
-<%--  		<xtag:chat nombre="MultiCatan" imagen="multicatan/multicatan.png" /> --%>
 	</section>
 	<script>
 	    const imagenes = [];
