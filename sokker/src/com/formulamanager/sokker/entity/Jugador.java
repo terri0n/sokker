@@ -469,7 +469,11 @@ public class Jugador implements Comparable<Jugador> {
 	}
 	
 	public void calcular_puntos() {
-		puntos = BigDecimal.ZERO;
+		if (edad < 21 || jornada < 1080) {
+			puntos = BigDecimal.ZERO;
+		} else {
+			puntos = new BigDecimal(edad - 21);
+		}
 		for (int i = original.condicion; i < condicion; i++) {
 			puntos = puntos.add(new BigDecimal(puntos_condicion[i+1]));
 		}
