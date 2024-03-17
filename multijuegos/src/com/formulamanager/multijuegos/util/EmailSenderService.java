@@ -12,9 +12,12 @@ import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
  
 public class EmailSenderService {
-	private static String USUARIO = "postmaster@sandboxaaec920564254deeb875b296fa63355e.mailgun.org"; //"tejedor@gmail.com";
-	private static String PASSWORD = "fd46026c61f17a35b0cb16ec7080ad53-8ed21946-88487e1f"; //"gwyvern79";
-	private static String SMTP = "smtp.mailgun.org"; //"smtp.gmail.com"*
+	private static String USUARIO = "tejedor@gmail.com";
+	private static String PASSWORD = "bamn cvco ittn degy";
+	private static String SMTP = "smtp.gmail.com";
+//	private static String USUARIO = "postmaster@sandboxaaec920564254deeb875b296fa63355e.mailgun.org";
+//	private static String PASSWORD = "fd46026c61f17a35b0cb16ec7080ad53-8ed21946-88487e1f";
+//	private static String SMTP = "smtp.mailgun.org"; //"smtp.gmail.com"*
 	
 	private static final Properties properties = new Properties();
 	private static Session session;

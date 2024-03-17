@@ -40,3 +40,17 @@ function shuffle(a) {
     }
     return a;
 }
+
+function mostrar_mensaje(mensaje, error) {
+	bootbox.alert({
+		message: '<span class="material-icons">' + (error ? 'error' : 'info') + '</span> ' + mensaje,
+	    locale: '${pageContext.request.locale.language}',
+		backdrop: true,
+		closeButton: false,
+		buttons: {
+			ok: {
+				className: 'button azul'
+			}
+		}
+	});
+}

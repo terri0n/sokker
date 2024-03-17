@@ -40,7 +40,7 @@ public class EndpointChessGoal extends EndpointBase {
 	    if (httpSession.getAttribute("jugador") == null) {
 	    	// Ha habido algún error, esto no debería pasar
 	    	httpSession.invalidate();
-	    	cerrar_sesion(sesion, "Error: sesión sin jugador");
+	    	cerrar_sesion(sesion, new CloseReason(CloseCodes.CLOSED_ABNORMALLY, "Error: sesión sin jugador"));
 	    } else {
 	    	// Recuperamos el usuario de la sesión
 	    	sesion.getUserProperties().put("jugador", httpSession.getAttribute("jugador"));
@@ -54,7 +54,7 @@ public class EndpointChessGoal extends EndpointBase {
 		    	Session s = sesiones.get(getJugador(httpSession).nombre);
 		    	if (s != null && s.isOpen()) {
 	    			try {
-	    				s.close(new CloseReason(CloseCodes.CANNOT_ACCEPT, "Nueva conexión desde la misma sesión"));
+	    				s.close(new CloseReason(CloseCodes.CANNOT_ACCEPT, "Nueva conexión desde otra sesión"));
 	    			} catch (Exception e) {
 	    				e.printStackTrace();
 	    			}
@@ -147,7 +147,7 @@ public class EndpointChessGoal extends EndpointBase {
         long lastAccessedTime = httpSession.getLastAccessedTime();
         long currentTime = System.currentTimeMillis();
         long durationSinceLastAccess = currentTime - lastAccessedTime;
-        long newSessionDuration = durationSinceLastAccess + (30 * 60 * 1000); // 30 minutos en milisegundos
+        long newSessionDuration = durationSinceLastAccess + (60 * 60 * 1000); // 60 minutos en milisegundos
         httpSession.setMaxInactiveInterval((int) (newSessionDuration / 1000)); // Convertir a segundos
 
         HashMap<String, String> hm = new Gson().fromJson(message, HashMap.class);
@@ -207,7 +207,7 @@ public class EndpointChessGoal extends EndpointBase {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			cerrar_sesion(sesion, e.getMessage());
+			cerrar_sesion(sesion, new CloseReason(CloseCodes.CLOSED_ABNORMALLY, e.getMessage()));
 		}
 		return null;
 	}
@@ -402,7 +402,7 @@ public class EndpointChessGoal extends EndpointBase {
 					if (p.blancas == null || p.negras == null) {
 						// Partido esperando rival
 						if (getJugador(sesion).nombre.equals(usuario)) {
-							cerrar_sesion(sesion, "No puedes jugar contigo mismo");
+							cerrar_sesion(sesion, new CloseReason(CloseCodes.CLOSED_ABNORMALLY, "No puedes jugar contigo mismo"));
 						} else {
 							// Acepta el partido
 							borrar_partido(partido);
@@ -495,7 +495,7 @@ public class EndpointChessGoal extends EndpointBase {
 	@OnError
 	public void onError(Throwable e){
 		e.printStackTrace();
-		cerrar_sesion(sesion, e.getMessage());
+		cerrar_sesion(sesion, new CloseReason(CloseCodes.CLOSED_ABNORMALLY, e.getMessage()));
 	}
 	
 	@OnClose

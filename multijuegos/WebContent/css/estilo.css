@@ -24,6 +24,8 @@ h1 {
     text-align: center;
     font-weight: bolder;
 	cursor: default;
+	white-space: nowrap;
+	overflow: hidden;
 }
 h1 img {
 	vertical-align: bottom;

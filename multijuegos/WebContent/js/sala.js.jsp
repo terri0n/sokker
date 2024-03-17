@@ -287,17 +287,7 @@ class Sala {
 	// El rival
 	partido_cancelado(quien) {
 		if (this.juego.estado) {
-			bootbox.alert({
-				message: '<span class="material-icons">info</span> <fmt:message key="msg.gameAborted" />',
-			    locale: '${pageContext.request.locale.language}',
-				backdrop: true,
-				closeButton: false,
-				buttons: {
-					ok: {
-						className: 'button azul'
-					}
-				}
-			});
+			mostrar_mensaje('<fmt:message key="msg.gameAborted" />', false);
 		}
 		this.juego.cancelar_partido(quien);
 	}

@@ -30,9 +30,6 @@ public class SessionListener implements HttpSessionListener {
      * @see SessionListener#sessionDestroyed(HttpSessionEvent)
      */
     public void sessionDestroyed(HttpSessionEvent se)  { 
-        Jugador j = (Jugador)se.getSession().getAttribute("jugador");
-       	EndpointBase.cerrar_sesion(j, "La sesión ha caducado");
-    	
     	synchronized (sesiones) {
         	sesiones.remove(se.getSession());
         	EndpointBase.sesion_destruida(se.getSession());

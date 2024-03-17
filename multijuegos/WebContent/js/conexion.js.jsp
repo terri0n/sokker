@@ -158,12 +158,15 @@ class Conexion {
 		this.sala.vaciar_sala();
 	
 		console.log(message.code, message.reason);
-		if (message.code == 1002 || message.code == 1003 || message.code == 1008) {
+		if (message.code == 1001 || message.code == 1002 || message.code == 1003 || message.code == 1008) {
+			// 1001 = La sesión ha caducado
 			// 1002 = Nombre o contraseña incorrectos, http 500
 			// 1003 = Se ha realizado otra conexión desde la misma sesión
 			// 1008 = Nombre o contraseña incorrectos
 			$('.modal-footer .bootbox-accept').prop('disabled', false);
 			$('#span_email').hide();
+			
+			mostrar_mensaje(message.reason, true);
 		} else {
 			location.reload();
 		}

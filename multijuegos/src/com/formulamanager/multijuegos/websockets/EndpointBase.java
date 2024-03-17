@@ -125,6 +125,7 @@ System.out.println(getJugador(s).nombre + " \t<- " + accion + "," + Util.nvl(par
 		try {
 			return rb.getString(key);
 		} catch (Exception e) {
+e.printStackTrace();
 			return "???" + key + "???";
 		}
 	}
@@ -139,17 +140,17 @@ System.out.println(getJugador(s).nombre + " \t<- " + accion + "," + Util.nvl(par
 
 	public static void cerrar_sesion(Jugador j, String mensaje) {
 		if (j != null) {
-			cerrar_sesion(sesiones.get(j.getNombre()), mensaje);
+			cerrar_sesion(sesiones.get(j.getNombre()), new CloseReason(CloseCodes.CLOSED_ABNORMALLY, mensaje));
 		}
 	}
 
-	public static void cerrar_sesion(Session sesion, String mensaje) {
+	public static void cerrar_sesion(Session sesion, CloseReason close_reason) {
 		if (sesion != null) {
 	    	try {
 	    		Thread.sleep(500);
 			    synchronized (sesiones) {
 					if (sesion.isOpen()) {
-						sesion.close(new CloseReason(CloseCodes.CLOSED_ABNORMALLY, mensaje));
+						sesion.close(close_reason);
 					}
 			    }
 			} catch (IOException | InterruptedException e1) {
@@ -158,8 +159,10 @@ System.out.println(getJugador(s).nombre + " \t<- " + accion + "," + Util.nvl(par
 		}
 	}
 
-	// Elimina la sesión del websocket
+	// Elimina la sesión del websocket cuando caduca la sesión
 	public static void sesion_destruida(HttpSession session) {
-		cerrar_sesion(getJugador(session), "La sesión ha expirado");
+		if (getJugador(session) != null) {
+			cerrar_sesion(sesiones.get(getJugador(session).getNombre()), new CloseReason(CloseCodes.GOING_AWAY, "La sesión ha caducado"));
+		}
 	}
 }
