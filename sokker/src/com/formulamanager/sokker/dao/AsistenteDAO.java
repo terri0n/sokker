@@ -183,7 +183,9 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 		j.setPais(JSONUtil.getInteger(jugador, "info.country.code"));
 		j.setFecha(new Date());
 		j.setTarjetas(JSONUtil.getInteger(jugador, "info.stats.cards.cards"));
-//		j.setNt(JSONUtil.getInteger(jugador, "info.team.nationalType"));
+		// No está disponible, le ponemos false
+		//j.setNt(JSONUtil.getInteger(jugador, "info.team.nationalType"));
+		j.setNt(0);
 		j.setLesion(JSONUtil.getInteger(jugador, "info.injury.daysRemaining"));
 //		j.setEn_venta(JSONUtil.getJSON(jugador, "transfer.deadline.date") == null ? null : 1);	// Sin info de anuncio
 		
@@ -247,6 +249,7 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 	public static void obtener_entrenamientos_pasados(int tid, Usuario usuario, int jornada_actual, List<Jugador> jugadores, WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 		/***************************************************************************
 		** NOTA: pido una jornada más para evitar un bug de Sokker que me manda los datos vacíos en la primera jornada al filtrar las jornadas
+		* 17/03/2024: /api/training/[pid]/report es solo para pluses
 		****************************************************************************/
 		int num_jornadas = jornada_actual - usuario.getDef_jornada() + 1;
 //System.out.println(jornada_actual + " - " + usuario.getDef_jornada() + " = " + num_jornadas);
@@ -359,5 +362,11 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 		}
 		
 		return palmares;
+	}
+	
+	public static boolean es_plus(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
+		Object document = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/current");
+		Boolean plus = JsonPath.read(document, "$.plus");
+		return plus;
 	}
 }

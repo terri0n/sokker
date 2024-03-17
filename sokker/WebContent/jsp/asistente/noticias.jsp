@@ -27,6 +27,12 @@
 	
 	<div style="text-align: justify; max-height: 300px; overflow: auto;">
 		<div class="bloque">
+			<span class="fecha peque">2024-03-17</span>
+			<b>Change in the API for non-plus users</b>
+			<p>Due to a change in the API for non-plus users, these users won't be able to get past weeks training from now on. <i>Sokker Asistente</i> has been adapted to this fact which was causing an error in the last days.</p>
+		</div>
+
+		<div class="bloque">
 			<span class="fecha peque">2023-12-10</span>
 			<b>Weight fixed</b>
 			<p>The weight for the NT players was showing a value multiplied by 10 for some time. It has been fixed.</p>

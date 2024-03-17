@@ -712,20 +712,23 @@ if (nuevo.getLesion() > 0) {
 			}
 		}
 
-		// Entrenamientos pasados
-		AsistenteDAO.obtener_entrenamientos_pasados(tid, _usuario, jornada_actual, jugadores_actualizados, navegador);
+		// Solo permitida para usuarios plus
+		if (AsistenteDAO.es_plus(navegador)) {
+			// Entrenamientos pasados
+			AsistenteDAO.obtener_entrenamientos_pasados(tid, _usuario, jornada_actual, jugadores_actualizados, navegador);
+		} else {
+			// Esta semana
+			for (Jugador j : jugadores_actualizados) {
+				// NOTA: es necesario actualizar a 50 minutos los jugadores con entrenamiento avanzado, por si no juegan durante la semana, que tengan esos minutos
+				// Dio algún problema y lo quité. Ahora lo he vuelto a dejar como estaba, pero no recuerdo cuál era el problema exactamente
+				j.prepararacion_entrenamiento(null, j.isEntrenamiento_avanzado());
+			}
 		
-		// Esta semana
-//		for (Jugador j : jugadores_actualizados) {
-			// NOTA: es necesario actualizar a 50 minutos los jugadores con entrenamiento avanzado, por si no juegan durante la semana, que tengan esos minutos
-			// Dio algún problema y lo quité. Ahora lo he vuelto a dejar como estaba, pero no recuerdo cuál era el problema exactamente
-//			j.prepararacion_entrenamiento(null, j.isEntrenamiento_avanzado());
-//		}
-		
-//		HashMap<String, String> minutos = obtener_entrenamiento(tid, _usuario, jornada_actual, jugadores_actualizados, navegadorXML);
-//		if (jornada_actual < JORNADA_NUEVO_ENTRENO) {
-//			calcular_minutos_entrenamiento(jugadores_actualizados, minutos, _usuario);
-//		}
+			HashMap<String, String> minutos = obtener_entrenamiento(tid, _usuario, jornada_actual, jugadores_actualizados, navegadorXML);
+			if (jornada_actual < JORNADA_NUEVO_ENTRENO) {
+				calcular_minutos_entrenamiento(jugadores_actualizados, minutos, _usuario);
+			}
+		}
 		
 		// Repesca
 		for (Jugador j : jugadores_actualizados) {
