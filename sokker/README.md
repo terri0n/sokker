@@ -1,4 +1,4 @@
-![Sokker Asistente](/WebContent/img/sa.png "Sokker Asistente")
+![Sokker Asistente](WebContent/img/sa.png "Sokker Asistente")
 
 [Sokker Asistente](http://raqueto.com/sokker/asistente)
 
