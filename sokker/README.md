@@ -1,6 +1,6 @@
 ![Sokker Asistente](/WebContent/img/sa.png "Sokker Asistente")
 
-[Sokker Asistente](http://www.formulamanager.com/sokker/asistente)
+[Sokker Asistente](http://raqueto.com/sokker/asistente)
 
 This is my first time in _GitHub_, so I might not use common standards, I'm sorry :P
 
