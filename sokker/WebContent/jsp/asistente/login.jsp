@@ -1,3 +1,4 @@
+<%@page import="com.formulamanager.sokker.acciones.asistente.Idioma"%>
 <%@page import="com.formulamanager.sokker.auxiliares.SERVLET_ASISTENTE"%>
 <%@page import="java.util.Date"%>
 <%@page import="com.formulamanager.sokker.tomcat.HttpSessionListener"%>
@@ -183,7 +184,7 @@
 	<%-- IDIOMA --%>
 	<%------------%>
 	<tags:desplegable onchange="idioma_change()" value="${fn:toUpperCase(sessionScope['javax.servlet.jsp.jstl.fmt.locale.session'].language)}" style="position: fixed; top: 0px; right: 0px; z-index: 3;" class_="dropdown_opacity">
-		<c:forEach var="lang" items="<%= new String[] { \"EN\", \"ES\", \"FR\", \"IT\" } %>">
+		<c:forEach var="lang" items="<%= Idioma.IDIOMAS %>">
 			<li onClick="dropdown_click(this)" data-toggle="${lang}" title="<%= Util.initCap(new Locale(((String)pageContext.getAttribute("lang"))).getDisplayLanguage()) %>">
 				<img src="${pageContext.request.contextPath}/img/banderas/${lang == 'EN' ? 'GB' : lang}.png" class="margin-right"/>
 			</li>
@@ -259,7 +260,7 @@
 
 				<div class="inicio_bloque fin_bloque doble" style="text-align: right; display: none;" id="registro">
 					<form name="form_registro" method="post" action="${pageContext.request.contextPath}/asistente/registro" onsubmit="return form_submit('form_registro')">
-						<input type="hidden" name="confirmed">
+						<input type="hidden" name="confirmed" value="${pageContext.request.serverName == 'localhost' ? '1' : ''}">
 						<fmt:message key="common.login" /> <input type="text" name="login" required="required"><br/>
 						<fmt:message key="login.sokker_login" /> <input type="text" name="ilogin" required="required"><br/>
 						<fmt:message key="login.sokker_password" /> <input type="password" name="ipassword" required="required"><br/>
@@ -272,7 +273,7 @@
 
 				<div class="inicio_bloque fin_bloque doble" style="text-align: right; display: none;" id="recuperar">
 					<form name="form_cambio" method="post" action="${pageContext.request.contextPath}/asistente/cambiar_password" onsubmit="return form_submit('form_cambio')">
-						<input type="hidden" name="confirmed">
+						<input type="hidden" name="confirmed" value="${pageContext.request.serverName == 'localhost' ? '1' : ''}">
 						<fmt:message key="common.login" /> <input type="text" name="login" required="required"><br/>
 						<fmt:message key="login.sokker_login" /> <input type="text" name="ilogin" required="required"><br/>
 						<fmt:message key="login.sokker_password" /> <input type="password" name="ipassword" required="required"><br/>
