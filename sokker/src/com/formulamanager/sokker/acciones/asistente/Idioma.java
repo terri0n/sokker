@@ -22,12 +22,13 @@ import com.formulamanager.sokker.entity.Usuario;
 public class Idioma extends SERVLET_ASISTENTE {
 	private static final long serialVersionUID = 1L;
 
-    public static final String[] IDIOMAS = {
-        "ES",
-        "EN",
-        "IT",
-        "SK"
-    };
+	public static final String[] IDIOMAS = {
+		"EN",
+		"ES",
+		"FR",
+		"IT",
+		"SK"
+	};
 	
     /**
      * @see HttpServlet#HttpServlet()
