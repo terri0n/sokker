@@ -56,11 +56,11 @@ public class Actualizar extends SERVLET_ASISTENTE {
 				String ilogin = usuario.getDef_tid() < NtdbBO.MAX_ID_SELECCION && !Util.getBoolean(request, "confirmed") ? SystemUtil.getVar(SystemUtil.LOGIN) : request.getParameter("ilogin");
 				String ipassword = usuario.getDef_tid() < NtdbBO.MAX_ID_SELECCION && !Util.getBoolean(request, "confirmed") ? SystemUtil.getVar(SystemUtil.PASSWORD) : request.getParameter("ipassword");
 	
-				new Navegador(true, ilogin, ipassword, request) {
+				new Navegador(false, ilogin, ipassword, request) {
 					@Override
-					protected void execute(WebClient navegadorXML) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {
+					protected void execute(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {
 						try {						
-							int jornada_actual = obtener_jornada(navegadorXML);
+							int jornada_actual = obtener_jornada_json(navegador);
 								
 		_log(request, "");
 								
@@ -74,12 +74,8 @@ public class Actualizar extends SERVLET_ASISTENTE {
 									usuario.setActualizacion_automatica(null);
 								}
 							}
-							new Navegador(false, ilogin, ipassword, request) {
-								@Override
-								protected void execute(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {
-									List<Jugador> jugadores_actualizados = AsistenteBO.actualizar_equipo(usuario, jornada_actual, isIncrementar_edad(), false, navegadorXML, navegador);
-								}
-							};
+
+							List<Jugador> jugadores_actualizados = AsistenteBO.actualizar_equipo(usuario, jornada_actual, isIncrementar_edad(), false, navegador, navegador);
 
 							mensaje[0] = "?mensaje=updated";
 						} catch (Exception e) {
