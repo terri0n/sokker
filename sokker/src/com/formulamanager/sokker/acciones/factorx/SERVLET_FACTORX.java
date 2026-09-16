@@ -19,7 +19,7 @@ import com.formulamanager.sokker.entity.Jugador;
  * Servlet implementation class ServletSokker
  */
 public abstract class SERVLET_FACTORX extends SERVLET {
-	public static enum TIPO_FACTORX { junior(""), senior("_senior"), internacional("_inter");
+	public static enum TIPO_FACTORX { junior(""), senior("_senior"), internacional("_inter"), Paraguay("_paraguay");
 		private String sufijo;
 		private TIPO_FACTORX(String sufijo) {
 			this.sufijo = sufijo;

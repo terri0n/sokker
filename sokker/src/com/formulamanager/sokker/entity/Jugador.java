@@ -348,100 +348,104 @@ public class Jugador implements Comparable<Jugador> {
 	 * @param edad_anterior Edad de la jornada anterior, para corregir los casos en los que se actualizó el equipo el jueves antes de cumplir años
 	 */
 	public Jugador(Integer pid, List<String> valores, boolean primero, String nombre, DEMARCACION_ASISTENTE demarcacion, Usuario usuario, Usuario usuario2, Integer edad_anterior) {
-		this.pid = pid;
-		this.usuario = usuario;
-		this.usuario2 = usuario2;
-		int i = 0;
-
-		if (primero) {
-			this.nombre = valores.get(i++);
-			tid = Integer.valueOf(valores.get(i++));
-			this.demarcacion = valores.get(i++).equals("") ? null : DEMARCACION_ASISTENTE.valueOf(valores.get(i-1));
-			pais = Integer.valueOf(valores.get(i++));
-			try {
-				fecha = Util.stringToDateTime(valores.get(i++));
-			} catch (ParseException e) {
-				e.printStackTrace();
-			}
-			actualizado = Boolean.valueOf(valores.get(i++));
-
-			tarjetas = valores.get(i++).equals("") ? 0 : Integer.valueOf(valores.get(i-1));
-			nt = valores.get(i++).equals("") ? null : Integer.valueOf(valores.get(i-1));
-			lesion = valores.get(i++).equals("") ? null : Integer.valueOf(valores.get(i-1));
-			en_venta = valores.get(i++).equals("") ? null : Integer.valueOf(valores.get(i-1));
-			notas = Util.nnvl(valores.get(i++));
-			
-			String aux = Util.nvl(valores.get(i));
-			if (aux.length() > 0 && aux.charAt(0) == '-') {
-				salario = Math.abs(Integer.valueOf(valores.get(i++)));
-				altura = valores.get(i++).equals("") ? null : Integer.valueOf(valores.get(i-1));
-				peso = valores.get(i++).equals("") ? null : Integer.valueOf(valores.get(i-1));
-				IMC = valores.get(i++).equals("") ? null : Integer.valueOf(valores.get(i-1));
-
-				aux = Util.nvl(valores.get(i));
-				if (aux.length() > 0 && aux.charAt(0) == '-') {
-					talento = valores.get(i++).equals("-") ? null : Math.abs(Double.valueOf(valores.get(i-1)));
-					destacar = Boolean.valueOf(valores.get(i++));
+		try {
+			this.pid = pid;
+			this.usuario = usuario;
+			this.usuario2 = usuario2;
+			int i = 0;
+	
+			if (primero) {
+				this.nombre = valores.get(i++);
+				tid = Integer.valueOf(valores.get(i++));
+				this.demarcacion = valores.get(i++).equals("") ? null : DEMARCACION_ASISTENTE.valueOf(valores.get(i-1));
+				pais = Integer.valueOf(valores.get(i++));
+				try {
+					fecha = Util.stringToDateTime(valores.get(i++));
+				} catch (ParseException e) {
+					e.printStackTrace();
 				}
+				actualizado = Boolean.valueOf(valores.get(i++));
+	
+				tarjetas = valores.get(i++).equals("") ? 0 : Integer.valueOf(valores.get(i-1));
+				nt = valores.get(i++).equals("") ? null : Integer.valueOf(valores.get(i-1));
+				lesion = valores.get(i++).equals("") ? null : Integer.valueOf(valores.get(i-1));
+				en_venta = valores.get(i++).equals("") ? null : Integer.valueOf(valores.get(i-1));
+				notas = Util.nnvl(valores.get(i++));
 				
-				if (valores.get(i).startsWith("#")) {
-					color = valores.get(i++);
+				String aux = Util.nvl(valores.get(i));
+				if (aux.length() > 0 && aux.charAt(0) == '-') {
+					salario = Math.abs(Integer.valueOf(valores.get(i++)));
+					altura = valores.get(i++).equals("") ? null : Integer.valueOf(valores.get(i-1));
+					peso = valores.get(i++).equals("") ? null : Integer.valueOf(valores.get(i-1));
+					IMC = valores.get(i++).equals("") ? null : Integer.valueOf(valores.get(i-1));
+	
+					aux = Util.nvl(valores.get(i));
+					if (aux.length() > 0 && aux.charAt(0) == '-') {
+						talento = valores.get(i++).equals("-") ? null : Math.abs(Double.valueOf(valores.get(i-1)));
+						destacar = Boolean.valueOf(valores.get(i++));
+					}
 					
-					if (valores.get(i).startsWith("-")) {
-						String login2 = Util.nnvl(valores.get(i++).substring(1));
-						if (login2 != null) {
-							this.usuario2 = UsuarioBO.leer_usuario(login2, false);
+					if (valores.get(i).startsWith("#")) {
+						color = valores.get(i++);
+						
+						if (valores.get(i).startsWith("-")) {
+							String login2 = Util.nnvl(valores.get(i++).substring(1));
+							if (login2 != null) {
+								this.usuario2 = UsuarioBO.leer_usuario(login2, false);
+							}
 						}
 					}
 				}
+			} else {
+				this.nombre = nombre;
+				this.demarcacion = demarcacion;
 			}
-		} else {
-			this.nombre = nombre;
-			this.demarcacion = demarcacion;
-		}
-
-		jornada = Integer.valueOf(valores.get(i++));
-		edad = Integer.valueOf(valores.get(i++));
-		// Corrección de la edad
-		if (AsistenteBO.getJornadaMod(jornada + 1) == 0 && edad_anterior != null) {
-			edad = edad_anterior;
-		}
-		
-		valor = Util.stringToInteger(valores.get(i++));
-
-		condicion = Util.stringToInteger(valores.get(i++));
-		rapidez = Util.stringToInteger(valores.get(i++));
-		tecnica = Util.stringToInteger(valores.get(i++));
-		pases = Util.stringToInteger(valores.get(i++));
-		porteria = Util.stringToInteger(valores.get(i++));
-		defensa = Util.stringToInteger(valores.get(i++));
-		creacion = Util.stringToInteger(valores.get(i++));
-		anotacion = Util.stringToInteger(valores.get(i++));
-
-		// Para que funcione en jugadores con el formato sin lesión y con lesión
-		String aux = Util.nvl(valores.get(i));
-		if (aux.length() > 0 && aux.charAt(0) == '-') {
-			lesion = Math.abs(Integer.valueOf(valores.get(i++)));
-		}
-		forma = Util.stringToInteger(valores.get(i++));
-//System.out.println(this.nombre + " " + jornada);
-		demarcacion_entrenamiento = valores.get(i++).equals("") ? null : DEMARCACION.valueOf(valores.get(i-1));
-		minutos = Float.valueOf(valores.get(i++));
-
-		aux = i >= valores.size() ? "" : Util.nvl(valores.get(i));
-		if (aux.length() > 0 && aux.charAt(0) == '-') {
-			experiencia = Math.abs(Integer.valueOf(valores.get(i++)));
-			disciplina_tactica = valores.get(i++).equals("") ? null : Integer.valueOf(valores.get(i-1));
-			trabajo_en_equipo = valores.get(i++).equals("") ? null : Integer.valueOf(valores.get(i-1));
-		}
-		
-		if (jornada >= AsistenteBO.JORNADA_NUEVO_ENTRENO) {
-			entrenamiento_avanzado = Boolean.valueOf(valores.get(i++));
-		}
-		
-		if (valores.size() > i && !valores.get(i).equals("*")) {
-			List<String> sublista = valores.subList(i, valores.size());
-			original = new Jugador(pid, sublista, false, this.nombre, this.demarcacion, usuario, this.usuario2, edad);
+	
+			jornada = Integer.valueOf(valores.get(i++));
+			edad = Integer.valueOf(valores.get(i++));
+			// Corrección de la edad
+			if (AsistenteBO.getJornadaMod(jornada + 1) == 0 && edad_anterior != null) {
+				edad = edad_anterior;
+			}
+			
+			valor = Util.stringToInteger(valores.get(i++));
+	
+			condicion = Util.stringToInteger(valores.get(i++));
+			rapidez = Util.stringToInteger(valores.get(i++));
+			tecnica = Util.stringToInteger(valores.get(i++));
+			pases = Util.stringToInteger(valores.get(i++));
+			porteria = Util.stringToInteger(valores.get(i++));
+			defensa = Util.stringToInteger(valores.get(i++));
+			creacion = Util.stringToInteger(valores.get(i++));
+			anotacion = Util.stringToInteger(valores.get(i++));
+	
+			// Para que funcione en jugadores con el formato sin lesión y con lesión
+			String aux = Util.nvl(valores.get(i));
+			if (aux.length() > 0 && aux.charAt(0) == '-') {
+				lesion = Math.abs(Integer.valueOf(valores.get(i++)));
+			}
+			forma = Util.stringToInteger(valores.get(i++));
+	//System.out.println(this.nombre + " " + jornada);
+			demarcacion_entrenamiento = valores.get(i++).equals("") ? null : DEMARCACION.valueOf(valores.get(i-1));
+			minutos = Float.valueOf(valores.get(i++));
+	
+			aux = i >= valores.size() ? "" : Util.nvl(valores.get(i));
+			if (aux.length() > 0 && aux.charAt(0) == '-') {
+				experiencia = Math.abs(Integer.valueOf(valores.get(i++)));
+				disciplina_tactica = valores.get(i++).equals("") ? null : Integer.valueOf(valores.get(i-1));
+				trabajo_en_equipo = valores.get(i++).equals("") ? null : Integer.valueOf(valores.get(i-1));
+			}
+			
+			if (jornada >= AsistenteBO.JORNADA_NUEVO_ENTRENO) {
+				entrenamiento_avanzado = Boolean.valueOf(valores.get(i++));
+			}
+			
+			if (valores.size() > i && !valores.get(i).equals("*")) {
+				List<String> sublista = valores.subList(i, valores.size());
+				original = new Jugador(pid, sublista, false, this.nombre, this.demarcacion, usuario, this.usuario2, edad);
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Error reading player " + Util.nvl(nombre) + " [" + pid + "] from " + usuario.getDef_equipo(), e);
 		}
 	}
 
@@ -1059,6 +1063,7 @@ public class Jugador implements Comparable<Jugador> {
 			experiencia = j.experiencia;
 			trabajo_en_equipo = j.trabajo_en_equipo;
 			disciplina_tactica = j.disciplina_tactica;
+			pais = j.pais;
 		}
 	}
 	

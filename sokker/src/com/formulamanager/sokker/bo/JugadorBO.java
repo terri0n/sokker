@@ -38,7 +38,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlTextArea;
 import com.gargoylesoftware.htmlunit.xml.XmlPage;
 
 public class JugadorBO {
-	public static String PATH_BASE = System.getProperty("os.name").contains("Windows") ? "d:\\home\\" : "/home/";
+	public static String PATH_BASE = System.getProperty("os.name").contains("Windows") ? "d:\\levi\\home\\" : "/home/";
 	public static String CONFIG_PROPERTIES = PATH_BASE + "factorx/config.properties";
 	public static String HISTORICO_PROPERTIES = PATH_BASE + "factorx/historico.properties";
 	
@@ -152,7 +152,7 @@ public class JugadorBO {
 			Set<String> keys = prop.stringPropertyNames();
 		    int max = -1;
 			for (String key : keys) {
-		    	max = Math.max(max, Integer.valueOf(key.split("_")[0]));
+				max = Math.max(max, Integer.valueOf(key.split("_")[0]));
 		    }
 	
 			for (int i = 0; i <= max; i++) {

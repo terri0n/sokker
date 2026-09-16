@@ -68,7 +68,7 @@ public class SystemUtil {
 	 */
 	public static String renewCertificate(String domain) {
         try {
-        	StringBuilder result = new StringBuilder();
+        		StringBuilder result = new StringBuilder();
             ProcessBuilder processBuilder = new ProcessBuilder("sudo", "certbot", "renew", "--nginx", "-d", domain);
             processBuilder.redirectErrorStream(true);
             Process process = processBuilder.start();

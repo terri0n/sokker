@@ -235,8 +235,9 @@
 			</thead>
 			<tbody>
 				<tr><td class="li"><a href="${pageContext.request.contextPath}/factorx?tipo=">Factor X</a></td></tr>
-				<tr><td class="li"><a href="${pageContext.request.contextPath}/factorx?tipo=senior">Factor X NT</a></td></tr>
-				<tr><td class="li"><a href="${pageContext.request.contextPath}/factorx?tipo=internacional">Factor X Internacional</a></td></tr>
+				<tr><td class="li"><a href="${pageContext.request.contextPath}/factorx/senior">Factor X NT</a></td></tr>
+				<tr><td class="li"><a href="${pageContext.request.contextPath}/factorx/paraguay">Factor X Paraguay</a></td></tr>
+				<tr><td class="li"><a href="${pageContext.request.contextPath}/factorx/venezuela">Factor X Venezuela</a></td></tr>
 			</tbody>
 		</table>
 		

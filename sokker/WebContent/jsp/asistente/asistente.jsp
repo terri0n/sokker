@@ -1,3 +1,5 @@
+<%@page import="com.formulamanager.sokker.bo.NtdbBO"%>
+<%@page import="com.formulamanager.sokker.acciones.asistente.Idioma"%>
 <%@page import="com.formulamanager.sokker.auxiliares.SystemUtil"%>
 <%@page import="java.util.Date"%>
 <%@page import="com.formulamanager.sokker.tomcat.HttpSessionListener"%>
@@ -45,7 +47,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%@ taglib tagdir="/WEB-INF/tags" prefix="xtag" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib uri="/WEB-INF/mistags.tld" prefix="tags" %>
 
 <c:if test="${empty sessionScope['javax.servlet.jsp.jstl.fmt.locale.session']}">
@@ -80,16 +82,18 @@
 	<c:if test="${empty sessionScope.usuario}">
 		<meta http-equiv="refresh" content="1800">
 	</c:if>
+	
+	<c:set var="MAX_ID_SELECCION"><%= NtdbBO.MAX_ID_SELECCION %></c:set>
 
 	<style>
 		<%-- FILTROS --%>
 		
-		<c:if test="${sessionScope.usuario.def_tid < 1000}">
+		<c:if test="${sessionScope.usuario.def_tid < MAX_ID_SELECCION}">
 			.nont {
 				display: none;
 			}
 		</c:if>
-		<c:if test="${sessionScope.usuario.def_tid > 1000}">
+		<c:if test="${sessionScope.usuario.def_tid > MAX_ID_SELECCION}">
 			.nt {
 				display: none;
 			}
@@ -226,13 +230,13 @@
 		}
 
 		function jugadores_click(demarcacion) {
-			<c:if test="${sessionScope.usuario.def_tid < 1000}">
+			<c:if test="${sessionScope.usuario.def_tid < MAX_ID_SELECCION}">
 				// Marcar checkboxes
 				$('#jugadores' + demarcacion + ' input[id^="check"]').each(function() {
 					$(this).prop('checked', !$(this).prop('checked'));
 				});				
 			</c:if>
-			<c:if test="${sessionScope.usuario.def_tid > 1000}">
+			<c:if test="${sessionScope.usuario.def_tid > MAX_ID_SELECCION}">
 				// Desplegar entrenamiento
 				$('#jugadores' + demarcacion + ' span[id^="span"]').each(function() {
 					var pid = $(this).attr("id").split("span")[1];
@@ -253,7 +257,7 @@
 			}
 			
 			$('#nombre').text(nombre);
-			$('#jornada').text(jornada + 1 < <%=AsistenteBO.JORNADA_NUEVO_SISTEMA_LIGAS%> ? (jornada + 1) % 16 : (jornada + 1 - <%=AsistenteBO.JORNADA_NUEVO_SISTEMA_LIGAS%>) % <%=AsistenteBO.JORNADAS_TEMPORADA%>);
+			$('#jornada').text((jornada + 1 < <%=AsistenteBO.JORNADA_NUEVO_SISTEMA_LIGAS%> ? (jornada + 1) % 16 : (jornada + 1 - <%=AsistenteBO.JORNADA_NUEVO_SISTEMA_LIGAS%>) % <%=AsistenteBO.JORNADAS_TEMPORADA%>) + 1);
 			$("input[name='puntos_entrenamiento']").val(puntos_entrenamiento);
 			$("input[name='avanzado']").prop("checked", avanzado);
 			$("input[name='lesion']").val(lesion);
@@ -292,10 +296,18 @@
 			anyadir ? $('#tr_borrar_entrenamiento').hide() : $('#tr_borrar_entrenamiento').show();
 		}
 
-		function borrar_entrenamiento_click() {
+		function borrar_entrenamiento_click(posteriores) {
 			var pid = $("input[name='pid_entrenamiento']").val();
 			var jornada = $("input[name='jornada_entrenamiento']").val();
-			location.href = '${pageContext.request.contextPath}/asistente/borrar_entrenamiento?pid=' + pid + '&jornada=' + jornada;
+			location.href = '${pageContext.request.contextPath}/asistente/borrar_entrenamiento?pid=' + pid + '&jornada=' + jornada + '&posteriores=' + posteriores;
+		}
+		
+		function cambiar_edad_click() {
+			var jornada = $("input[name='jornada_entrenamiento']").val();
+			var incr = prompt('Incremento de edad:');
+			if (incr) {
+				location.href = '/sokker/asistente/cambiar_edad?jornada=' + jornada + '&incr=' + incr;
+			}
 		}
 		
 		function editar_click(boton, id) {
@@ -386,7 +398,24 @@
 			    alert('No players selected');
 			}
 		}
-		
+
+		function cambiar_color(span) {
+		    // Buscar el input de color dentro del mismo div .boton
+		    let colorInput = $(span).closest('.boton').find('input[type="color"]');
+		    let color = colorInput.val(); // tomamos el color ya seleccionado
+
+		    let checked = get_checked();
+
+		    if (checked) {
+		        if (confirm('Set ' + (checked.split(',').length - 1) + ' players to color ' + color + '?')) {
+		            location.href = '${pageContext.request.contextPath}/asistente/cambiar_color?color=' 
+		                            + encodeURIComponent(color) + '&pids=' + checked;
+		        }
+		    } else {
+		        alert("No players selected");
+		    }
+		}
+	
 		function notas_click(boton) {
 			const textarea = $('#editar_notas');
 			textarea.css('left', boton.offset().left + boton.width());
@@ -461,7 +490,7 @@
 		}
 
 		function proyectar_nuevo_click(elem) {
-			proyectar_click(elem, 15, <c:out value="${jugadores[0].jornadaProyeccion}" />, '0', '0', '0', '0', '0', '0', '0', '0', 0, 0, 0, 0, 0, 0, 0, 0, '3.7', true);
+			proyectar_click(elem, 15, '<c:out value="${jugadores[0].jornadaProyeccion}" />', '0', '0', '0', '0', '0', '0', '0', '0', 0, 0, 0, 0, 0, 0, 0, 0, '3.7', true);
 		}
 		
 		function proyectar_listo_click() {
@@ -783,13 +812,13 @@
 					}
 
                    	if (tr1 != tr2 && (tr1 < tr2 ^ ascendente)) {
-						<c:if test="${empty sessionScope.juveniles && sessionScope.usuario.def_tid > 1000}">
+						<c:if test="${empty sessionScope.juveniles && sessionScope.usuario.def_tid > MAX_ID_SELECCION}">
 							// Primero movemos los entrenamientos
 							$(trs[j]).parent().next().insertAfter($(trs[j+1]).parent().next());
 							// Luego al jugador
 							$(trs[j]).parent().insertAfter($(trs[j+1]).parent().next());
 						</c:if>
-						<c:if test="${not empty sessionScope.juveniles || sessionScope.usuario.def_tid < 1000}">
+						<c:if test="${not empty sessionScope.juveniles || sessionScope.usuario.def_tid < MAX_ID_SELECCION}">
 							$(trs[j]).insertAfter($(trs[j+1]));
 						</c:if>
 						// Refresco los trs en el nuevo orden
@@ -802,7 +831,7 @@
         }
 	
 		function actualizar_submit() {
-			if ($('#confirmed').val() == '1' || !$("#ilogin").val() && '${sessionScope.usuario.def_tid < 1000}' == 'true') {
+			if ($('#confirmed').val() == '1' || !$("#ilogin").val() && '${sessionScope.usuario.def_tid < MAX_ID_SELECCION}' == 'true') {
 				mostrar_mensaje('<fmt:message key="common.updating" />');
 				return true;
 			} else {
@@ -974,7 +1003,7 @@ request.setAttribute("j", new Jugador());
 	<%-- IDIOMA --%>
 	<%------------%>
 	<tags:desplegable onchange="idioma_change()" value="${fn:toUpperCase(sessionScope['javax.servlet.jsp.jstl.fmt.locale.session'].language)}" style="position: fixed; top: 0px; right: 0px; z-index: 3;" class_="dropdown_opacity">
-		<c:forEach var="lang" items="<%=new String[] {\"EN\",\"ES\",\"FR\",\"IT\" }%>">
+		<c:forEach var="lang" items="<%= Idioma.IDIOMAS %>">
 			<li onClick="dropdown_click(this)" data-toggle="${lang}" title="<%= Util.initCap(new Locale(((String)pageContext.getAttribute("lang"))).getDisplayLanguage()) %>">
 				<img src="${pageContext.request.contextPath}/img/banderas/${lang == 'EN' ? 'GB' : lang}.png" class="margin-right"/>
 			</li>
@@ -1005,7 +1034,7 @@ request.setAttribute("j", new Jugador());
 					</fmt:message></b>
 				</div>
 				<div class="bloque doble" style="text-align: center;">
-					<c:if test="${sessionScope.usuario.def_tid < 1000}">
+					<c:if test="${sessionScope.usuario.def_tid < MAX_ID_SELECCION}">
 						<a href="${pageContext.request.contextPath}/asistente/cambiar_equipo">
 							<fmt:message key="menu.change_to" /> <c:out value="${sessionScope.usuario.equipo}" />
 						</a>
@@ -1013,7 +1042,7 @@ request.setAttribute("j", new Jugador());
 				<div class="bloque doble">
 					</c:if>
 
-					<c:if test="${sessionScope.usuario.def_tid > 1000 && not empty sessionScope.usuario.tid_nt}">
+					<c:if test="${sessionScope.usuario.def_tid > MAX_ID_SELECCION && not empty sessionScope.usuario.tid_nt}">
 						<a href="${pageContext.request.contextPath}/asistente/cambiar_equipo">
 							<fmt:message key="menu.change_to" /> <c:out value="${sessionScope.usuario.equipo_nt}" />
 						</a>
@@ -1022,7 +1051,7 @@ request.setAttribute("j", new Jugador());
 				<div class="bloque doble">
 					</c:if>
 
-					<c:if test="${sessionScope.usuario.def_tid > 1000 && sessionScope.usuario.scout_de.size() > 0}">
+					<c:if test="${sessionScope.usuario.def_tid > MAX_ID_SELECCION && sessionScope.usuario.scout_de.size() > 0}">
 						<c:forEach items="${sessionScope.usuario.scout_de}" var="entry">
 							<a href="${pageContext.request.contextPath}/asistente/cambiar_equipo?coach=${entry.key}">
 								<fmt:message key="menu.change_to" /> <c:out value="${entry.value.equipo_nt}" />
@@ -1053,10 +1082,10 @@ request.setAttribute("j", new Jugador());
 						<form method="post" action="${pageContext.request.contextPath}/asistente/actualizar" onsubmit="return actualizar_submit()">
 							<input type="hidden" id="confirmed" name="confirmed" value="${pageContext.request.serverName == 'localhost' ? '1' : ''}" />
 
-							<fmt:message key="login.sokker_login" />: <input type="text" id="ilogin" name="ilogin" value="${sessionScope.usuario.login_sokker}" size="10" <c:if test='${sessionScope.usuario.def_tid > 1000}'>required="required"</c:if> /><br/>
-							<fmt:message key="login.sokker_password" />: <input type="password" id="ipassword" name="ipassword" size="10" <c:if test='${sessionScope.usuario.def_tid > 1000}'>required="required"</c:if> value="${cookie.apassword.value}" /><br/>
+							<fmt:message key="login.sokker_login" />: <input type="text" id="ilogin" name="ilogin" value="${sessionScope.usuario.login_sokker}" size="10" <c:if test='${sessionScope.usuario.def_tid > MAX_ID_SELECCION}'>required="required"</c:if> /><br/>
+							<fmt:message key="login.sokker_password" />: <input type="password" id="ipassword" name="ipassword" size="10" <c:if test='${sessionScope.usuario.def_tid > MAX_ID_SELECCION}'>required="required"</c:if> value="${cookie.apassword.value}" /><br/>
 
-							<c:if test="${sessionScope.usuario.def_tid > 1000}">
+							<c:if test="${sessionScope.usuario.def_tid > MAX_ID_SELECCION}">
 								<label class="peque" for="actualizacion_automatica">
 									<input type="checkbox" name="actualizacion_automatica" id="actualizacion_automatica" ${empty sessionScope.usuario.actualizacion_automatica ? '' : 'checked'} />
 									<fmt:message key="menu.automatic_update" />
@@ -1078,7 +1107,7 @@ request.setAttribute("j", new Jugador());
 				</div>
 
 				<div class="fin_bloque doble">
-					<c:if test="${sessionScope.usuario.def_tid > 1000}">
+					<c:if test="${sessionScope.usuario.def_tid > MAX_ID_SELECCION}">
 						<div class="boton grande" onclick="location.href='${pageContext.request.contextPath}/asistente/cambiar_vista?juveniles=${1 - sessionScope.juveniles}'">
 							<span class="material-icons md-32" style="color: ${empty sessionScope.juveniles ? 'black' : 'brown'}"><c:out value="${empty sessionScope.juveniles ? 'school' : 'directions_run'}" /></span>
 							<div class="peque">
@@ -1092,7 +1121,7 @@ request.setAttribute("j", new Jugador());
 						</div>
 					</c:if>
 					
-					<c:if test="${sessionScope.usuario.def_tid < 1000}">
+					<c:if test="${sessionScope.usuario.def_tid < MAX_ID_SELECCION}">
 						<div class="boton grande" onclick="nuevo_jugador_click($(this));">
 							<span class="material-icons md-32" style="color: brown">directions_run</span>
 							<div class="peque">
@@ -1101,7 +1130,7 @@ request.setAttribute("j", new Jugador());
 						</div>
 					</c:if>
 					
-					<c:if test="${sessionScope.usuario.def_tid > 1000}">
+					<c:if test="${sessionScope.usuario.def_tid > MAX_ID_SELECCION}">
 						<div class="boton grande" onclick="nuevo_jugador_click($(this));">
 							<span class="material-icons md-32" style="color: gray">biotech</span>
 							<div class="peque">
@@ -1159,7 +1188,7 @@ request.setAttribute("j", new Jugador());
 						</div>
 					</c:if>
 
-					<c:if test="${sessionScope.usuario.def_tid < 1000}">
+					<c:if test="${sessionScope.usuario.def_tid < MAX_ID_SELECCION}">
 						<div class="boton grande" onclick="skmail_click($(this))">
 							<span class="material-icons md-32 blanco borde-negro" style="opacity: 0.8;">email</span>
 							<div class="peque">
@@ -1168,29 +1197,38 @@ request.setAttribute("j", new Jugador());
 						</div>
 					</c:if>
 					
+					<c:if test="${sessionScope.usuario.def_tid > MAX_ID_SELECCION}">
+						<c:if test="${sessionScope.usuario.mostrar_salario}">
+							<div align="left">
+								<br />
+								<label class="etiqueta"><fmt:message key="menu.players_salary" />:</label>
+								<fmt:formatNumber value="${salario_jugadores}" type="number" />
+							</div>
+						</c:if>
+					</c:if> 
 				</div>
 			</div>
 
 			<br />
 
-<%-- 			<c:if test="${sessionScope.usuario.def_tid < 1000}"> --%>
+<%-- 			<c:if test="${sessionScope.usuario.def_tid < MAX_ID_SELECCION}"> --%>
 				<c:set var="j" value="<%=new Jugador()%>" />
 				<div id="editar_nuevo_jugador" class="menu nt sombra" style="position: absolute; display: none; z-index: 100;">
 					<div class="cabecera">
-						<c:if test="${sessionScope.usuario.def_tid < 1000}">
+						<c:if test="${sessionScope.usuario.def_tid < MAX_ID_SELECCION}">
 							<b><fmt:message key="menu.new_player" /></b>
 						</c:if>
-						<c:if test="${sessionScope.usuario.def_tid > 1000}">
+						<c:if test="${sessionScope.usuario.def_tid > MAX_ID_SELECCION}">
 							<b><fmt:message key="menu.test_player" /></b>
 						</c:if>
 					</div>
 					<div class="fin_bloque doble editar" style="text-align: center; margin: auto;">
 						<form method="post" action="${pageContext.request.contextPath}/asistente/grabar">
 							<div style="display: inline-block; text-align: right; margin: auto">
-								<c:if test="${sessionScope.usuario.def_tid < 1000}">
+								<c:if test="${sessionScope.usuario.def_tid < MAX_ID_SELECCION}">
 									<fmt:message key="common.pid" />: <input type="number" name="pid" required="required"/><br/>
 								</c:if>
-								<c:if test="${sessionScope.usuario.def_tid > 1000}">
+								<c:if test="${sessionScope.usuario.def_tid > MAX_ID_SELECCION}">
 									<fmt:message key="skills.age" />: <input type="number" name="edad" required="required"/><br/>
 								</c:if>
 							</div>
@@ -1216,7 +1254,7 @@ request.setAttribute("j", new Jugador());
 									<td colspan="4">
 										<fmt:message key="common.position" />: <c:out value="${j.despDemarcacion_asistente(null, sessionScope.usuario)}" escapeXml="false"/>
 										<fmt:message key="common.color" />: <input type="color" name="color" />
-										<c:if test="${sessionScope.usuario.def_tid < 1000}">
+										<c:if test="${sessionScope.usuario.def_tid < MAX_ID_SELECCION}">
 											<label for="fiable">
 												<input type="checkbox" id="fiable" name="fiable" /><fmt:message key="players.reliable" />
 											</label>
@@ -1236,7 +1274,7 @@ request.setAttribute("j", new Jugador());
 				</div>
 <%-- 			</c:if> --%>
 
-			<c:if test="${sessionScope.usuario.def_tid > 1000}">
+			<c:if test="${sessionScope.usuario.def_tid > MAX_ID_SELECCION}">
 				<div class="menu">
 					<div class="cabecera">
 						<b><fmt:message key="common.training" /></b>
@@ -1286,7 +1324,7 @@ request.setAttribute("j", new Jugador());
 					<br/>
 					<a href="${pageContext.request.contextPath}/asistente/actualizar_seleccionadores">Actualizar seleccionadores</a>
 					<br/>
-					<a href="${pageContext.request.contextPath}/asistente/tareas_NTs">Tareas NTs</a>
+					<a href="${pageContext.request.contextPath}/asistente/tareas_NTs">Limpiar NTs</a>
 					<br/>
 					<a href="${pageContext.request.contextPath}/asistente/enviar_backups">Enviar backups</a>
 					
@@ -1303,7 +1341,7 @@ request.setAttribute("j", new Jugador());
 					Usuarios
 				</div>
 				<div style="display:none" class="fin_bloque doble" align="left" id="lista_usuarios">
-					<a target="_blank" href="${pageContext.request.contextPath}/asistente/ver?logs/_${sessionScope.usuario.login}.log">Logs</a>
+					<a target="_blank" href="${pageContext.request.contextPath}/asistente/ver?logs/_${fn:toLowerCase(sessionScope.usuario.login)}.log">Logs</a>
 					| Backups:
 					<%= AsistenteBO.listar_jornadas((Usuario)session.getAttribute("usuario")) %>
 					<label for="recuperar">
@@ -1338,7 +1376,7 @@ request.setAttribute("j", new Jugador());
 		
 		<div style="display: inline-block; text-align: left; padding-top: 10px;">
 			<h2 class="texto_3d">
-				<c:out value="${sessionScope.usuario.def_tid < 1000 ? sessionScope.usuario.equipo_nt : sessionScope.usuario.equipo}" />
+				<c:out value="${sessionScope.usuario.def_tid < MAX_ID_SELECCION ? sessionScope.usuario.equipo_nt : sessionScope.usuario.equipo}" />
 				<c:if test="${not empty sessionScope.historico}">
 					(<fmt:message key="common.history" />)
 				</c:if>
@@ -1384,7 +1422,7 @@ request.setAttribute("j", new Jugador());
 
 	<div id="editar_entrenamiento" class="menu sombra" style="position: absolute; display: none; text-align: center; z-index: 100;">
 		<div class="cabecera">
-			<b><span id='nombre'></span> - <fmt:message key="common.round" /> <span id='jornada'></span></b>
+			<b><span id='nombre'></span> - <fmt:message key="common.week" /> <span id='jornada'></span></b>
 		</div>
 
 		<div class="fin_bloque doble editar">
@@ -1522,7 +1560,15 @@ request.setAttribute("j", new Jugador());
 				</table>
 				<input id="actualizar_entrenamiento_submit" type="submit" value="<fmt:message key="common.change" />" style="margin-top: 5px;"/>
 				<c:if test="${not empty sessionScope.admin}">
-					<span class="material-icons boton gris vertical" id="tr_borrar_entrenamiento" title="<fmt:message key="training.remove" />" onclick="if (confirm('<fmt:message key="training.remove" />?')) borrar_entrenamiento_click();">delete</span>
+					<span class="material-icons boton gris vertical" id="tr_borrar_entrenamiento" title="<fmt:message key="training.remove" />" onclick="if (confirm('<fmt:message key="training.remove" />?')) borrar_entrenamiento_click(false);">
+						<span>delete</span>
+					    <span>keyboard_double_arrow_left</span>
+					</span>
+					<span class="material-icons boton gris vertical" id="tr_borrar_entrenamiento" title="<fmt:message key="training.remove" />" onclick="if (confirm('<fmt:message key="training.remove" />?')) borrar_entrenamiento_click(true);">
+						<span>delete</span>
+					    <span>keyboard_double_arrow_right</span>
+					</span>
+					<input id="boton_cambiar_edad" type="button" value="Edad" style="margin-top: 5px;" onclick="cambiar_edad_click();" />
 				</c:if>
 			</form>
 		</div>
@@ -1630,20 +1676,20 @@ request.setAttribute("j", new Jugador());
 				<td><b><fmt:message key="skills.age" /></b></td>
 				<td>
 					<select id="filtro_edad_desde" onchange="filtro_change();">
-						<c:forEach begin="16" end="${sessionScope.usuario.def_tid > 400 && sessionScope.usuario.def_tid < 1000 && empty sessionScope.historico ? 21 : 30}" var="i">
+						<c:forEach begin="16" end="${sessionScope.usuario.def_tid > 400 && sessionScope.usuario.def_tid < MAX_ID_SELECCION && empty sessionScope.historico ? 21 : 30}" var="i">
 							<option>${i}</option>
 						</c:forEach>
 					</select><br/>
 				</td>
 				<td>
 					<select id="filtro_edad_hasta" onchange="filtro_change();">
-						<c:forEach begin="16" end="${sessionScope.usuario.def_tid > 400 && sessionScope.usuario.def_tid < 1000 && empty sessionScope.historico ? 20 : 30}" var="i">
+						<c:forEach begin="16" end="${sessionScope.usuario.def_tid > 400 && sessionScope.usuario.def_tid < MAX_ID_SELECCION && empty sessionScope.historico ? 20 : 30}" var="i">
 							<option>${i}</option>
 						</c:forEach>
-						<c:if test="${sessionScope.usuario.def_tid < 400 || sessionScope.usuario.def_tid > 1000 || not empty sessionScope.historico}">
+						<c:if test="${sessionScope.usuario.def_tid < 400 || sessionScope.usuario.def_tid > MAX_ID_SELECCION || not empty sessionScope.historico}">
 							<option value="" selected>99</option>
 						</c:if>
-						<c:if test="${sessionScope.usuario.def_tid > 400 && sessionScope.usuario.def_tid < 1000 && empty sessionScope.historico}">
+						<c:if test="${sessionScope.usuario.def_tid > 400 && sessionScope.usuario.def_tid < MAX_ID_SELECCION && empty sessionScope.historico}">
 							<option selected>21</option>
 						</c:if>
 					</select><br/>
@@ -1798,7 +1844,7 @@ request.setAttribute("j", new Jugador());
 			</tr>
 		</table>
 
-		<c:if test="${sessionScope.usuario.def_tid > 1000}">
+		<c:if test="${sessionScope.usuario.def_tid > MAX_ID_SELECCION}">
 			<div style="margin: 10px;">
 				<label for="solo_juveniles">
 					<input type="checkbox" id="solo_juveniles" onclick="filtro_change()" />
@@ -1809,7 +1855,7 @@ request.setAttribute("j", new Jugador());
 				</label>
 			</div>
 		</c:if>
-		<c:if test="${sessionScope.usuario.def_tid < 1000}">
+		<c:if test="${sessionScope.usuario.def_tid < MAX_ID_SELECCION}">
 			<div style="margin: 10px;">
 				<label for="solo_nts">
 					<input type="checkbox" id="solo_nts" onclick="filtro_change()" />
@@ -1840,7 +1886,7 @@ request.setAttribute("j", new Jugador());
 		</div>
 	</div>
 
-	<c:if test="${sessionScope.usuario.def_tid < 1000}">
+	<c:if test="${sessionScope.usuario.def_tid < MAX_ID_SELECCION}">
 		<!-- SK-MAIL -->
 		<div class="sombra" style="position:absolute; display: none; padding: 5px; background-color: lightgray; text-align: left;" id="editar_skmail">
 			<form method="post" id="form_skmail" action="javascript:enviar_skmail_confirmado()" onsubmit="return false;">
@@ -1880,7 +1926,7 @@ Thank you!</textarea>
 				<div class="boton" onclick="exportar_click($(this))">
 					<fmt:message key="menu.export" />
 				</div>
-				<c:if test="${sessionScope.usuario.def_tid < 1000}">
+				<c:if test="${sessionScope.usuario.def_tid < MAX_ID_SELECCION}">
 					<div class="boton" onclick="exportar_url_click($(this))">
 						<fmt:message key="menu.export_to_url" />
 					</div>
@@ -1917,6 +1963,12 @@ Thank you!</textarea>
 					<fmt:message key="menu.set_as">
 						<fmt:param><fmt:message key="common.other_position" /></fmt:param>
 					</fmt:message>
+				</div>
+				<div class="boton">
+					<span onclick="cambiar_color($(this))">
+						<fmt:message key="menu.set_color" />
+					</span>
+					<input type="color" name="color" style="height: 20px; vertical-align: middle;" />
 				</div>
 			</div>
 		</div>
