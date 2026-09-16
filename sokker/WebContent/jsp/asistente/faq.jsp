@@ -184,6 +184,10 @@
 					<td align="center"><img src="${pageContext.request.contextPath}/img/banderas/IT.png" /></td>
 					<td><a href="https://sokker.org/team/teamID/44454" target="_blank">ringhiostarr</a></td>
 				</tr>
+ 				<tr>
+					<td align="center"><img src="${pageContext.request.contextPath}/img/banderas/SK.png" /></td>
+					<td><a href="https://sokker.org/team/teamID/105956" target="_blank">Divoch</a></td>
+				</tr>
 <!-- 				<tr>
 					<td align="center"><img src="${pageContext.request.contextPath}/img/banderas/PL.png" /></td>
 					<td><a href="https://sokker.org/team/teamID/24878" target="_blank">kryminator</a></td>
