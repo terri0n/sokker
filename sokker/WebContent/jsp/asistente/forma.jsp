@@ -62,7 +62,7 @@
 			//span.show();
 
 			var vTicks = [];
-			var salto = parseInt(max_valor / 500) * 100;
+			var salto = Math.max(100, Math.floor(max_valor / 500) * 100);
 
 			for (var i = 0; i < max_valor + salto; i += salto) {
 				vTicks.push(i);
