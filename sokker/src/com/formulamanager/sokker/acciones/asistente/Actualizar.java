@@ -5,7 +5,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.text.ParseException;
-import java.util.List;
 
 import javax.security.auth.login.LoginException;
 import javax.servlet.ServletException;
@@ -20,7 +19,6 @@ import com.formulamanager.sokker.auxiliares.SystemUtil;
 import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.bo.AsistenteBO;
 import com.formulamanager.sokker.bo.NtdbBO;
-import com.formulamanager.sokker.entity.Jugador;
 import com.formulamanager.sokker.entity.Usuario;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
@@ -75,7 +73,7 @@ public class Actualizar extends SERVLET_ASISTENTE {
 								}
 							}
 
-							List<Jugador> jugadores_actualizados = AsistenteBO.actualizar_equipo(usuario, jornada_actual, isIncrementar_edad(), false, navegador, navegador);
+							AsistenteBO.actualizar_equipo(usuario, jornada_actual, isIncrementar_edad(), false, navegador, navegador);
 
 							mensaje[0] = "?mensaje=updated";
 						} catch (Exception e) {
