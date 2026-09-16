@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.ParseException;
+import java.util.LinkedHashMap;
 
 import javax.security.auth.login.LoginException;
 import javax.servlet.http.HttpServletRequest;
@@ -175,6 +176,25 @@ public abstract class Navegador {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
+	public Integer obtener_jornada_json(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
+		if (jornada != null) {
+			return jornada;
+		}
+
+		LinkedHashMap<String, Object> actual = (LinkedHashMap<String, Object>) JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/current");
+		Integer week = JSONUtil.getInteger(actual, "today.week");
+		Integer dia = JSONUtil.getInteger(actual, "today.day");
+		int jornada_actual = week - (dia >= 5 ? 0 : 1);
+		setJornada(jornada_actual);
+
+		if (getJornadaMod(jornada_actual) == 12 && dia == 5) {
+			incrementar_edad = true;
+		}
+
+		return jornada;
+	}
+
 	//-----
 	// G&S
 	//-----
@@ -185,7 +205,7 @@ public abstract class Navegador {
 			request.setAttribute("usuario", usuario);
 		}
 	}
-
+	
 	protected Usuario getUsuario() {
 		return usuario;
 	}
@@ -197,9 +217,12 @@ public abstract class Navegador {
 		}
 	}
 
-	protected Integer getJornadaMod(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
-		int jornada = obtener_jornada(navegador);
+	private int getJornadaMod(int jornada) {
 		return jornada < 976 ? jornada % 16 : (jornada - 976) % AsistenteBO.JORNADAS_TEMPORADA;
+	}
+	
+	protected Integer getJornadaMod(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
+		return getJornadaMod(obtener_jornada(navegador));
 	}
 
 	public boolean isIncrementar_edad() {
