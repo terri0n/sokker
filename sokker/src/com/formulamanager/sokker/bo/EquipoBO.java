@@ -2,13 +2,18 @@ package com.formulamanager.sokker.bo;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
 
+import com.formulamanager.sokker.auxiliares.JSONUtil;
 import com.formulamanager.sokker.entity.Jugador.DEMARCACION;
 import com.formulamanager.sokker.entity.Usuario;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.DomText;
 import com.gargoylesoftware.htmlunit.xml.XmlPage;
+import com.jayway.jsonpath.JsonPath;
 
 public class EquipoBO {
 	// NOTA: En Sokker el índice viene con +1 en los XML/JSON!!!
@@ -54,95 +59,98 @@ public class EquipoBO {
 			}
 		}
 	};
+
+	private static TIPO_ENTRENAMIENTO obtener_tipo_entrenamiento(String tipo) {
+		if (tipo == null) {
+			return null;
+		}
+
+		switch (tipo.toLowerCase(Locale.ROOT)) {
+			case "stamina":
+				return TIPO_ENTRENAMIENTO.Condicion;
+			case "keeper":
+				return TIPO_ENTRENAMIENTO.Porteria;
+			case "playmaker":
+			case "playmaking":
+				return TIPO_ENTRENAMIENTO.Creacion;
+			case "passing":
+				return TIPO_ENTRENAMIENTO.Pases;
+			case "technique":
+				return TIPO_ENTRENAMIENTO.Tecnica;
+			case "defender":
+			case "defending":
+				return TIPO_ENTRENAMIENTO.Defensa;
+			case "striker":
+			case "scoring":
+				return TIPO_ENTRENAMIENTO.Anotacion;
+			case "pace":
+				return TIPO_ENTRENAMIENTO.Rapidez;
+			default:
+				throw new IllegalArgumentException("Tipo de entrenamiento desconocido: " + tipo);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private static TIPO_ENTRENAMIENTO[] obtener_entrenamientos(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
+		Object document = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/training/formations");
+		List<LinkedHashMap<String, Object>> formaciones = JsonPath.read(document, "$.formations");
+		TIPO_ENTRENAMIENTO[] tipos = new TIPO_ENTRENAMIENTO[DEMARCACION.values().length];
+
+		for (LinkedHashMap<String, Object> formacion : formaciones) {
+			Integer codigo = JSONUtil.getInteger(formacion, "formation.code");
+			if (codigo == null || codigo < 0 || codigo >= tipos.length) {
+				throw new IllegalArgumentException("Demarcación de entrenamiento desconocida: " + codigo);
+			}
+			tipos[codigo] = obtener_tipo_entrenamiento(JSONUtil.getString(formacion, "type.name"));
+		}
+
+		for (int i = 0; i < tipos.length; i++) {
+			if (tipos[i] == null) {
+				throw new IllegalArgumentException("Falta el entrenamiento de " + DEMARCACION.values()[i]);
+			}
+		}
+
+		return tipos;
+	}
 	
+	@SuppressWarnings("unchecked")
 	public static void obtener_datos_equipo(Usuario usuario, int jornada_anterior, int jornada_actual, WebClient navegador) {
 		try {
-			// Actualizo la jornada de la última actualización
-			usuario.setDef_jornada(jornada_actual);
+			Object document = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/team/" + usuario.getDef_tid());
+			LinkedHashMap<String, Object> datos_equipo = JsonPath.read(document, "$");
+			String equipo = JSONUtil.getString(datos_equipo, "name");
+			if (equipo == null) {
+				throw new IllegalArgumentException("El equipo no tiene nombre");
+			}
 
-			XmlPage pagina = navegador.getPage(AsistenteBO.SOKKER_URL + "/xml/team-" + usuario.getDef_tid() + ".xml");
-			
-			String equipo = ((DomText) pagina.getFirstByXPath("//teamdata/team/name/text()")).asText();
-			
+			TIPO_ENTRENAMIENTO[] entrenamientos = null;
+			Integer countryID = null;
+			if (usuario.getDef_tid() > NtdbBO.MAX_ID_SELECCION) {
+				countryID = JSONUtil.getInteger(datos_equipo, "country.code");
+				if (countryID == null) {
+					throw new IllegalArgumentException("El equipo no tiene país");
+				}
+				entrenamientos = obtener_entrenamientos(navegador);
+			}
+
+			// Aplicamos los datos solo después de haber validado todas las respuestas JSON necesarias.
+			usuario.setDef_jornada(jornada_actual);
 			if (usuario.getDef_tid() < NtdbBO.MAX_ID_SELECCION) {
 				usuario.setEquipo_nt(equipo);
 			} else {
 				usuario.setEquipo(equipo);
-				usuario.setCountryID(new Integer(((DomText) pagina.getFirstByXPath("//teamdata/team/countryID/text()")).asText()));
+				usuario.setCountryID(countryID);
 
-				// Resto 1 porque empiezan en 1
-				TIPO_ENTRENAMIENTO tipo = TIPO_ENTRENAMIENTO.values()[
-				     new Integer(((DomText) pagina.getFirstByXPath("//teamdata/team/trainingType/text()")).asText()) - 1
-				];
-	
-				// Aquí empiezan en 0
-				DEMARCACION demarcacion = DEMARCACION.values()[
-				     new Integer(((DomText) pagina.getFirstByXPath("//teamdata/team/trainingFormation/text()")).asText())
-				];
-
-				// Resto 1 porque empiezan en 1
-				TIPO_ENTRENAMIENTO tipoGk = TIPO_ENTRENAMIENTO.values()[
-				     new Integer(((DomText) pagina.getFirstByXPath("//teamdata/team/trainingTypeGk/text()")).asText()) - 1
-				];
-				TIPO_ENTRENAMIENTO tipoDef = TIPO_ENTRENAMIENTO.values()[
-   				     new Integer(((DomText) pagina.getFirstByXPath("//teamdata/team/trainingTypeDef/text()")).asText()) - 1
-   				];
-				TIPO_ENTRENAMIENTO tipoMid = TIPO_ENTRENAMIENTO.values()[
-				     new Integer(((DomText) pagina.getFirstByXPath("//teamdata/team/trainingTypeMid/text()")).asText()) - 1
-				];
-				TIPO_ENTRENAMIENTO tipoAtt = TIPO_ENTRENAMIENTO.values()[
-   				     new Integer(((DomText) pagina.getFirstByXPath("//teamdata/team/trainingTypeAtt/text()")).asText()) - 1
-   				];
-				
-				
-				// Actualizo todas las jornadas desde la última actualización...
-				// solo si no se actualizó al obtener entrenamientos pasados
-				for (int j = jornada_anterior; j <= usuario.getDef_jornada(); j++) {
-					if (j < AsistenteBO.JORNADA_NUEVO_ENTRENO) {
-						usuario.getTipo_entrenamiento(0).put(j, tipo);
-						usuario.getDemarcacion().put(j, demarcacion);
-					} else {
-						if (usuario.getTipo_entrenamiento(0).get(j) == null || j == jornada_actual) {
-							usuario.getTipo_entrenamiento(0).put(j, tipoGk);
-						}
-						if (usuario.getTipo_entrenamiento(1).get(j) == null || j == jornada_actual) {
-							usuario.getTipo_entrenamiento(1).put(j, tipoDef);
-						}
-						if (usuario.getTipo_entrenamiento(2).get(j) == null || j == jornada_actual) {
-							usuario.getTipo_entrenamiento(2).put(j, tipoMid);
-						}
-						if (usuario.getTipo_entrenamiento(3).get(j) == null || j == jornada_actual) {
-							usuario.getTipo_entrenamiento(3).put(j, tipoAtt);
+				// La API moderna solo describe el sistema actual de cuatro demarcaciones.
+				// No inventamos valores históricos anteriores al cambio de entrenamiento.
+				for (int j = Math.max(jornada_anterior, AsistenteBO.JORNADA_NUEVO_ENTRENO); j <= usuario.getDef_jornada(); j++) {
+					for (int i = 0; i < entrenamientos.length; i++) {
+						if (usuario.getTipo_entrenamiento(i).get(j) == null || j == jornada_actual) {
+							usuario.getTipo_entrenamiento(i).put(j, entrenamientos[i]);
 						}
 					}
 				}
-
-				
-				//---------------
-				// INTERFAZ JSON
-				//---------------
-/*				
-//				Object document = Navegador.get_json(navegador, AsistenteBO.SOKKER_URL + "/api/training/formations");
-				Object document = Navegador.get_json(navegador, "http://raqueto.com/var/formations.json");
-				List<LinkedHashMap<String, LinkedHashMap>> lista = JsonPath.read(document, "$.formations.*");
-				for (LinkedHashMap<String, LinkedHashMap> s : lista) {
-					DEMARCACION demarcacion = DEMARCACION.values()[(Integer)s.get("formation").get("code")];
-					TIPO_ENTRENAMIENTO tipo = TIPO_ENTRENAMIENTO.values()[(Integer)s.get("type").get("code")];
-
-					// Actualizo todas las jornadas desde la �ltima actualizaci�n
-					for (int j = jornada_anterior; j <= usuario.getDef_jornada(); j++) {
-						usuario.getTipo_entrenamiento(demarcacion.ordinal()).put(j, tipo);
-					}
-				}
-				
-//				document = Navegador.get_json(navegador, "http://raqueto.com/var/players.json");
-//				List<Integer> avanzados = JsonPath.read(document, "$.advanced[*].id");
-//				System.out.println(avanzados);
-*/				
 			}
-			
-
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
