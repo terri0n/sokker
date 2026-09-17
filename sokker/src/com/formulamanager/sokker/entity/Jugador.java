@@ -242,6 +242,7 @@ public class Jugador implements Comparable<Jugador> {
 	private double talento_max;
 	private Double talento;
 	private boolean destacar;
+	private boolean bot;
 	
 	private Juvenil juvenil;
 	
@@ -393,6 +394,10 @@ public class Jugador implements Comparable<Jugador> {
 							if (login2 != null) {
 								this.usuario2 = UsuarioBO.leer_usuario(login2, false);
 							}
+						}
+
+						if (valores.get(i).startsWith("-")) {
+							bot = Boolean.valueOf(valores.get(i++).substring(1));
 						}
 					}
 				}
@@ -802,6 +807,7 @@ public class Jugador implements Comparable<Jugador> {
 
 			valores.add(color == null ? "#" : color);
 			valores.add("-" + (usuario2 == null ? "" : usuario2.getLogin()));
+			valores.add("-" + bot);
 		}
 		
 		valores.add(jornada+"");
@@ -882,7 +888,7 @@ public class Jugador implements Comparable<Jugador> {
 
 			String texto = Util.getTexto(usuario.getLocale(), "skills.skill" + valor + gender);
 			if (juveniles) {
-				texto = StringUtils.rightPad(texto, 12 + (usuario.isNumeros() ? 5 : 0), ".");
+				texto = StringUtils.rightPad(texto, 12 + (usuario.isNumeros() ? 5 : 0), '.');
 			}
 			
 			if (juveniles && original == null) {
@@ -1064,6 +1070,7 @@ public class Jugador implements Comparable<Jugador> {
 			trabajo_en_equipo = j.trabajo_en_equipo;
 			disciplina_tactica = j.disciplina_tactica;
 			pais = j.pais;
+			bot = j.bot;
 		}
 	}
 	
@@ -2502,5 +2509,13 @@ public class Jugador implements Comparable<Jugador> {
 
 	public Usuario getUsuario2() {
 		return usuario2;
+	}
+
+	public boolean isBot() {
+		return bot;
+	}
+
+	public void setBot(boolean bot) {
+		this.bot = bot;
 	}
 }
