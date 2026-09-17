@@ -72,8 +72,19 @@ public abstract class Navegador {
 		WebRequest requestSettings = new WebRequest(url, HttpMethod.POST);
 		requestSettings.setRequestBody("{\"login\" : \"" + login + "\", \"password\" : \"" + password + "\", \"remember\" : false }");
 		requestSettings.setAdditionalHeader("Content-Type", "application/json; charset=utf-8");
-		Page paginaLogin = navegador.getPage(requestSettings);
+		try {
+			Page paginaLogin = navegador.getPage(requestSettings);
 //System.out.println(paginaLogin.getWebResponse().getContentAsString());
+		} catch (FailingHttpStatusCodeException e) {
+			navegador.close();
+			if (e.getStatusCode() == 401) {
+				throw new LoginExceptionExt("Error when logging in to Sokker: bad password", login, password);
+			}
+			throw e;
+		} catch (IOException e) {
+			navegador.close();
+			throw e;
+		}
 		return navegador;
 	}
 
