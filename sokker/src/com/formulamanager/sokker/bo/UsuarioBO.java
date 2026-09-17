@@ -47,8 +47,8 @@ public class UsuarioBO {
 
 			for (Entry<Object, Object> e : prop.entrySet()) {
 				String key = e.getKey().toString();
-				if (key.startsWith("entrenamiento")) {
-					int jornada = Integer.valueOf(key.split("entrenamiento")[1]);
+				if (key.matches("entrenamiento[0-9]+")) {
+					int jornada = Integer.valueOf(key.substring("entrenamiento".length()));
 					String[] split = e.getValue().toString().split(",");
 					
 					if (!split[0].contains("-")) {
@@ -124,6 +124,27 @@ public class UsuarioBO {
 		return null;
 	}
 
+	private static String conservar_valores_usuario_desconocidos(String anterior, String serializado) {
+		if (anterior == null) {
+			return serializado;
+		}
+
+		List<String> valores_anteriores = Arrays.asList(anterior.split(",", -1));
+		List<String> valores_serializados = Arrays.asList(serializado.split(",", -1));
+		int fin_anterior = valores_anteriores.indexOf("*");
+		int fin_serializado = valores_serializados.indexOf("*");
+
+		// Las versiones nuevas añaden los campos al final, antes del asterisco.
+		// Si el fichero anterior no tiene más campos que el formato que conocemos, no hay nada que conservar.
+		if (fin_anterior < 0 || fin_serializado < 0 || fin_anterior <= fin_serializado) {
+			return serializado;
+		}
+
+		List<String> resultado = new ArrayList<String>(valores_serializados.subList(0, fin_serializado));
+		resultado.addAll(valores_anteriores.subList(fin_serializado, fin_anterior));
+		return String.join(",", resultado) + ",*";
+	}
+
 	public static void grabar_usuario(Usuario usuario) throws IOException {
 		// El usuario de prueba tiene "prueba/" como prefijo
 		String ruta = SystemUtil.getVar("path") + (usuario.getLogin().startsWith("prueba/") ? "" : "_") + usuario.getLogin() + ".properties";
@@ -135,14 +156,16 @@ public class UsuarioBO {
 			}
 		}
 
+		String usuario_anterior = prop.getProperty("usuario");
+
 		// Solo reconstruimos las claves que gestiona UsuarioBO. Las demás pueden pertenecer a versiones más nuevas.
 		for (String key : new ArrayList<String>(prop.stringPropertyNames())) {
-			if (key.startsWith("entrenamiento")) {
+			if (key.matches("entrenamiento[0-9]+")) {
 				prop.remove(key);
 			}
 		}
 		
-		prop.setProperty("usuario", usuario.serializar());
+		prop.setProperty("usuario", conservar_valores_usuario_desconocidos(usuario_anterior, usuario.serializar()));
 		prop.setProperty("notas", Util.nvl(usuario.getNotas()));
 
 		// Entrenamiento
