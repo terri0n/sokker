@@ -47,7 +47,7 @@ public class UsuarioBO {
 
 			for (Entry<Object, Object> e : prop.entrySet()) {
 				String key = e.getKey().toString();
-				if (key.startsWith("entrenamiento")) {
+				if (key.matches("entrenamiento[0-9]+")) {
 					int jornada = Integer.valueOf(key.split("entrenamiento")[1]);
 					String[] split = e.getValue().toString().split(",");
 					
@@ -125,7 +125,23 @@ public class UsuarioBO {
 	}
 
 	public static void grabar_usuario(Usuario usuario) throws IOException {
+		String ruta = SystemUtil.getVar("path") + (usuario.getLogin().startsWith("prueba/") ? "" : "_") + usuario.getLogin() + ".properties";
 		Properties prop = new Properties();
+
+		// Partimos del fichero existente para no perder claves que esta versión no conozca.
+		// Las claves de entrenamiento sí son gestionadas por Usuario y se reconstruyen debajo.
+		File file = new File(ruta);
+		if (file.exists()) {
+			try (InputStream input = new FileInputStream(file)) {
+				prop.load(input);
+			}
+		}
+		for (Object keyObject : new ArrayList<Object>(prop.keySet())) {
+			String key = keyObject.toString();
+			if (key.matches("entrenamiento[0-9]+")) {
+				prop.remove(keyObject);
+			}
+		}
 		
 		prop.setProperty("usuario", usuario.serializar());
 		prop.setProperty("notas", Util.nvl(usuario.getNotas()));
@@ -146,8 +162,6 @@ public class UsuarioBO {
 			}
 		}
 
-		// El usuario de prueba tiene "prueba/" como prefijo
-		String ruta = SystemUtil.getVar("path") + (usuario.getLogin().startsWith("prueba/") ? "" : "_") + usuario.getLogin() + ".properties";
 		Util.guardar_properties(prop, ruta);
 
 //		ruta = AsistenteBO.PATH_BACKUP + "_" + usuario.getLogin() + ".properties";
