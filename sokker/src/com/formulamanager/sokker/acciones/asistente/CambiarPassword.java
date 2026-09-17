@@ -3,6 +3,7 @@ package com.formulamanager.sokker.acciones.asistente;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.text.ParseException;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import javax.security.auth.login.LoginException;
@@ -12,6 +13,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.formulamanager.sokker.auxiliares.JSONUtil;
 import com.formulamanager.sokker.auxiliares.Navegador;
 import com.formulamanager.sokker.auxiliares.SERVLET_ASISTENTE;
 import com.formulamanager.sokker.auxiliares.Util;
@@ -21,6 +23,7 @@ import com.formulamanager.sokker.entity.Jugador;
 import com.formulamanager.sokker.entity.Usuario;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
+import com.jayway.jsonpath.JsonPath;
 
 /**
  * Cambia la contrase�a
@@ -57,29 +60,26 @@ public class CambiarPassword extends SERVLET_ASISTENTE {
 				throw new LoginException(Util.getTexto(request.getLocale().getLanguage(), "messages.user_not_exists"));
 			}
 	
-			new Navegador(true, ilogin, ipassword, request) {
+			new Navegador(false, ilogin, ipassword, request) {
 				@Override
-				protected void execute(WebClient navegadorXML) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {
-					if (!getUsuario().getTid().equals(usuario_.getTid())) {
+				protected void execute(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {
+					Object document = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/current");
+					LinkedHashMap<String, Object> datos = JsonPath.read(document, "$");
+					Integer tid = JSONUtil.getInteger(datos, "team.id");
+					if (tid == null || !tid.equals(usuario_.getTid())) {
 						throw new LoginException(Util.getTexto(request.getLocale().getLanguage(), "messages.wrong_team"));
-					} else {
+					}
 
 _log(request, "");
 					
-						int jornada_actual = obtener_jornada(navegadorXML);
+					int jornada_actual = obtener_jornada_json(navegador);
 	
-						usuario_.setPassword(Util.getMD5(ipassword));
-						usuario_.setLogin_sokker(ilogin);
-						usuario_.setIntentos_fallidos(0);
+					usuario_.setPassword(Util.getMD5(ipassword));
+					usuario_.setLogin_sokker(ilogin);
+					usuario_.setIntentos_fallidos(0);
 
-						new Navegador(true, ilogin, ipassword, null) {
-							@Override
-							protected void execute(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {
-								List<Jugador> jugadores_actualizados = AsistenteBO.actualizar_equipo(usuario_, jornada_actual, isIncrementar_edad(), false, navegadorXML, navegador);
-								request.getSession().setAttribute("usuario", usuario_);
-							}
-						};
-					}
+					List<Jugador> jugadores_actualizados = AsistenteBO.actualizar_equipo(usuario_, jornada_actual, isIncrementar_edad(), false, navegador, navegador);
+					request.getSession().setAttribute("usuario", usuario_);
 				}
 			};
 			
