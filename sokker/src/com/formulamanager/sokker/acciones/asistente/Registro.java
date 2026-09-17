@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.text.ParseException;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import javax.security.auth.login.LoginException;
@@ -14,6 +15,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.formulamanager.sokker.auxiliares.JSONUtil;
 import com.formulamanager.sokker.auxiliares.Navegador;
 import com.formulamanager.sokker.auxiliares.SERVLET_ASISTENTE;
 import com.formulamanager.sokker.auxiliares.Util;
@@ -24,6 +26,7 @@ import com.formulamanager.sokker.entity.Jugador;
 import com.formulamanager.sokker.entity.Usuario;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
+import com.jayway.jsonpath.JsonPath;
 
 /**
  * Actualiza las habilidades originales de un jugador
@@ -58,14 +61,21 @@ public class Registro extends SERVLET_ASISTENTE {
 				throw new LoginException(Util.getTexto(request.getLocale().getLanguage(), "messages.user_already_exists"));
 			}
 	
-			new Navegador(true, ilogin, ipassword, request) {
+			new Navegador(false, ilogin, ipassword, request) {
 				@Override
-				protected void execute(WebClient navegadorXML) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {
+				protected void execute(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {
+					Usuario usuario = null;
 					try {
-						int jornada_actual = obtener_jornada(navegadorXML);
-	
-						Usuario usuario = getUsuario();	// Aquí está el TID
-						
+						int jornada_actual = obtener_jornada_json(navegador);
+
+						Object document = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/current");
+						LinkedHashMap<String, Object> datos = JsonPath.read(document, "$");
+						Integer tid = JSONUtil.getInteger(datos, "team.id");
+						if (tid == null) {
+							throw new LoginException("Error when logging in to Sokker: user has no team");
+						}
+
+						usuario = new Usuario(tid, null);
 						usuario.inicializar();
 						usuario.setLogin(login);
 						usuario.setPassword(Util.getMD5(ipassword));
@@ -77,18 +87,10 @@ public class Registro extends SERVLET_ASISTENTE {
 				
 _log(request, "");
 
-						// NOTA: quería comentar esta línea para no exigir tener el CORS desabilitado, para los que solo vayan a usar la aplicación para manejar la NT, por ejemplo. Pero si no hago login con el usuario y la contraseña del usuario, no hay forma de saber cuál es su equipo
-						// Así que, hasta que cambien la interfaz XML (o JSON), lo dejo como está
-						// Se puede crear el archivo en el servidor para registrar al usuario manualmente
-						new Navegador(false, ilogin, ipassword, request) {
-							@Override
-							protected void execute(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {
-								List<Jugador> jugadores_actualizados = AsistenteBO.actualizar_equipo(usuario, jornada_actual, isIncrementar_edad(), true, navegadorXML, navegador);
-								AsistenteDAO.obtener_datos_NT(navegador, usuario);
-							}
-						};
+						List<Jugador> jugadores_actualizados = AsistenteBO.actualizar_equipo(usuario, jornada_actual, isIncrementar_edad(), true, navegador, navegador);
+						AsistenteDAO.obtener_datos_NT(navegador, usuario);
 					
-						request.getSession().setAttribute("usuario", getUsuario());
+						request.getSession().setAttribute("usuario", usuario);
 						mensaje[0] = "registered";
 					} catch (Exception e) {
 						mensaje[0] = "Error connecting to Sokker: " + e.toString();
@@ -96,7 +98,7 @@ _log(request, "");
 
 						StringWriter sw = new StringWriter();
 						e.printStackTrace(new PrintWriter(sw));
-						SERVLET_ASISTENTE._log_linea("_EXCEPTIONS", "__TID: " + getUsuario().getDef_tid() + " -> " + sw.toString() + "\n");
+						SERVLET_ASISTENTE._log_linea("_EXCEPTIONS", "__TID: " + (usuario == null ? "?" : usuario.getDef_tid()) + " -> " + sw.toString() + "\n");
 					}
 				}
 			};
