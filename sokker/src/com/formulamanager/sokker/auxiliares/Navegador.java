@@ -19,11 +19,6 @@ import com.gargoylesoftware.htmlunit.HttpMethod;
 import com.gargoylesoftware.htmlunit.Page;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.WebRequest;
-import com.gargoylesoftware.htmlunit.html.DomNode;
-import com.gargoylesoftware.htmlunit.html.DomText;
-import com.gargoylesoftware.htmlunit.html.HtmlForm;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
 import com.gargoylesoftware.htmlunit.xml.XmlPage;
 
 public abstract class Navegador {
@@ -91,47 +86,21 @@ public abstract class Navegador {
 		return navegador;
 	}
 	
+	/**
+	 * Compatibilidad para los llamadores antiguos que pedían login XML.
+	 * La autenticación se realiza con la API JSON actual y se mantiene el mismo
+	 * contrato de getUsuario()/request para no obligar a migrar todos los llamadores a la vez.
+	 */
+	@SuppressWarnings("unchecked")
 	public WebClient hacer_login_xml(String login, String password) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException {
-		login = login.replace("ñ",  "n");
-		login = login.replace("áàäâ",  "a");
-		login = login.replace("éèëê",  "e");
-		login = login.replace("íìïî",  "i");
-		login = login.replace("óòöô",  "o");
-		login = login.replace("úùüû",  "u");
-		
-		WebClient navegador = crear_navegador();
-
-		//Proceso de login.
-		HtmlPage paginaLogin = navegador.getPage(AsistenteBO.SOKKER_URL + "/xmlinfo.php");
-		
-		HtmlForm formularioLogin = paginaLogin.getFirstByXPath("//form");
-		
-		HtmlSubmitInput botonFormularioLogin = formularioLogin.getFirstByXPath("//input[@type='submit']");
-		formularioLogin.getInputByName("ilogin").setValueAttribute(login);
-		formularioLogin.getInputByName("ipassword").setValueAttribute(password);
-	
-		HtmlPage page = botonFormularioLogin.click();
-
-		if (!page.asText().startsWith("OK")) {
-			String resp = page.asText();
-			try {
-				switch(Integer.valueOf(resp.split("\\=")[1])) {
-					case 1: throw new LoginExceptionExt("Error when logging in to Sokker: 1 - bad password", login, password);
-					case 3: throw new LoginExceptionExt("Error when logging in to Sokker: 3 - user has no team", login, password);
-					case 4: throw new LoginExceptionExt("Error when logging in to Sokker: 4 - user is banned", login, password);
-					case 5: throw new LoginExceptionExt("Error when logging in to Sokker: 5 - user is a bakrupt", login, password);
-					case 6: throw new LoginException("Error when logging in to Sokker: the server is temporarily bloqued. Please, be patient and try again later (Error number 6)");	// user IP is blacklisted
-					default: throw new LoginException(resp);
-				}
-			} catch (NumberFormatException | NullPointerException e) {
-				throw new LoginException(resp);
-			}
+		WebClient navegador = hacer_login(login, password);
+		LinkedHashMap<String, Object> actual = (LinkedHashMap<String, Object>) JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/current");
+		Integer tid = JSONUtil.getInteger(actual, "team.id");
+		if (tid == null) {
+			throw new LoginExceptionExt("Error when logging in to Sokker: user has no team", login, password);
 		}
 
-		Usuario usuario = new Usuario(Util.stringToInteger(page.asText().split("teamID=")[1]), null);
-		
-		setUsuario(usuario);
-		
+		setUsuario(new Usuario(tid, null));
 		return navegador;
 	}
 
@@ -157,23 +126,11 @@ public abstract class Navegador {
 		return FactorxBO.getEdicion(obtener_jornada(navegador));
 	}
 	
+	/**
+	 * Mantiene el nombre histórico del método, pero la jornada se obtiene de /api/current.
+	 */
 	public Integer obtener_jornada(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
-		if (jornada != null) {
-			return jornada;
-		} else {
-			XmlPage pagina = navegador.getPage(AsistenteBO.SOKKER_URL + "/xml/vars.xml");
-			DomNode vars = (DomNode) pagina.getFirstByXPath("//vars");
-			setJornada(AsistenteBO.obtener_jornada(vars));
-			
-			if (getJornadaMod(navegador) == 12) {
-				Integer dia = Integer.valueOf(((DomText) vars.getFirstByXPath("day/text()")).asText());
-				// Jueves
-				if (dia == 5) {
-					incrementar_edad = true;
-				}
-			}
-			return jornada;
-		}
+		return obtener_jornada_json(navegador);
 	}
 
 	@SuppressWarnings("unchecked")
