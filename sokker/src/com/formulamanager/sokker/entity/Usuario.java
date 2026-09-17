@@ -3,6 +3,7 @@ package com.formulamanager.sokker.entity;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -240,11 +241,14 @@ public class Usuario {
 								mostrar_banquillo = Util.stringToBoolean(valores.get(i++));
 								mostrar_suma_habilidades = Util.stringToBoolean(valores.get(i++));
 								if (!valores.get(i).equals("*")) {
-									actualizacion_automatica = Util.nnvl(valores.get(i++));
+									i++; // Hueco histórico de la contraseña de actualización automática en texto plano
 									if (!valores.get(i).equals("*")) {
 										factor_edad_rapidez = Util.stringToFloat(valores.get(i++));
 									} else {
 										factor_edad_rapidez = 1.1f;
+									}
+									if (!valores.get(i).equals("*")) {
+										actualizacion_automatica = Util.nnvl(new String(Base64.getDecoder().decode(valores.get(i++))));
 									}
 								}
 							}
@@ -336,8 +340,9 @@ public class Usuario {
 		valores.add(new Boolean(mostrar_IMC).toString());
 		valores.add(new Boolean(mostrar_banquillo).toString());
 		valores.add(new Boolean(mostrar_suma_habilidades).toString());
-		valores.add(Util.nvl(actualizacion_automatica));
+		valores.add(""); // Hueco histórico de la contraseña en texto plano
 		valores.add(factor_edad_rapidez + "");
+		valores.add(actualizacion_automatica == null ? "" : Base64.getEncoder().encodeToString(actualizacion_automatica.getBytes()));
 
 		// NOTA: es necesario acabar con ",*" porque String.split no añade las últimas cadenas al array si están vacías
 		return String.join(",", valores) + ",*";
