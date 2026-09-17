@@ -241,14 +241,21 @@ public class Usuario {
 								mostrar_banquillo = Util.stringToBoolean(valores.get(i++));
 								mostrar_suma_habilidades = Util.stringToBoolean(valores.get(i++));
 								if (!valores.get(i).equals("*")) {
-									i++; // Hueco histórico de la contraseña de actualización automática en texto plano
+									actualizacion_automatica = Util.nnvl(valores.get(i++));
 									if (!valores.get(i).equals("*")) {
 										factor_edad_rapidez = Util.stringToFloat(valores.get(i++));
 									} else {
 										factor_edad_rapidez = 1.1f;
 									}
-									if (!valores.get(i).equals("*")) {
-										actualizacion_automatica = Util.nnvl(new String(Base64.getDecoder().decode(valores.get(i++))));
+									if (i < valores.size() && !valores.get(i).equals("*")) {
+										String actualizacionCodificada = valores.get(i++);
+										if (!actualizacionCodificada.isEmpty()) {
+											try {
+												actualizacion_automatica = Util.nnvl(new String(Base64.getDecoder().decode(actualizacionCodificada)));
+											} catch (IllegalArgumentException e) {
+												// Conservamos el valor antiguo en texto plano si el campo Base64 no es válido.
+											}
+										}
 									}
 								}
 							}
