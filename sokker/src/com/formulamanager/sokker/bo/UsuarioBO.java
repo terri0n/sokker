@@ -5,10 +5,8 @@ import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -25,47 +23,6 @@ import com.formulamanager.sokker.entity.Jugador.DEMARCACION;
 import com.formulamanager.sokker.entity.Usuario;
 
 public class UsuarioBO {
-	private static List<String> deserializar_usuario(String linea) {
-		List<String> valores = new ArrayList<String>(Arrays.asList(linea.split(",", -1)));
-		int n = valores.size();
-
-		// Formato actual de producción:
-		// ..., mostrar_suma_habilidades, <hueco contraseña antigua>, factor_edad_rapidez, <contraseña Base64>, *
-		if (n >= 4 && "*".equals(valores.get(n - 1)) && valores.get(n - 4).isEmpty() && es_float(valores.get(n - 3))) {
-			String codificada = valores.get(n - 2);
-			String password = codificada.isEmpty() ? "" : new String(Base64.getDecoder().decode(codificada), StandardCharsets.UTF_8);
-			valores.set(n - 4, password);
-			valores.remove(n - 2);
-		}
-
-		return valores;
-	}
-
-	private static String serializar_usuario(Usuario usuario) {
-		List<String> valores = new ArrayList<String>(Arrays.asList(usuario.serializar().split(",", -1)));
-		int n = valores.size();
-
-		// Usuario.serializar() mantiene el formato antiguo en memoria. Al persistirlo
-		// escribimos el formato que usa producción, sin contraseña en texto plano.
-		if (n >= 3 && "*".equals(valores.get(n - 1)) && es_float(valores.get(n - 2))) {
-			String password = valores.get(n - 3);
-			valores.set(n - 3, "");
-			String codificada = password.isEmpty() ? "" : Base64.getEncoder().encodeToString(password.getBytes(StandardCharsets.UTF_8));
-			valores.add(n - 1, codificada);
-		}
-
-		return String.join(",", valores);
-	}
-
-	private static boolean es_float(String valor) {
-		try {
-			Float.parseFloat(valor);
-			return true;
-		} catch (NumberFormatException e) {
-			return false;
-		}
-	}
-
 	public static Usuario leer_usuario (String login, boolean leer_scouts) {
 		Properties prop = new Properties();
 		InputStream input = null;
@@ -83,7 +40,7 @@ public class UsuarioBO {
 			// load a properties file
 			prop.load(input);
 			String linea = prop.getProperty("usuario");
-			Usuario usuario = new Usuario(deserializar_usuario(linea));
+			Usuario usuario = new Usuario(Arrays.asList(linea.split(",")));
 			usuario.setNotas(prop.getProperty("notas", ""));
 			
 			// ENTRENAMIENTO
@@ -170,7 +127,7 @@ public class UsuarioBO {
 	public static void grabar_usuario(Usuario usuario) throws IOException {
 		Properties prop = new Properties();
 		
-		prop.setProperty("usuario", serializar_usuario(usuario));
+		prop.setProperty("usuario", usuario.serializar());
 		prop.setProperty("notas", Util.nvl(usuario.getNotas()));
 
 		// Entrenamiento
