@@ -364,20 +364,6 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 		return palmares;
 	}
 	
-	public static boolean es_bot(WebClient navegador, Integer tid) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
-		try {
-			JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/team/" + tid + "/owner");
-			return false;
-		} catch (FailingHttpStatusCodeException e) {
-			return true;
-		}
-	}
-
-	public static Integer obtener_tid(WebClient navegador, Integer pid) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
-		Object json = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/player/" + pid);
-		return JsonPath.read(json, "$.info.team.id");
-	}
-
 	public static boolean es_plus(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 		Object document = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/current");
 		Boolean plus = JsonPath.read(document, "$.plus");
