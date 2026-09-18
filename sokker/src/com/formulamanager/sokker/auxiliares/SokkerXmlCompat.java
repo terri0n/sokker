@@ -1,18 +1,192 @@
 package com.formulamanager.sokker.auxiliares;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.formulamanager.sokker.bo.AsistenteBO;
+import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
+import com.gargoylesoftware.htmlunit.StringWebResponse;
+import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.xml.XmlPage;
 
 /**
  * Adaptador de datos JSON modernos al XML mínimo que todavía consumen
  * algunos algoritmos históricos de Sokker Asistente.
  */
 public final class SokkerXmlCompat {
+	private static final Map<Integer, Object> partidosJson = new ConcurrentHashMap<Integer, Object>();
+	private static final Map<Integer, Object> ligasJson = new ConcurrentHashMap<Integer, Object>();
+
 	private SokkerXmlCompat() {}
+
+	/**
+	 * Sustituye únicamente los XML de partidos y ligas que todavía usa el cálculo
+	 * de entrenamiento. Para cualquier otra URL devuelve null y el llamador puede
+	 * continuar con el comportamiento XML legado.
+	 */
+	public static XmlPage getXmlPage(WebClient navegador, String url) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
+		String matchesPrefix = AsistenteBO.SOKKER_URL + "/xml/matches-team-";
+		String matchPrefix = AsistenteBO.SOKKER_URL + "/xml/match-";
+		String leaguePrefix = AsistenteBO.SOKKER_URL + "/xml/league-";
+		String xml;
+
+		if (url.startsWith(matchesPrefix) && url.endsWith(".xml")) {
+			Integer tid = extraerId(url, matchesPrefix);
+			if (tid == null) {
+				return null;
+			}
+			xml = obtenerPartidosXml(navegador, tid);
+		} else if (url.startsWith(matchPrefix) && url.endsWith(".xml")) {
+			Integer mid = extraerId(url, matchPrefix);
+			if (mid == null) {
+				return null;
+			}
+			xml = obtenerPartidoXml(navegador, mid);
+		} else if (url.startsWith(leaguePrefix) && url.endsWith(".xml")) {
+			Integer leagueID = extraerId(url, leaguePrefix);
+			if (leagueID == null) {
+				return null;
+			}
+			xml = obtenerLigaXml(navegador, leagueID);
+		} else {
+			return null;
+		}
+
+		StringWebResponse response = new StringWebResponse(xml, new URL(url));
+		return new XmlPage(response, navegador.getCurrentWindow());
+	}
+
+	private static String obtenerPartidosXml(WebClient navegador, int tid) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
+		Object actual = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/current");
+		Integer temporada = integer(actual, "today.season");
+		List<Object> partidos = new ArrayList<Object>();
+		Set<Integer> ids = new HashSet<Integer>();
+
+		if (temporada != null) {
+			// En la primera jornada de temporada puede hacer falta el partido de la
+			// semana anterior, que pertenece todavía a la temporada previa.
+			for (int season = Math.max(0, temporada - 1); season <= temporada; season++) {
+				Object pagina = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL
+						+ "/api/team/" + tid + "/match?filter[season]=" + season + "&filter[limit]=200");
+				agregarPartidos(pagina, partidos, ids);
+			}
+		} else {
+			// Compatibilidad defensiva por si /api/current no incluye season.
+			Object pagina = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL
+					+ "/api/team/" + tid + "/match?filter[limit]=200");
+			agregarPartidos(pagina, partidos, ids);
+		}
+
+		return buildMatchesXml(actual, partidos);
+	}
+
+	private static void agregarPartidos(Object pagina, List<Object> partidos, Set<Integer> ids) {
+		for (Object partido : list(pagina, "matches")) {
+			Integer mid = integer(partido, "id", "matchID");
+			if (mid != null && ids.add(mid)) {
+				partidos.add(partido);
+				partidosJson.put(mid, partido);
+				guardarLiga(partido);
+			}
+		}
+	}
+
+	private static String obtenerPartidoXml(WebClient navegador, int mid) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
+		Object detalle = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/match/" + mid);
+		Object resumen = partidosJson.get(mid);
+		detalle = completarLiga(detalle, resumen);
+		guardarLiga(detalle);
+
+		Object alineacion = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/match/" + mid + "/lineup");
+		Object estadisticas = null;
+		if (needsStats(alineacion)) {
+			try {
+				estadisticas = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/match/" + mid + "/stats");
+			} catch (FailingHttpStatusCodeException e) {
+				// stats es complementario. La alineación sigue siendo suficiente si
+				// Sokker no publica este endpoint para el partido o el usuario.
+				if (e.getStatusCode() != 403 && e.getStatusCode() != 404) {
+					throw e;
+				}
+			}
+		}
+
+		return buildMatchXml(detalle, alineacion, estadisticas);
+	}
+
+	private static Object completarLiga(Object detalle, Object resumen) {
+		if (integer(detalle, "league.id", "leagueID", "info.league.id", "info.leagueID", "match.league.id") != null
+				|| !(detalle instanceof Map<?, ?>) || !(resumen instanceof Map<?, ?>)) {
+			return detalle;
+		}
+
+		Object league = value(resumen, "league");
+		if (league == null) {
+			league = value(resumen, "match.league");
+		}
+		if (league == null) {
+			return detalle;
+		}
+
+		Map<String, Object> combinado = new LinkedHashMap<String, Object>();
+		for (Map.Entry<?, ?> entry : ((Map<?, ?>) detalle).entrySet()) {
+			if (entry.getKey() instanceof String) {
+				combinado.put((String) entry.getKey(), entry.getValue());
+			}
+		}
+		combinado.put("league", league);
+		return combinado;
+	}
+
+	private static String obtenerLigaXml(WebClient navegador, int leagueID) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
+		Object league = ligasJson.get(leagueID);
+		if (league == null) {
+			try {
+				Object pagina = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/league/" + leagueID);
+				Object nested = value(pagina, "league");
+				league = nested == null ? pagina : nested;
+				if (league != null) {
+					ligasJson.put(leagueID, league);
+				}
+			} catch (FailingHttpStatusCodeException e) {
+				if (e.getStatusCode() != 403 && e.getStatusCode() != 404) {
+					throw e;
+				}
+			}
+		}
+		return buildLeagueXml(league);
+	}
+
+	private static Integer extraerId(String url, String prefix) {
+		try {
+			return Integer.valueOf(url.substring(prefix.length(), url.length() - 4));
+		} catch (RuntimeException e) {
+			return null;
+		}
+	}
+
+	private static void guardarLiga(Object pagina) {
+		Integer leagueID = integer(pagina,
+				"league.id", "leagueID", "info.league.id", "info.leagueID", "match.league.id");
+		Object league = value(pagina, "league");
+		if (league == null) {
+			league = value(pagina, "match.league");
+		}
+		if (leagueID != null && league != null) {
+			ligasJson.put(leagueID, league);
+		}
+	}
 
 	public static String buildMatchesXml(Object current, List<?> matches) {
 		Integer currentWeek = integer(current, "today.week");
@@ -54,13 +228,14 @@ public final class SokkerXmlCompat {
 	}
 
 	public static String buildMatchXml(Object detail, Object lineup, Object stats) {
-		Integer leagueId = integer(detail, "league.id", "leagueID", "info.league.id", "info.leagueID");
+		Integer leagueId = integer(detail,
+				"league.id", "leagueID", "info.league.id", "info.leagueID", "match.league.id");
 		StringBuilder xml = new StringBuilder("<match><info><leagueID>")
 				.append(leagueId == null ? 0 : leagueId)
 				.append("</leagueID></info><playerStatsList>");
 
-		appendPlayers(xml, list(lineup, "homePlayers", "home.players"), stats);
-		appendPlayers(xml, list(lineup, "awayPlayers", "away.players"), stats);
+		appendPlayers(xml, list(lineup, "homePlayers", "home.players", "lineup.homePlayers"), stats);
+		appendPlayers(xml, list(lineup, "awayPlayers", "away.players", "lineup.awayPlayers"), stats);
 		return xml.append("</playerStatsList></match>").toString();
 	}
 
@@ -82,7 +257,7 @@ public final class SokkerXmlCompat {
 			Integer formation = integer(player,
 					"formation.code", "formation", "position.code", "player.formation.code");
 			if (formation == null && statsPlayer != null) {
-				formation = integer(statsPlayer, "formation.code", "formation", "position.code");
+				formation = integer(statsPlayer, "formation.code", "formation", "position.code", "player.formation.code");
 			}
 			if (formation == null) {
 				// El algoritmo legado no puede procesar un playerStats sin formación.
@@ -213,15 +388,15 @@ public final class SokkerXmlCompat {
 					} catch (RuntimeException ignored) {
 					}
 				}
-			}
+		}
 		}
 		return null;
 	}
 
 	private static List<Object> allPlayers(Object lineup) {
 		List<Object> result = new ArrayList<Object>();
-		result.addAll(cast(list(lineup, "homePlayers", "home.players")));
-		result.addAll(cast(list(lineup, "awayPlayers", "away.players")));
+		result.addAll(cast(list(lineup, "homePlayers", "home.players", "lineup.homePlayers")));
+		result.addAll(cast(list(lineup, "awayPlayers", "away.players", "lineup.awayPlayers")));
 		return result;
 	}
 
