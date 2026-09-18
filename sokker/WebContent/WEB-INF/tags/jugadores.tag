@@ -1,5 +1,6 @@
 <%@tag import="java.util.List"%>
 <%@tag import="com.formulamanager.sokker.bo.AsistenteBO"%>
+<%@tag import="com.formulamanager.sokker.bo.NtdbBO"%>
 <%@tag import="com.formulamanager.sokker.bo.EquipoBO.TIPO_ENTRENAMIENTO"%>
 <%@tag import="com.formulamanager.sokker.entity.Usuario"%>
 <%@tag import="com.formulamanager.sokker.entity.Jugador"%>
@@ -12,6 +13,7 @@
 <%@ tag pageEncoding="UTF-8" %>
 
 <fmt:setBundle basename="com.formulamanager.sokker.idiomas.ApplicationResources" />
+<c:set var="MAX_ID_SELECCION"><%= NtdbBO.MAX_ID_SELECCION %></c:set>
 
 	<c:set var="lista" value="<%= AsistenteBO.filtrar_demarcacion((List<Jugador>)request.getAttribute(\"jugadores\"), demarcacion) %>" />
 
@@ -98,7 +100,7 @@
 			<c:if test="${empty sessionScope.juveniles}">
 				<td nowrap align="left">
 					<input type="checkbox" id="check${j.pid}" class="nt" />
-					<c:if test="${sessionScope.usuario.def_tid > 1000}">
+					<c:if test="${sessionScope.usuario.def_tid > MAX_ID_SELECCION}">
 						<span id="span${j.pid}" title="<c:if test='${j.entrenamiento_avanzado}'><fmt:message key="training.advanced_training" /></c:if><c:if test='${!j.entrenamiento_avanzado}'><fmt:message key="training.formation_training" /></c:if>" class="flecha ${j.entrenamiento_avanzado ? 'avanzado' : ''} nont" onclick="desplegar_click(${j.pid}, true)">▶</span>
 					</c:if>
 					<img class="nont" src="https://files.sokker.org/pic/flags/${j.pais}.png" />
@@ -214,7 +216,7 @@
 	
 					--%><span class="material-icons boton vertical" title="<fmt:message key="menu.export" />" onclick="exportar_jugador_click($(this), ${j.pid});">code</span><%--
 	
-					--%><c:if test="${j.pid <= 0 || sessionScope.usuario.def_tid < 1000}"><span class="material-icons boton gris vertical" title="<fmt:message key="common.remove" />" onclick="if (confirm('<fmt:message key="players.remove_player"><fmt:param value="${j.nombre}"/></fmt:message>')) location.href='${pageContext.request.contextPath}/asistente/borrar_jugadores?pids=${j.pid},';">delete</span></c:if><%--
+					--%><c:if test="${j.pid <= 0 || sessionScope.usuario.def_tid < MAX_ID_SELECCION}"><span class="material-icons boton gris vertical" title="<fmt:message key="common.remove" />" onclick="if (confirm('<fmt:message key="players.remove_player"><fmt:param value="${j.nombre}"/></fmt:message>')) location.href='${pageContext.request.contextPath}/asistente/borrar_jugadores?pids=${j.pid},';">delete</span></c:if><%--
 					
 					--%><div id="editar${j.pid}" class="menu sombra" style="position: absolute; display: none; text-align: center; z-index: 100">
 							<div class="cabecera">
@@ -274,7 +276,7 @@
 		
 		<%-- ENTRENAMIENTO --%>
 
-		<c:if test="${sessionScope.usuario.def_tid > 1000 && empty sessionScope.juveniles}">
+		<c:if test="${sessionScope.usuario.def_tid > MAX_ID_SELECCION && empty sessionScope.juveniles}">
 			<input type="hidden" id="talento${j.pid}" value="${j.talento_medio}" />
 			<tbody id="tbody${j.pid}" style="display: none;">
 				<c:forEach begin="${j.min_edad}" end="${j.edad}" var="edad">
@@ -308,7 +310,7 @@
 						<td nowrap valign="top" class="entrenamiento"><%= ((Jugador)jspContext.getAttribute("j")).getEntrenamiento(TIPO_ENTRENAMIENTO.Defensa,   (Integer)jspContext.getAttribute("edad")) %></td>
 						<td nowrap valign="top" class="entrenamiento"><%= ((Jugador)jspContext.getAttribute("j")).getEntrenamiento(TIPO_ENTRENAMIENTO.Creacion,  (Integer)jspContext.getAttribute("edad")) %></td>
 						<td nowrap valign="top" class="entrenamiento"><%= ((Jugador)jspContext.getAttribute("j")).getEntrenamiento(TIPO_ENTRENAMIENTO.Anotacion, (Integer)jspContext.getAttribute("edad")) %></td>
-						<td class="nohist" colspan="${sessionScope.usuario.def_tid < 1000 ? 3 : 1}">
+						<td class="nohist" colspan="${sessionScope.usuario.def_tid < MAX_ID_SELECCION ? 3 : 1}">
 							<span class="flecha_arr gris md-24" style="display: ${edad > j.min_edad && edad == j.edad - 2 ? '' : 'none'}" onclick="mover_entrenamiento_click(${j.pid}, -1, false)">▲</span>
 							<span class="flecha_aba gris md-24" style="display: none" onclick="mover_entrenamiento_click(${j.pid}, 1, false)">▼</span>
 						</td>

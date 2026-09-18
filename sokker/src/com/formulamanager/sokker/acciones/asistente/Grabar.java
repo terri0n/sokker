@@ -18,6 +18,7 @@ import com.formulamanager.sokker.auxiliares.Navegador;
 import com.formulamanager.sokker.auxiliares.SERVLET_ASISTENTE;
 import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.bo.AsistenteBO;
+import com.formulamanager.sokker.bo.NtdbBO;
 import com.formulamanager.sokker.bo.UsuarioBO;
 import com.formulamanager.sokker.dao.AsistenteDAO;
 import com.formulamanager.sokker.entity.Jugador;
@@ -98,7 +99,7 @@ _log(request, pid + " " + condicion + " " + rapidez + " " + tecnica + " " + pase
 									
 									UsuarioBO.grabar_usuario(usuario2);
 								} else {
-									j_nuevo = AsistenteDAO.obtener_jugador(pid, tid < 1000, jornada_actual, isIncrementar_edad(), _usuario, navegador);
+									j_nuevo = AsistenteDAO.obtener_jugador(pid, tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, isIncrementar_edad(), _usuario, navegador);
 
 									// Entrenamiento avanzado
 									Set<Integer> avanzados = AsistenteDAO.obtener_entrenamiento_avanzado(navegador);
@@ -115,7 +116,7 @@ _log(request, pid + " " + condicion + " " + rapidez + " " + tecnica + " " + pase
 								}
 								
 								// Actualizo los valores de los jugadores NT para que se cree una nueva semana en caso de que cambien
-								if (tid < 1000 && Util.invl(j_nuevo.getEn_venta()) == 0 && (Util.invl(condicion) != 0 || Util.invl(rapidez) != 0 || Util.invl(tecnica) != 0 || Util.invl(pases) != 0 || Util.invl(porteria) != 0 || Util.invl(defensa) != 0 || Util.invl(creacion) != 0 || Util.invl(anotacion) != 0)
+								if (tid < NtdbBO.MAX_ID_SELECCION && Util.invl(j_nuevo.getEn_venta()) == 0 && (Util.invl(condicion) != 0 || Util.invl(rapidez) != 0 || Util.invl(tecnica) != 0 || Util.invl(pases) != 0 || Util.invl(porteria) != 0 || Util.invl(defensa) != 0 || Util.invl(creacion) != 0 || Util.invl(anotacion) != 0)
 										|| pid == null) {	 // Jugador de prueba
 									// Solo actualizo la fecha si ha cambiado el valor de alguna habilidad
 									if (j_anterior == null || !rapidez.equals(j_anterior.getRapidez()) || !tecnica.equals(j_anterior.getTecnica()) || !pases.equals(j_anterior.getPases()) || !porteria.equals(j_anterior.getPorteria()) || !defensa.equals(j_anterior.getDefensa()) || !creacion.equals(j_anterior.getCreacion()) || !condicion.equals(j_anterior.getCondicion()) || !anotacion.equals(j_anterior.getAnotacion())) {

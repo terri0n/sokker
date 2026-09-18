@@ -195,12 +195,12 @@
 						<input type="checkbox" <c:out value="${sessionScope.usuario.mostrar_banquillo ? 'checked' : ''}" /> id="mostrar_banquillo" name="mostrar_banquillo"><fmt:message key="menu.show_bench" />
 					</label><br/>
 					
-					<c:if test="${sessionScope.usuario.def_tid > 1000}">
+					<c:if test="${sessionScope.usuario.def_tid > MAX_ID_SELECCION}">
 						<label for="ntdb" class="peque">
 							<input type="checkbox" <c:out value="${sessionScope.usuario.ntdb ? 'checked' : ''}" /> id="ntdb" name="ntdb"><fmt:message key="menu.send_players" />
 						</label><br/>
 					</c:if>
-					<c:if test="${sessionScope.usuario.def_tid < 1000}">
+					<c:if test="${sessionScope.usuario.def_tid < MAX_ID_SELECCION}">
 						<label for="recibir_ntdb" class="peque">
 							<input type="checkbox" <c:out value="${sessionScope.usuario.recibir_ntdb ? 'checked' : ''}" /> id="recibir_ntdb" name="recibir_ntdb"><fmt:message key="menu.get_players" />
 						</label><br/>
@@ -269,7 +269,7 @@
 					</table>
 				</div>
 				
-				<c:if test="${sessionScope.usuario.def_tid < 1000}">
+				<c:if test="${sessionScope.usuario.def_tid < MAX_ID_SELECCION}">
 					<br/>
 					
 					<b><fmt:message key="config.scouts" />:</b><br/>

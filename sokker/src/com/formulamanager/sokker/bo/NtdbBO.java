@@ -29,7 +29,7 @@ import com.gargoylesoftware.htmlunit.javascript.host.event.Event;
  * - yfolire.net/~sktables/add-player.php
  */
 public class NtdbBO {
-	public static int MAX_ID_SELECCION = 1000;
+	public static int MAX_ID_SELECCION = 800;
 	public static int DIF_NT_U21 = 400;
 	public static String NOTAS_NTDB = "Direct update from Sokker Asistente";
 	

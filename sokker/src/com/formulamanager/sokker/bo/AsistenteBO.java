@@ -241,7 +241,7 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.asXml())
 			j.setForma(new Integer(((DomText) jugador.getFirstByXPath("skillForm/text()")).asText()));
 			j.setPais(new Integer(((DomText) jugador.getFirstByXPath("countryID/text()")).asText()));
 			j.setFecha(new Date());
-			j.setTarjetas(new Integer(((DomText) jugador.getFirstByXPath(tid < 1000 ? "ntCards/text()" : "cards/text()")).asText()));
+			j.setTarjetas(new Integer(((DomText) jugador.getFirstByXPath(tid < NtdbBO.MAX_ID_SELECCION ? "ntCards/text()" : "cards/text()")).asText()));
 			j.setNt(new Integer(((DomText) jugador.getFirstByXPath("national/text()")).asText()));
 			j.setLesion(new Integer(((DomText) jugador.getFirstByXPath("injuryDays/text()")).asText()));
 			j.setEn_venta(new Integer(((DomText) jugador.getFirstByXPath("transferList/text()")).asText()));
@@ -445,7 +445,7 @@ SERVLET_ASISTENTE._log_linea(usuario.getLogin(), "\t" + j.getPid() + " " + week 
 		}
 		
 		// Selecciones
-		if (tid > 1000) {
+		if (tid > NtdbBO.MAX_ID_SELECCION) {
 			// Comprobamos si el jugador ha jugado un partido internacional
 			for (Jugador j : jugadores) {
 				// Si pertenece a la selecci�n
@@ -536,7 +536,7 @@ SERVLET_ASISTENTE._log_linea(usuario.getLogin(), "\t" + clave + ": " + tiempo_to
 		}
 		
 		// Selecciones
-		if (tid > 1000) {
+		if (tid > NtdbBO.MAX_ID_SELECCION) {
 			// Comprobamos si el jugador ha jugado un partido internacional
 			for (Jugador j : jugadores) {
 				// Si pertenece a la selección
@@ -557,7 +557,7 @@ SERVLET_ASISTENTE._log_linea(usuario.getLogin(), "\t" + clave + ": " + tiempo_to
 
 	private static float obtener_porcentaje_entrenamiento_liga(int tid, Usuario usuario, int leagueID, WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 		try {
-			if (tid < 1000) {			// NT
+			if (tid < NtdbBO.MAX_ID_SELECCION) {			// NT
 				if (leagueID == ID_NT_FRIENDLY) {
 					return 0f;
 				} else {
