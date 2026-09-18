@@ -26,6 +26,26 @@ jobs:
           mvn -q dependency:get -Dartifact=javax.servlet:javax.servlet-api:4.0.1
           mvn -q dependency:get -Dartifact=javax.servlet.jsp:javax.servlet.jsp-api:2.3.3
 
+      - name: Normalize mixed source encodings
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          source = Path('sokker/src')
+          target = Path('/tmp/sokker-src')
+          for path in source.rglob('*.java'):
+              raw = path.read_bytes()
+              try:
+                  text = raw.decode('utf-8')
+              except UnicodeDecodeError:
+                  text = raw.decode('cp1252')
+              out = target / path.relative_to(source)
+              out.parent.mkdir(parents=True, exist_ok=True)
+              out.write_text(text, encoding='utf-8', newline='')
+          PY
+
       - name: Compile all Java sources
         shell: bash
         run: |
@@ -35,5 +55,5 @@ jobs:
           JSP="$HOME/.m2/repository/javax/servlet/jsp/javax.servlet.jsp-api/2.3.3/javax.servlet.jsp-api-2.3.3.jar"
           MAVEN_CP="$(cat /tmp/maven-classpath.txt)"
           CP="sokker/WebContent/WEB-INF/lib/*:${MAVEN_CP}:${SERVLET}:${JSP}"
-          find sokker/src -name '*.java' -print0 \
-            | xargs -0 javac -source 8 -target 8 -encoding windows-1252 -cp "$CP" -d /tmp/sokker-classes
+          find /tmp/sokker-src -name '*.java' -print0 \
+            | xargs -0 javac -source 8 -target 8 -encoding UTF-8 -cp "$CP" -d /tmp/sokker-classes
