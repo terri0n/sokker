@@ -139,7 +139,10 @@ public class EquipoBO {
 				entrenamientos = obtener_entrenamientos(navegador);
 			}
 
-			// Aplicamos los datos solo después de haber validado todas las respuestas JSON necesarias.
+			// Un fallo de juveniles no puede convertirse después en una lista vacía y archivar datos.
+			navegador.getPage(AsistenteBO.SOKKER_URL + "/xml/juniors.xml");
+
+			// Aplicamos los datos solo después de haber validado todas las respuestas necesarias.
 			usuario.setDef_jornada(jornada_actual);
 			if (usuario.getDef_tid() < NtdbBO.MAX_ID_SELECCION) {
 				usuario.setEquipo_nt(equipo);
