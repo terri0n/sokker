@@ -10,6 +10,7 @@ public class TrainingMatchMappingHarness {
         rejectsMissingTiming();
         rejectsMissingFormation();
         rejectsMissingPlayerId();
+        rejectsMissingLeagueId();
     }
 
     private static void rejectsMissingTiming() {
@@ -48,6 +49,24 @@ public class TrainingMatchMappingHarness {
         if (xml != null) {
             throw new AssertionError("Missing player id must reject the JSON compatibility mapping instead of silently omitting the player");
         }
+    }
+
+    private static void rejectsMissingLeagueId() {
+        Map<String, Object> player = completePlayer();
+        String xml = SokkerXmlCompat.buildMatchXml(new LinkedHashMap<String, Object>(), lineup(player), null);
+        if (xml != null) {
+            throw new AssertionError("Missing league id must reject the JSON compatibility mapping instead of inventing leagueID=0");
+        }
+    }
+
+    private static Map<String, Object> completePlayer() {
+        Map<String, Object> player = playerWithId();
+        player.put("bench", Boolean.FALSE);
+        player.put("minutes", Integer.valueOf(90));
+        Map<String, Object> formation = new LinkedHashMap<String, Object>();
+        formation.put("code", Integer.valueOf(1));
+        player.put("formation", formation);
+        return player;
     }
 
     private static Map<String, Object> playerWithId() {
