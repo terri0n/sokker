@@ -137,6 +137,9 @@ public class EquipoBO {
 					throw new IllegalArgumentException("El equipo no tiene país");
 				}
 				entrenamientos = obtener_entrenamientos(navegador);
+
+				// Mientras entrenadores siga en XML, validamos y cacheamos la misma respuesta que leerá AsistenteBO.
+				navegador.getPage(AsistenteBO.SOKKER_URL + "/xml/trainers.xml");
 			}
 
 			// Un fallo de juveniles no puede convertirse después en una lista vacía y archivar datos.
