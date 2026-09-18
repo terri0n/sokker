@@ -266,8 +266,8 @@ public final class SokkerXmlCompat {
 				formation = integer(statsPlayer, "formation.code", "formation", "player.formation.code");
 			}
 			if (formation == null) {
-				// El algoritmo legado no puede procesar un playerStats sin formación.
-				continue;
+				// Sin formación no se puede reconstruir el entrenamiento con seguridad.
+				return false;
 			}
 
 			Integer timeIn = integer(player, "timeIn", "time.in", "minuteIn", "substitution.in");
