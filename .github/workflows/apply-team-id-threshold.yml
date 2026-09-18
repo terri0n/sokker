@@ -1,0 +1,122 @@
+name: Apply team ID threshold fix
+
+on:
+  push:
+    branches:
+      - fix/update-json-only
+    paths:
+      - .github/workflows/apply-team-id-threshold.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/update-json-only
+
+      - name: Apply threshold consistently
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          def replace(path, old, new, expected):
+              p = Path(path)
+              data = p.read_bytes()
+              count = data.count(old)
+              if count != expected:
+                  raise SystemExit('%s: expected %d occurrences of %r, found %d' % (path, expected, old, count))
+              p.write_bytes(data.replace(old, new))
+
+          ntdb = 'sokker/src/com/formulamanager/sokker/bo/NtdbBO.java'
+          replace(ntdb, b'MAX_ID_SELECCION = 1000;', b'MAX_ID_SELECCION = 800;', 1)
+
+          grabar = Path('sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java')
+          data = grabar.read_bytes()
+          nl = b'\r\n' if b'\r\n' in data else b'\n'
+          marker = b'import com.formulamanager.sokker.bo.AsistenteBO;' + nl
+          if data.count(marker) != 1:
+              raise SystemExit('Grabar.java: AsistenteBO import marker not unique')
+          data = data.replace(marker, marker + b'import com.formulamanager.sokker.bo.NtdbBO;' + nl, 1)
+          if data.count(b'tid < 1000') != 2:
+              raise SystemExit('Grabar.java: unexpected tid < 1000 occurrence count')
+          data = data.replace(b'tid < 1000', b'tid < NtdbBO.MAX_ID_SELECCION')
+          grabar.write_bytes(data)
+
+          asistente = Path('sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java')
+          data = asistente.read_bytes()
+          if data.count(b'tid < 1000') != 2:
+              raise SystemExit('AsistenteBO.java: unexpected tid < 1000 occurrence count')
+          if data.count(b'tid > 1000') != 1:
+              raise SystemExit('AsistenteBO.java: unexpected tid > 1000 occurrence count')
+          data = data.replace(b'tid < 1000', b'tid < NtdbBO.MAX_ID_SELECCION')
+          data = data.replace(b'tid > 1000', b'tid > NtdbBO.MAX_ID_SELECCION')
+          asistente.write_bytes(data)
+
+          config = Path('sokker/WebContent/jsp/asistente/config.jsp')
+          data = config.read_bytes()
+          if data.count(b'sessionScope.usuario.def_tid > 1000') != 1:
+              raise SystemExit('config.jsp: unexpected > 1000 occurrence count')
+          if data.count(b'sessionScope.usuario.def_tid < 1000') != 2:
+              raise SystemExit('config.jsp: unexpected < 1000 occurrence count')
+          data = data.replace(b'sessionScope.usuario.def_tid > 1000', b'sessionScope.usuario.def_tid > MAX_ID_SELECCION')
+          data = data.replace(b'sessionScope.usuario.def_tid < 1000', b'sessionScope.usuario.def_tid < MAX_ID_SELECCION')
+          config.write_bytes(data)
+
+          tag = Path('sokker/WebContent/WEB-INF/tags/jugadores.tag')
+          data = tag.read_bytes()
+          nl = b'\r\n' if b'\r\n' in data else b'\n'
+          import_marker = b'<%@tag import="com.formulamanager.sokker.bo.AsistenteBO"%>' + nl
+          if data.count(import_marker) != 1:
+              raise SystemExit('jugadores.tag: AsistenteBO import marker not unique')
+          data = data.replace(import_marker, import_marker + b'<%@tag import="com.formulamanager.sokker.bo.NtdbBO"%>' + nl, 1)
+          bundle_marker = b'<fmt:setBundle basename="com.formulamanager.sokker.idiomas.ApplicationResources" />' + nl
+          if data.count(bundle_marker) != 1:
+              raise SystemExit('jugadores.tag: bundle marker not unique')
+          data = data.replace(bundle_marker, bundle_marker + b'<c:set var="MAX_ID_SELECCION"><%= NtdbBO.MAX_ID_SELECCION %></c:set>' + nl, 1)
+          if data.count(b'sessionScope.usuario.def_tid > 1000') != 1:
+              raise SystemExit('jugadores.tag: unexpected > 1000 occurrence count')
+          data = data.replace(b'sessionScope.usuario.def_tid > 1000', b'sessionScope.usuario.def_tid > MAX_ID_SELECCION')
+          tag.write_bytes(data)
+
+          pattern = re.compile(br'(?:tid|def_tid)[ \t]*[<>][ \t]*1000')
+          offenders = []
+          for root in (Path('sokker/src'), Path('sokker/WebContent')):
+              for p in root.rglob('*'):
+                  if p.is_file():
+                      try:
+                          raw = p.read_bytes()
+                      except OSError:
+                          continue
+                      if pattern.search(raw):
+                          offenders.append(str(p))
+          if offenders:
+              raise SystemExit('Hardcoded team-ID threshold remains in: ' + ', '.join(offenders))
+          PY
+
+          git diff --stat
+          git diff -- sokker/src/com/formulamanager/sokker/bo/NtdbBO.java \
+            sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java \
+            sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java \
+            sokker/WebContent/jsp/asistente/config.jsp \
+            sokker/WebContent/WEB-INF/tags/jugadores.tag
+
+      - name: Commit fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sokker/src/com/formulamanager/sokker/bo/NtdbBO.java \
+            sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java \
+            sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java \
+            sokker/WebContent/jsp/asistente/config.jsp \
+            sokker/WebContent/WEB-INF/tags/jugadores.tag
+          git commit -m 'Fix legacy club ID threshold'
+          git push origin HEAD:fix/update-json-only
