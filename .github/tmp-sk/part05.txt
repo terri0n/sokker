@@ -1,0 +1,41 @@
+0FD
+skills.skill4m                    = slab\u00FD
+skills.skill5m                    = priemern\u00FD
+skills.skill6m                    = adekv\u00E1tny
+skills.skill7m                    = dobr\u00FD
+skills.skill8m                    = sol\u00EDdny
+skills.skill9m                    = ve\u013Emi dobr\u00FD
+skills.stamina                    = Kond\u00EDcia
+skills.stamina_short              = Ko.
+skills.striker                    = \u00DAto\u010Dn\u00EDk
+skills.striker_short              = \u00DAt.
+skills.sumskills                  = Sumskills
+skills.tactical_discipline        = Taktick\u00E1 discipl\u00EDna
+skills.tactical_discipline_short  = Td.
+skills.talent                     = Talent
+skills.team_work                  = T\u00EDmov\u00E1 pr\u00E1ca
+skills.team_work_short            = Tp.
+skills.technique                  = Technika
+skills.technique_short            = Te.
+skills.value                      = Hodnota
+skills.wage                       = Mzda
+skills.weight                     = V\u00E1ha
+
+training.advanced_training            = Pokro\u010Dil\u00FD tr\u00E9ning
+training.formation_training           = Forma\u010Dn\u00FD tr\u00E9ning
+training.general_training             = V\u0161eobecn\u00FD tr\u00E9ning
+training.individual_training          = Tr\u00E9ning hr\u00E1\u010Da
+training.minimum_maximum_talent       = Minim\u00E1lny/maxim\u00E1lny talent
+training.new_talent                   = Nov\u00FD talent
+training.remove                       = Odstr\u00E1ni\u0165 tr\u00E9ning
+training.show_training                = Zobrazi\u0165 tr\u00E9ning
+training.team_training                = Tr\u00E9ning t\u00EDmu
+training.training_intensity_this_week = Intenzita tr\u00E9ningu tento t\u00FD\u017Ede\u0148
+training.training_points              = Tr\u00E9ningov\u00E9 body
+training.type                         = Typ
+
+ntdb.interface                  = Rozhranie NTDB
+ntdb.available_national_teams   = Dostupn\u00E9 n\u00E1rodn\u00E9 t\u00EDmy
+ntdb.links                      = Odkazy
+ntdb.u21_schedule               = Program U21
+ntdb.nt_schedule                = Program NT
