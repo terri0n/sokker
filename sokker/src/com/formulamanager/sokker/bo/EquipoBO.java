@@ -114,45 +114,42 @@ public class EquipoBO {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static void obtener_datos_equipo(Usuario usuario, int jornada_anterior, int jornada_actual, WebClient navegador) {
-		try {
-			Object document = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/team/" + usuario.getDef_tid());
-			LinkedHashMap<String, Object> datos_equipo = JsonPath.read(document, "$");
-			String equipo = JSONUtil.getString(datos_equipo, "name");
-			if (equipo == null) {
-				throw new IllegalArgumentException("El equipo no tiene nombre");
+	public static void obtener_datos_equipo(Usuario usuario, int jornada_anterior, int jornada_actual, WebClient navegador)
+			throws FailingHttpStatusCodeException, MalformedURLException, IOException {
+		Object document = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/team/" + usuario.getDef_tid());
+		LinkedHashMap<String, Object> datos_equipo = JsonPath.read(document, "$");
+		String equipo = JSONUtil.getString(datos_equipo, "name");
+		if (equipo == null) {
+			throw new IllegalArgumentException("El equipo no tiene nombre");
+		}
+
+		TIPO_ENTRENAMIENTO[] entrenamientos = null;
+		Integer countryID = null;
+		if (usuario.getDef_tid() > NtdbBO.MAX_ID_SELECCION) {
+			countryID = JSONUtil.getInteger(datos_equipo, "country.code");
+			if (countryID == null) {
+				throw new IllegalArgumentException("El equipo no tiene país");
 			}
+			entrenamientos = obtener_entrenamientos(navegador);
+		}
 
-			TIPO_ENTRENAMIENTO[] entrenamientos = null;
-			Integer countryID = null;
-			if (usuario.getDef_tid() > NtdbBO.MAX_ID_SELECCION) {
-				countryID = JSONUtil.getInteger(datos_equipo, "country.code");
-				if (countryID == null) {
-					throw new IllegalArgumentException("El equipo no tiene país");
-				}
-				entrenamientos = obtener_entrenamientos(navegador);
-			}
+		// Aplicamos los datos solo después de haber validado todas las respuestas JSON necesarias.
+		usuario.setDef_jornada(jornada_actual);
+		if (usuario.getDef_tid() < NtdbBO.MAX_ID_SELECCION) {
+			usuario.setEquipo_nt(equipo);
+		} else {
+			usuario.setEquipo(equipo);
+			usuario.setCountryID(countryID);
 
-			// Aplicamos los datos solo después de haber validado todas las respuestas JSON necesarias.
-			usuario.setDef_jornada(jornada_actual);
-			if (usuario.getDef_tid() < NtdbBO.MAX_ID_SELECCION) {
-				usuario.setEquipo_nt(equipo);
-			} else {
-				usuario.setEquipo(equipo);
-				usuario.setCountryID(countryID);
-
-				// La API moderna solo describe el sistema actual de cuatro demarcaciones.
-				// No inventamos valores históricos anteriores al cambio de entrenamiento.
-				for (int j = Math.max(jornada_anterior, AsistenteBO.JORNADA_NUEVO_ENTRENO); j <= usuario.getDef_jornada(); j++) {
-					for (int i = 0; i < entrenamientos.length; i++) {
-						if (usuario.getTipo_entrenamiento(i).get(j) == null || j == jornada_actual) {
-							usuario.getTipo_entrenamiento(i).put(j, entrenamientos[i]);
-						}
+			// La API moderna solo describe el sistema actual de cuatro demarcaciones.
+			// No inventamos valores históricos anteriores al cambio de entrenamiento.
+			for (int j = Math.max(jornada_anterior, AsistenteBO.JORNADA_NUEVO_ENTRENO); j <= usuario.getDef_jornada(); j++) {
+				for (int i = 0; i < entrenamientos.length; i++) {
+					if (usuario.getTipo_entrenamiento(i).get(j) == null || j == jornada_actual) {
+						usuario.getTipo_entrenamiento(i).put(j, entrenamientos[i]);
 					}
 				}
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 	}
 
