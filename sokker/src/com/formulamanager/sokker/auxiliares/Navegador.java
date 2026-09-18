@@ -209,6 +209,18 @@ public abstract class Navegador {
 		return obtener_jornada_json(navegador);
 	}
 
+	public static Integer calcular_jornada_actual(LinkedHashMap<String, Object> actual) throws IOException {
+		if (actual == null) {
+			throw new IOException("Incomplete /api/current payload: missing root object");
+		}
+		Integer week = JSONUtil.getInteger(actual, "today.week");
+		Integer dia = JSONUtil.getInteger(actual, "today.day");
+		if (week == null || dia == null) {
+			throw new IOException("Incomplete /api/current payload: missing today.week or today.day");
+		}
+		return week - (dia >= 5 ? 0 : 1);
+	}
+
 	@SuppressWarnings("unchecked")
 	public Integer obtener_jornada_json(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 		if (jornada != null) {
@@ -216,9 +228,8 @@ public abstract class Navegador {
 		}
 
 		LinkedHashMap<String, Object> actual = (LinkedHashMap<String, Object>) JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/current");
-		Integer week = JSONUtil.getInteger(actual, "today.week");
+		int jornada_actual = calcular_jornada_actual(actual);
 		Integer dia = JSONUtil.getInteger(actual, "today.day");
-		int jornada_actual = week - (dia >= 5 ? 0 : 1);
 		setJornada(jornada_actual);
 
 		if (getJornadaMod(jornada_actual) == 12 && dia == 5) {
