@@ -1,7 +1,6 @@
 package com.formulamanager.sokker.auxiliares;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -37,6 +36,8 @@ public final class SokkerTrainerMapping {
         for (Object trainer : trainers) {
             Integer job = job(string(trainer, "info.assignment.name"));
             if (job == null) {
+                // Solo activamos JSON para roles cuyo nombre actual esta demostrado.
+                // Un entrenador de juveniles o sin asignar desconocido fuerza XML.
                 return null;
             }
 
@@ -62,8 +63,10 @@ public final class SokkerTrainerMapping {
                 return null;
             }
 
-            int general = (int) Math.floor((calculatedAverage + 1e-9d) / PERCENT_PER_LEVEL);
-            if (general < 0 || general > 16) {
+            int generalFromApi = visibleLevel(averagePercent.doubleValue());
+            int generalFromSkills = visibleLevel(calculatedAverage);
+            if (generalFromApi != generalFromSkills) {
+                // Evitamos decidir un nivel en una frontera afectada por redondeos.
                 return null;
             }
 
@@ -73,41 +76,36 @@ public final class SokkerTrainerMapping {
                    .append(values[i])
                    .append("</").append(XML_SKILLS[i]).append('>');
             }
-            xml.append("<skillCoach>").append(general).append("</skillCoach></trainer>");
+            xml.append("<skillCoach>").append(generalFromApi)
+               .append("</skillCoach></trainer>");
         }
         return xml.append("</trainers>").toString();
     }
 
+    private static int visibleLevel(double percent) {
+        return Math.min(16, (int) Math.floor((percent + 1e-9d) / PERCENT_PER_LEVEL));
+    }
+
     private static boolean validSkill(Integer value, Integer percent) {
-        if (value == null || percent == null || value < 0 || value > 16 || percent < 0 || percent > 100) {
+        if (value == null || percent == null || value < 0 || value > 16
+                || percent < 0 || percent > 100) {
             return false;
         }
 
         double min = value.doubleValue() * PERCENT_PER_LEVEL;
-        double max = value.intValue() == 16 ? 100.0d : (value.doubleValue() + 1.0d) * PERCENT_PER_LEVEL;
-        return percent.doubleValue() + 1e-9d >= min && percent.doubleValue() < max + 1e-9d;
+        double max = value.intValue() == 16
+                ? 100.0d
+                : (value.doubleValue() + 1.0d) * PERCENT_PER_LEVEL;
+        return percent.doubleValue() + 1e-9d >= min
+                && percent.doubleValue() < max + 1e-9d;
     }
 
     private static Integer job(String assignment) {
-        if (assignment == null) {
-            return null;
-        }
-
-        String name = assignment.toLowerCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
-        if ("first".equals(name) || "head".equals(name) || "head_coach".equals(name) || "main".equals(name)) {
+        if ("first".equals(assignment)) {
             return 1;
         }
-        if ("assistant".equals(name) || "assistant_coach".equals(name)) {
+        if ("assistant".equals(assignment)) {
             return 2;
-        }
-        if ("junior".equals(name) || "juniors".equals(name) || "youth".equals(name)
-                || "junior_coach".equals(name) || "youth_coach".equals(name)
-                || "youth_school".equals(name) || "junior_school".equals(name)) {
-            return 3;
-        }
-        if ("none".equals(name) || "other".equals(name) || "unassigned".equals(name)
-                || "no_assignment".equals(name)) {
-            return 4;
         }
         return null;
     }
