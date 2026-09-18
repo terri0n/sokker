@@ -11,8 +11,8 @@ import com.gargoylesoftware.htmlunit.WebClient;
 
 public class UpdateAtomicityHarness {
     public static void main(String[] args) throws Exception {
-        trainerFailureAbortsClubUpdateAtSharedThreshold();
         juniorFailureIsNotConvertedIntoAnEmptySquad();
+        trainerFailureAbortsClubUpdateAtSharedThreshold();
     }
 
     private static void trainerFailureAbortsClubUpdateAtSharedThreshold() throws Exception {
