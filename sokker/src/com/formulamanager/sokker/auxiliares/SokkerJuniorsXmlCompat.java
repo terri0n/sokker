@@ -37,11 +37,15 @@ public final class SokkerJuniorsXmlCompat {
         Object current = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/current");
         Integer tid = integer(current, "team.id");
         if (tid == null) {
-            throw new IllegalStateException("/api/current no contiene team.id");
+            return null;
         }
 
         Object response = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/junior");
-        List<?> juniors = list(response, "juniors");
+        Object juniorsValue = value(response, "juniors");
+        if (!(juniorsValue instanceof List<?>)) {
+            return null;
+        }
+        List<?> juniors = (List<?>) juniorsValue;
         Map<Integer, Boolean> savedPositions = loadSavedPositions(tid);
 
         Set<Integer> pending = new HashSet<Integer>();
@@ -55,8 +59,18 @@ public final class SokkerJuniorsXmlCompat {
         Map<Integer, String> newsPositions = pending.isEmpty()
                 ? Collections.<Integer, String>emptyMap()
                 : loadNewsPositions(navegador, pending);
+        if (!newsPositions.keySet().containsAll(pending)) {
+            return null;
+        }
 
-        String xml = buildJuniorsXml(juniors, savedPositions, newsPositions);
+        final String xml;
+        try {
+            xml = buildJuniorsXml(juniors, savedPositions, newsPositions);
+        } catch (IllegalStateException e) {
+            // No fabricamos datos de juveniles. Si el JSON no permite reconstruir
+            // exactamente el formato antiguo, el llamador debe usar el XML legado.
+            return null;
+        }
         StringWebResponse webResponse = new StringWebResponse(xml, new URL(url));
         return new XmlPage(webResponse, navegador.getCurrentWindow());
     }
@@ -125,8 +139,12 @@ public final class SokkerJuniorsXmlCompat {
             if (fields.length < 2) {
                 continue;
             }
+            String position = fields[1];
+            if (!"true".equalsIgnoreCase(position) && !"false".equalsIgnoreCase(position)) {
+                continue;
+            }
             try {
-                result.put(Integer.valueOf(key), Boolean.valueOf(fields[1]));
+                result.put(Integer.valueOf(key), Boolean.valueOf(position));
             } catch (NumberFormatException ignored) {
                 // La lectura histórica de juveniles solo admite PID numérico.
             }
