@@ -81,6 +81,8 @@ public final class PersistenceRoundTrip {
         initial.setProperty("usuario", withFutureFields);
         initial.setProperty("notas", "round-trip");
         initial.setProperty("future.key", "future-value");
+        initial.setProperty("entrenamiento1200",
+                "Rapidez-Pases-Rapidez-Tecnica,,16;16;16;16;11;16;16;16,15.39583,16.5,future-training,*");
         try (FileOutputStream output = new FileOutputStream(userFile)) {
             initial.store(output, null);
         }
@@ -121,6 +123,9 @@ public final class PersistenceRoundTrip {
         require("future-value".equals(saved.getProperty("future.key")), "Unknown Usuario.properties key was lost");
         String usuario = saved.getProperty("usuario");
         require(usuario != null && usuario.endsWith(",future-one,future-two,*"), "Future usuario= fields were lost");
+        String entrenamiento = saved.getProperty("entrenamiento1200");
+        require(entrenamiento != null && entrenamiento.endsWith(",future-training,*"),
+                "Future entrenamiento fields were lost");
     }
 
     private static String xml(String value) {
