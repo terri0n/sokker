@@ -881,7 +881,7 @@ if (nuevo.getLesion() > 0) {
 				juveniles.add(j);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			throw new RuntimeException("Error al leer juveniles", e);
 		}
 
 		return juveniles;
@@ -1065,7 +1065,7 @@ if (nuevo.getLesion() > 0) {
 	}
 	
 	public static void leer_entrenadores(Usuario usuario, int jornada_anterior, WebClient navegador) {
-		if (usuario.getDef_tid() > 1000) {
+		if (usuario.getDef_tid() > NtdbBO.MAX_ID_SELECCION) {
 			try {
 				XmlPage pagina = Navegador.getXmlPage(navegador, AsistenteBO.SOKKER_URL + "/xml/trainers.xml");
 				ArrayList<DomNode> entrenadores = (ArrayList<DomNode>) pagina.getByXPath("//trainer");
@@ -1111,7 +1111,7 @@ if (nuevo.getLesion() > 0) {
 					}
 				}
 			} catch (Exception e) {
-				e.printStackTrace();
+				throw new RuntimeException("Error al leer entrenadores", e);
 			}
 		}
 	}
