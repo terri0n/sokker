@@ -26,45 +26,45 @@ jobs:
           from pathlib import Path
           import re
 
-          def replace(path, old, new, expected):
+          def replace_required(path, old, new):
               p = Path(path)
               data = p.read_bytes()
               count = data.count(old)
-              if count != expected:
-                  raise SystemExit('%s: expected %d occurrences of %r, found %d' % (path, expected, old, count))
+              if count == 0:
+                  raise SystemExit('%s: expected occurrence of %r' % (path, old))
               p.write_bytes(data.replace(old, new))
+              print('%s: replaced %d occurrence(s) of %r' % (path, count, old))
 
-          ntdb = 'sokker/src/com/formulamanager/sokker/bo/NtdbBO.java'
-          replace(ntdb, b'MAX_ID_SELECCION = 1000;', b'MAX_ID_SELECCION = 800;', 1)
+          replace_required(
+              'sokker/src/com/formulamanager/sokker/bo/NtdbBO.java',
+              b'MAX_ID_SELECCION = 1000;',
+              b'MAX_ID_SELECCION = 800;')
 
           grabar = Path('sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java')
           data = grabar.read_bytes()
           nl = b'\r\n' if b'\r\n' in data else b'\n'
           marker = b'import com.formulamanager.sokker.bo.AsistenteBO;' + nl
-          if data.count(marker) != 1:
-              raise SystemExit('Grabar.java: AsistenteBO import marker not unique')
-          data = data.replace(marker, marker + b'import com.formulamanager.sokker.bo.NtdbBO;' + nl, 1)
-          if data.count(b'tid < 1000') != 2:
-              raise SystemExit('Grabar.java: unexpected tid < 1000 occurrence count')
+          if b'import com.formulamanager.sokker.bo.NtdbBO;' not in data:
+              if data.count(marker) != 1:
+                  raise SystemExit('Grabar.java: AsistenteBO import marker not unique')
+              data = data.replace(marker, marker + b'import com.formulamanager.sokker.bo.NtdbBO;' + nl, 1)
+          if b'tid < 1000' not in data:
+              raise SystemExit('Grabar.java: expected hardcoded threshold not found')
           data = data.replace(b'tid < 1000', b'tid < NtdbBO.MAX_ID_SELECCION')
           grabar.write_bytes(data)
 
           asistente = Path('sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java')
           data = asistente.read_bytes()
-          if data.count(b'tid < 1000') != 2:
-              raise SystemExit('AsistenteBO.java: unexpected tid < 1000 occurrence count')
-          if data.count(b'tid > 1000') != 1:
-              raise SystemExit('AsistenteBO.java: unexpected tid > 1000 occurrence count')
+          if b'tid < 1000' not in data and b'tid > 1000' not in data:
+              raise SystemExit('AsistenteBO.java: expected hardcoded threshold not found')
           data = data.replace(b'tid < 1000', b'tid < NtdbBO.MAX_ID_SELECCION')
           data = data.replace(b'tid > 1000', b'tid > NtdbBO.MAX_ID_SELECCION')
           asistente.write_bytes(data)
 
           config = Path('sokker/WebContent/jsp/asistente/config.jsp')
           data = config.read_bytes()
-          if data.count(b'sessionScope.usuario.def_tid > 1000') != 1:
-              raise SystemExit('config.jsp: unexpected > 1000 occurrence count')
-          if data.count(b'sessionScope.usuario.def_tid < 1000') != 2:
-              raise SystemExit('config.jsp: unexpected < 1000 occurrence count')
+          if b'sessionScope.usuario.def_tid > 1000' not in data or b'sessionScope.usuario.def_tid < 1000' not in data:
+              raise SystemExit('config.jsp: expected hardcoded thresholds not found')
           data = data.replace(b'sessionScope.usuario.def_tid > 1000', b'sessionScope.usuario.def_tid > MAX_ID_SELECCION')
           data = data.replace(b'sessionScope.usuario.def_tid < 1000', b'sessionScope.usuario.def_tid < MAX_ID_SELECCION')
           config.write_bytes(data)
@@ -73,15 +73,18 @@ jobs:
           data = tag.read_bytes()
           nl = b'\r\n' if b'\r\n' in data else b'\n'
           import_marker = b'<%@tag import="com.formulamanager.sokker.bo.AsistenteBO"%>' + nl
-          if data.count(import_marker) != 1:
-              raise SystemExit('jugadores.tag: AsistenteBO import marker not unique')
-          data = data.replace(import_marker, import_marker + b'<%@tag import="com.formulamanager.sokker.bo.NtdbBO"%>' + nl, 1)
+          if b'<%@tag import="com.formulamanager.sokker.bo.NtdbBO"%>' not in data:
+              if data.count(import_marker) != 1:
+                  raise SystemExit('jugadores.tag: AsistenteBO import marker not unique')
+              data = data.replace(import_marker, import_marker + b'<%@tag import="com.formulamanager.sokker.bo.NtdbBO"%>' + nl, 1)
           bundle_marker = b'<fmt:setBundle basename="com.formulamanager.sokker.idiomas.ApplicationResources" />' + nl
-          if data.count(bundle_marker) != 1:
-              raise SystemExit('jugadores.tag: bundle marker not unique')
-          data = data.replace(bundle_marker, bundle_marker + b'<c:set var="MAX_ID_SELECCION"><%= NtdbBO.MAX_ID_SELECCION %></c:set>' + nl, 1)
-          if data.count(b'sessionScope.usuario.def_tid > 1000') != 1:
-              raise SystemExit('jugadores.tag: unexpected > 1000 occurrence count')
+          set_marker = b'<c:set var="MAX_ID_SELECCION"><%= NtdbBO.MAX_ID_SELECCION %></c:set>'
+          if set_marker not in data:
+              if data.count(bundle_marker) != 1:
+                  raise SystemExit('jugadores.tag: bundle marker not unique')
+              data = data.replace(bundle_marker, bundle_marker + set_marker + nl, 1)
+          if b'sessionScope.usuario.def_tid > 1000' not in data:
+              raise SystemExit('jugadores.tag: expected hardcoded threshold not found')
           data = data.replace(b'sessionScope.usuario.def_tid > 1000', b'sessionScope.usuario.def_tid > MAX_ID_SELECCION')
           tag.write_bytes(data)
 
@@ -89,23 +92,13 @@ jobs:
           offenders = []
           for root in (Path('sokker/src'), Path('sokker/WebContent')):
               for p in root.rglob('*'):
-                  if p.is_file():
-                      try:
-                          raw = p.read_bytes()
-                      except OSError:
-                          continue
-                      if pattern.search(raw):
-                          offenders.append(str(p))
+                  if p.is_file() and pattern.search(p.read_bytes()):
+                      offenders.append(str(p))
           if offenders:
               raise SystemExit('Hardcoded team-ID threshold remains in: ' + ', '.join(offenders))
           PY
 
           git diff --stat
-          git diff -- sokker/src/com/formulamanager/sokker/bo/NtdbBO.java \
-            sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java \
-            sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java \
-            sokker/WebContent/jsp/asistente/config.jsp \
-            sokker/WebContent/WEB-INF/tags/jugadores.tag
 
       - name: Commit fix
         shell: bash
