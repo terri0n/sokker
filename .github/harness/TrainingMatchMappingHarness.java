@@ -1,17 +1,21 @@
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.formulamanager.sokker.auxiliares.SokkerXmlCompat;
 
 public class TrainingMatchMappingHarness {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         rejectsMissingTiming();
         rejectsMissingFormation();
         rejectsMissingPlayerId();
         rejectsMissingLeagueId();
         rejectsMissingFinishedState();
+        rejectsPageMatchMissingId();
     }
 
     private static void rejectsMissingTiming() {
@@ -71,6 +75,29 @@ public class TrainingMatchMappingHarness {
         String xml = SokkerXmlCompat.buildMatchesXml(new LinkedHashMap<String, Object>(), matches);
         if (xml != null) {
             throw new AssertionError("Missing match finished state must reject the JSON compatibility mapping instead of assuming isFinished=0");
+        }
+    }
+
+    private static void rejectsPageMatchMissingId() throws Exception {
+        Map<String, Object> match = new LinkedHashMap<String, Object>();
+        match.put("week", Integer.valueOf(12));
+        match.put("day", Integer.valueOf(3));
+        match.put("wasPlayed", Boolean.TRUE);
+
+        List<Object> pageMatches = new ArrayList<Object>();
+        pageMatches.add(match);
+        Map<String, Object> page = new LinkedHashMap<String, Object>();
+        page.put("matches", pageMatches);
+
+        List<Object> collected = new ArrayList<Object>();
+        Set<Integer> ids = new HashSet<Integer>();
+        Method agregarPartidos = SokkerXmlCompat.class.getDeclaredMethod("agregarPartidos", Object.class, List.class, Set.class);
+        agregarPartidos.setAccessible(true);
+        agregarPartidos.invoke(null, page, collected, ids);
+
+        String xml = SokkerXmlCompat.buildMatchesXml(new LinkedHashMap<String, Object>(), collected);
+        if (xml != null) {
+            throw new AssertionError("A page match without id must reject the JSON compatibility mapping instead of disappearing from the match list");
         }
     }
 
