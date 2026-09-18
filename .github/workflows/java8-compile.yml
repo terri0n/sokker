@@ -75,12 +75,14 @@ jobs:
             .github/harness/TrainingMatchMappingHarness.java \
             .github/harness/TeamIdThresholdHarness.java \
             .github/harness/CurrentApiHarness.java \
+            .github/harness/UpdateAtomicityHarness.java \
             .github/harness/I18nParityHarness.java
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" PersistenceRoundTrip
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainerMappingHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainingMatchMappingHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TeamIdThresholdHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" CurrentApiHarness
+          java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" UpdateAtomicityHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" I18nParityHarness
 
       - name: Verify team ID classification uses shared threshold
@@ -88,7 +90,7 @@ jobs:
         run: |
           set -euo pipefail
           grep -Fq 'public static int MAX_ID_SELECCION = 800;' sokker/src/com/formulamanager/sokker/bo/NtdbBO.java
-          if grep -R -nE '(tid|def_tid)[[:space:]]*[<>][[:space:]]*1000' sokker/src sokker/WebContent; then
+          if grep -R -nE '(tid|def_tid|getDef_tid\(\))[[:space:]]*[<>][[:space:]]*1000' sokker/src sokker/WebContent; then
             echo 'Found hardcoded 1000 team-ID classification threshold' >&2
             exit 1
           fi
