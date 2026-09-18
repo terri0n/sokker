@@ -63,6 +63,10 @@ public final class SokkerXmlCompat {
 			return null;
 		}
 
+		if (xml == null) {
+			return null;
+		}
+
 		StringWebResponse response = new StringWebResponse(xml, new URL(url));
 		return new XmlPage(response, navegador.getCurrentWindow());
 	}
@@ -234,12 +238,14 @@ public final class SokkerXmlCompat {
 				.append(leagueId == null ? 0 : leagueId)
 				.append("</leagueID></info><playerStatsList>");
 
-		appendPlayers(xml, list(lineup, "homePlayers", "home.players", "lineup.homePlayers"), stats);
-		appendPlayers(xml, list(lineup, "awayPlayers", "away.players", "lineup.awayPlayers"), stats);
+		if (!appendPlayers(xml, list(lineup, "homePlayers", "home.players", "lineup.homePlayers"), stats)
+				|| !appendPlayers(xml, list(lineup, "awayPlayers", "away.players", "lineup.awayPlayers"), stats)) {
+			return null;
+		}
 		return xml.append("</playerStatsList></match>").toString();
 	}
 
-	private static void appendPlayers(StringBuilder xml, List<?> players, Object stats) {
+	private static boolean appendPlayers(StringBuilder xml, List<?> players, Object stats) {
 		int starterNumber = 1;
 		int benchNumber = 12;
 		for (int i = 0; i < players.size(); i++) {
@@ -281,9 +287,9 @@ public final class SokkerXmlCompat {
 
 			if (timeIn == null || timeOut == null) {
 				if (minutes == null) {
-					// Sin minutos no fabricamos 90' para titulares: una estimación falsa
-					// contaminaría el cálculo provisional de entrenamiento de la semana.
-					continue;
+					// Si no podemos reconstruir el tiempo jugado de un miembro de la alineación,
+					// rechazamos todo el adaptador para que el llamador use el XML real.
+					return false;
 				}
 				int played = Math.max(0, Math.min(90, minutes));
 				if (bench) {
@@ -305,6 +311,7 @@ public final class SokkerXmlCompat {
 				.append("<timeOut>").append(timeOut).append("</timeOut>")
 				.append("<formation>").append(formation).append("</formation></playerStats>");
 		}
+		return true;
 	}
 
 	public static String buildLeagueXml(Object league) {
