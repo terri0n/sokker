@@ -95,8 +95,13 @@ public abstract class Navegador {
 			@SuppressWarnings("unchecked")
 			@Override
 			public <P extends Page> P getPage(String url) throws IOException, FailingHttpStatusCodeException, MalformedURLException {
+				XmlPage paginaJson = SokkerPlayerXmlCompat.getXmlPage(this, url);
+				if (paginaJson != null) {
+					return (P) paginaJson;
+				}
+
 				if ((AsistenteBO.SOKKER_URL + "/xml/juniors.xml").equals(url)) {
-					XmlPage paginaJson = SokkerJuniorsXmlCompat.getXmlPage(this, url);
+					paginaJson = SokkerJuniorsXmlCompat.getXmlPage(this, url);
 					if (paginaJson != null) {
 						return (P) paginaJson;
 					}
@@ -131,7 +136,12 @@ public abstract class Navegador {
 
 	// Intenta acceder a una url hasta 3 veces
 	public static XmlPage getXmlPage(WebClient navegador, String url) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
-		XmlPage paginaJson = SokkerJuniorsXmlCompat.getXmlPage(navegador, url);
+		XmlPage paginaJson = SokkerPlayerXmlCompat.getXmlPage(navegador, url);
+		if (paginaJson != null) {
+			return paginaJson;
+		}
+
+		paginaJson = SokkerJuniorsXmlCompat.getXmlPage(navegador, url);
 		if (paginaJson != null) {
 			return paginaJson;
 		}
