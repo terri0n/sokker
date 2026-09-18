@@ -62,6 +62,7 @@ jobs:
           set -euo pipefail
           git config user.name 'Terrion'
           git config user.email '63014185+terri0n@users.noreply.github.com'
+          git config core.whitespace cr-at-eol
           git add sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java
           git diff --cached --check
           git commit -m 'Abort updates when trainer or junior loading fails'
