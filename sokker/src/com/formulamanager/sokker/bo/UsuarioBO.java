@@ -157,10 +157,12 @@ public class UsuarioBO {
 		}
 
 		String usuario_anterior = prop.getProperty("usuario");
+		HashMap<String, String> entrenamientos_anteriores = new HashMap<String, String>();
 
 		// Solo reconstruimos las claves que gestiona UsuarioBO. Las demás pueden pertenecer a versiones más nuevas.
 		for (String key : new ArrayList<String>(prop.stringPropertyNames())) {
 			if (key.matches("entrenamiento[0-9]+")) {
+				entrenamientos_anteriores.put(key, prop.getProperty(key));
 				prop.remove(key);
 			}
 		}
@@ -171,17 +173,21 @@ public class UsuarioBO {
 		// Entrenamiento
 		for (Integer jornada : usuario.getTipo_entrenamiento(0).keySet()) {
 			String tipo_entrenamiento;
+			String entrenamiento_serializado;
 			if (jornada < AsistenteBO.JORNADA_NUEVO_ENTRENO) {
 				tipo_entrenamiento = Util.nvl(usuario.getTipo_entrenamiento(0).get(jornada));
-				prop.setProperty("entrenamiento" + jornada, tipo_entrenamiento + "," + Util.nvl(usuario.getDemarcacion().get(jornada)) + "," + (usuario.getEntrenador_principal().get(jornada) == null ? "" : usuario.getEntrenador_principal().get(jornada).serializar_entrenador()) + "," + Util.nvl(usuario.getNivel_asistentes().get(jornada)) + "," + Util.nvl(usuario.getNivel_juveniles().get(jornada)) + ",*");
+				entrenamiento_serializado = tipo_entrenamiento + "," + Util.nvl(usuario.getDemarcacion().get(jornada)) + "," + (usuario.getEntrenador_principal().get(jornada) == null ? "" : usuario.getEntrenador_principal().get(jornada).serializar_entrenador()) + "," + Util.nvl(usuario.getNivel_asistentes().get(jornada)) + "," + Util.nvl(usuario.getNivel_juveniles().get(jornada)) + ",*";
 			} else {
 				tipo_entrenamiento = Util.nvl(usuario.getTipo_entrenamiento(0).get(jornada)) + "-" +
 									Util.nvl(usuario.getTipo_entrenamiento(1).get(jornada)) + "-" +
 									Util.nvl(usuario.getTipo_entrenamiento(2).get(jornada)) + "-" +
 									Util.nvl(usuario.getTipo_entrenamiento(3).get(jornada));
 				// Aquí dejo en blanco la demarcación
-				prop.setProperty("entrenamiento" + jornada, tipo_entrenamiento + ",," + (usuario.getEntrenador_principal().get(jornada) == null ? "" : usuario.getEntrenador_principal().get(jornada).serializar_entrenador()) + "," + Util.nvl(usuario.getNivel_asistentes().get(jornada)) + "," + Util.nvl(usuario.getNivel_juveniles().get(jornada)) + ",*");
+				entrenamiento_serializado = tipo_entrenamiento + ",," + (usuario.getEntrenador_principal().get(jornada) == null ? "" : usuario.getEntrenador_principal().get(jornada).serializar_entrenador()) + "," + Util.nvl(usuario.getNivel_asistentes().get(jornada)) + "," + Util.nvl(usuario.getNivel_juveniles().get(jornada)) + ",*";
 			}
+
+			String key = "entrenamiento" + jornada;
+			prop.setProperty(key, conservar_valores_usuario_desconocidos(entrenamientos_anteriores.get(key), entrenamiento_serializado));
 		}
 
 		Util.guardar_properties(prop, ruta);
