@@ -1,0 +1,138 @@
+name: Apply Slovak i18n
+
+on:
+  push:
+    branches:
+      - fix/update-json-only
+    paths:
+      - .github/workflows/apply-slovak-i18n.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/update-json-only
+
+      - name: Apply Slovak resources and NTDB localization
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64
+          import gzip
+          import re
+
+          root = Path('sokker/src/com/formulamanager/sokker/idiomas')
+          sk_b64 = '''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'''
+          sk_bytes = gzip.decompress(base64.b64decode(sk_b64))
+          (root / 'ApplicationResources_sk.properties').write_bytes(sk_bytes)
+
+          # English and French use only masculine level forms at runtime, but the
+          # catalog must retain the same keys across all languages. Add harmless
+          # feminine aliases to make the bundles structurally compatible.
+          for lang in ('en', 'fr'):
+              p = root / ('ApplicationResources_' + lang + '.properties')
+              data = p.read_bytes()
+              additions = []
+              for level in range(19):
+                  fkey = ('skills.skill%df' % level).encode('ascii')
+                  if re.search(br'(?m)^' + re.escape(fkey) + br'\s*=', data):
+                      continue
+                  m = re.search(br'(?m)^skills\.skill' + str(level).encode('ascii') + br'm\s*=\s*(.*)$', data)
+                  if not m:
+                      raise SystemExit('%s: missing masculine skill level %d' % (p, level))
+                  additions.append(fkey + b' = ' + m.group(1).rstrip(b'\r'))
+              if additions:
+                  data += b'\r\n' + b'\r\n'.join(additions) + b'\r\n'
+                  p.write_bytes(data)
+
+          translations = {
+              'en': [
+                  'ntdb.interface = NTDB interface',
+                  'ntdb.available_national_teams = Available National Teams',
+                  'ntdb.links = Links',
+                  'ntdb.u21_schedule = U21s schedule',
+                  'ntdb.nt_schedule = NTs schedule'],
+              'es': [
+                  'ntdb.interface = Interfaz NTDB',
+                  'ntdb.available_national_teams = Selecciones nacionales disponibles',
+                  'ntdb.links = Enlaces',
+                  'ntdb.u21_schedule = Calendario U21',
+                  'ntdb.nt_schedule = Calendario NT'],
+              'fr': [
+                  'ntdb.interface = Interface NTDB',
+                  'ntdb.available_national_teams = \u00C9quipes nationales disponibles',
+                  'ntdb.links = Liens',
+                  'ntdb.u21_schedule = Calendrier U21',
+                  'ntdb.nt_schedule = Calendrier NT'],
+              'it': [
+                  'ntdb.interface = Interfaccia NTDB',
+                  'ntdb.available_national_teams = Nazionali disponibili',
+                  'ntdb.links = Collegamenti',
+                  'ntdb.u21_schedule = Calendario U21',
+                  'ntdb.nt_schedule = Calendario NT']
+          }
+          for lang, lines in translations.items():
+              p = root / ('ApplicationResources_' + lang + '.properties')
+              data = p.read_bytes()
+              if b'ntdb.interface' not in data:
+                  data += b'\r\n' + ('\r\n'.join(lines) + '\r\n').encode('ascii')
+                  p.write_bytes(data)
+
+          jsp = Path('sokker/WebContent/jsp/asistente/ntdb_menu.jsp')
+          text = jsp.read_text(encoding='utf-8')
+          if '<%@page import="com.formulamanager.sokker.acciones.asistente.Idioma"%>' not in text:
+              marker = '<%@page import="com.formulamanager.sokker.bo.NtdbBO"%>'
+              if marker not in text:
+                  raise SystemExit('ntdb_menu.jsp: NtdbBO import marker not found')
+              text = text.replace(marker, marker + '\n<%@page import="com.formulamanager.sokker.acciones.asistente.Idioma"%>', 1)
+
+          replacements = {
+              '<title><fmt:message key="common.sokker_asistente" /> - NTDB interface</title>':
+                  '<title><fmt:message key="common.sokker_asistente" /> - <fmt:message key="ntdb.interface" /></title>',
+              '<c:forEach var="idioma" items="<%= new String[] { "EN", "ES", "FR", "IT" } %>">':
+                  '<c:forEach var="idioma" items="<%= Idioma.IDIOMAS %>">',
+              '<div class="cabecera">Available National Teams</div>':
+                  '<div class="cabecera"><fmt:message key="ntdb.available_national_teams" /></div>',
+              '<div class="cabecera">Links</div>':
+                  '<div class="cabecera"><fmt:message key="ntdb.links" /></div>',
+              '>U21s schedule</a>':
+                  '><fmt:message key="ntdb.u21_schedule" /></a>',
+              '>NTs schedule</a>':
+                  '><fmt:message key="ntdb.nt_schedule" /></a>'
+          }
+          for old, new in replacements.items():
+              if old not in text:
+                  raise SystemExit('ntdb_menu.jsp: expected text not found: ' + old)
+              text = text.replace(old, new)
+          jsp.write_text(text, encoding='utf-8', newline='')
+
+          # Repair the WAR verification path introduced while wiring the red test.
+          workflow = Path('.github/workflows/java8-compile.yml')
+          wf = workflow.read_text(encoding='utf-8')
+          wf = wf.replace('jar tf /tmp/sokker-war > /tmp/sokker-war-entries.txt',
+                          'jar tf /tmp/sokker.war > /tmp/sokker-war-entries.txt')
+          workflow.write_text(wf, encoding='utf-8', newline='')
+          PY
+
+          git diff --check
+          git diff --stat
+
+      - name: Commit Slovak localization
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            sokker/src/com/formulamanager/sokker/idiomas/ApplicationResources_*.properties \
+            sokker/WebContent/jsp/asistente/ntdb_menu.jsp \
+            .github/workflows/java8-compile.yml
+          git commit -m 'Complete Slovak localization'
+          git push origin HEAD:fix/update-json-only
