@@ -222,7 +222,7 @@ public final class SokkerXmlCompat {
 					}
 				}
 				if (week == null || day == null) {
-					continue;
+					return null;
 				}
 
 				Boolean finished = bool(match, "time.wasPlayed", "wasPlayed", "isFinished");
