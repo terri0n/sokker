@@ -280,7 +280,12 @@ public final class SokkerXmlCompat {
 			}
 
 			if (timeIn == null || timeOut == null) {
-				int played = minutes == null ? (bench ? 0 : 90) : Math.max(0, Math.min(90, minutes));
+				if (minutes == null) {
+					// Sin minutos no fabricamos 90' para titulares: una estimación falsa
+					// contaminaría el cálculo provisional de entrenamiento de la semana.
+					continue;
+				}
+				int played = Math.max(0, Math.min(90, minutes));
 				if (bench) {
 					timeIn = played == 0 ? 0 : 91 - played;
 					timeOut = played == 0 ? 0 : 90;
