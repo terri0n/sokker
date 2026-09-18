@@ -33,6 +33,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.formulamanager.sokker.auxiliares.EmailSenderService;
 import com.formulamanager.sokker.auxiliares.FileUtil;
 import com.formulamanager.sokker.auxiliares.Navegador;
+import com.formulamanager.sokker.auxiliares.PlayerPropertiesCompat;
 import com.formulamanager.sokker.auxiliares.SERVLET_ASISTENTE;
 import com.formulamanager.sokker.auxiliares.SystemUtil;
 import com.formulamanager.sokker.auxiliares.Util;
@@ -124,6 +125,9 @@ public class AsistenteBO extends JugadorBO {
 	
 			Set<String> keys = prop.stringPropertyNames();
 			for (String key : keys) {
+				if (!PlayerPropertiesCompat.isManagedPlayerKey(key)) {
+					continue;
+				}
 				String linea = prop.getProperty(key);
 //System.out.println(linea);
 				Jugador j = new Jugador(Integer.valueOf(key), Arrays.asList(linea.split(",")), true, null, null, usuario, null, null);
@@ -302,6 +306,7 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.asXml())
 		}
 	
 		String ruta = SystemUtil.getVar(SystemUtil.PATH) + tid + (historico ? "_historico" : "") + ".properties";
+		PlayerPropertiesCompat.preserveUnmanagedKeys(new File(ruta), prop);
 		Util.guardar_properties(prop, ruta);
 
 /*		File f = new File(PATH_BACKUP);
@@ -321,6 +326,7 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.asXml())
 		}
 	
 		String ruta = SystemUtil.getVar(SystemUtil.PATH) + tid + (historico ? "_historico" : "") + "_juveniles.properties";
+		PlayerPropertiesCompat.preserveUnmanagedKeys(new File(ruta), prop);
 		Util.guardar_properties(prop, ruta);
 
 //		ruta = PATH_BACKUP + tid + "_" + jornada_actual + (historico ? "_historico" : "") + "_juveniles.properties";
@@ -833,6 +839,9 @@ if (nuevo.getLesion() > 0) {
 	
 			Set<String> keys = prop.stringPropertyNames();
 			for (String key : keys) {
+				if (!PlayerPropertiesCompat.isManagedPlayerKey(key)) {
+					continue;
+				}
 				String linea = prop.getProperty(key);
 				Juvenil j = new Juvenil(Integer.valueOf(key), Arrays.asList(linea.split(",")), true, null, usuario);
 				juveniles.add(j);
