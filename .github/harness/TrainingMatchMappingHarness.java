@@ -9,6 +9,7 @@ public class TrainingMatchMappingHarness {
     public static void main(String[] args) {
         rejectsMissingTiming();
         rejectsMissingFormation();
+        rejectsMissingPlayerId();
     }
 
     private static void rejectsMissingTiming() {
@@ -32,6 +33,20 @@ public class TrainingMatchMappingHarness {
         String xml = SokkerXmlCompat.buildMatchXml(detail(), lineup(player), null);
         if (xml != null) {
             throw new AssertionError("Missing player formation must reject the JSON compatibility mapping instead of silently omitting the player");
+        }
+    }
+
+    private static void rejectsMissingPlayerId() {
+        Map<String, Object> player = new LinkedHashMap<String, Object>();
+        player.put("bench", Boolean.FALSE);
+        player.put("minutes", Integer.valueOf(90));
+        Map<String, Object> formation = new LinkedHashMap<String, Object>();
+        formation.put("code", Integer.valueOf(1));
+        player.put("formation", formation);
+
+        String xml = SokkerXmlCompat.buildMatchXml(detail(), lineup(player), null);
+        if (xml != null) {
+            throw new AssertionError("Missing player id must reject the JSON compatibility mapping instead of silently omitting the player");
         }
     }
 
