@@ -117,6 +117,11 @@ public abstract class Navegador {
 
 	// Intenta acceder a una url hasta 3 veces
 	public static XmlPage getXmlPage(WebClient navegador, String url) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
+		XmlPage paginaJson = SokkerXmlCompat.getXmlPage(navegador, url);
+		if (paginaJson != null) {
+			return paginaJson;
+		}
+
 		int intentos = 0;
 		Exception ex;
 		
