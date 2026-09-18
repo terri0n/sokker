@@ -1,0 +1,148 @@
+name: Apply Slovak i18n v2
+
+on:
+  push:
+    branches:
+      - fix/update-json-only
+    paths:
+      - .github/workflows/apply-slovak-i18n-v2.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/update-json-only
+
+      - name: Apply verified Slovak localization
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64
+          import gzip
+          import re
+
+          root = Path('sokker/src/com/formulamanager/sokker/idiomas')
+
+          # Reuse the exact bundle payload from the first guarded attempt.
+          helper = Path('.github/workflows/apply-slovak-i18n.yml').read_text(encoding='utf-8')
+          match = re.search(r"sk_b64 = '''([^']+)'''", helper)
+          if not match:
+              raise SystemExit('Unable to recover embedded Slovak bundle payload')
+          sk_bytes = gzip.decompress(base64.b64decode(match.group(1)))
+          (root / 'ApplicationResources_sk.properties').write_bytes(sk_bytes)
+
+          # EN and FR use masculine skill-level forms at runtime, while ES/IT
+          # already carry both genders. Add aliases so every bundle exposes the
+          # same resource-key contract without changing runtime selection.
+          for lang in ('en', 'fr'):
+              p = root / ('ApplicationResources_' + lang + '.properties')
+              data = p.read_bytes()
+              additions = []
+              for level in range(19):
+                  fkey = ('skills.skill%df' % level).encode('ascii')
+                  if re.search(br'(?m)^' + re.escape(fkey) + br'\s*=', data):
+                      continue
+                  m = re.search(br'(?m)^skills\.skill' + str(level).encode('ascii') + br'm\s*=\s*(.*)$', data)
+                  if not m:
+                      raise SystemExit('%s: missing masculine skill level %d' % (p, level))
+                  additions.append(fkey + b' = ' + m.group(1).rstrip(b'\r'))
+              if additions:
+                  data += b'\r\n' + b'\r\n'.join(additions) + b'\r\n'
+                  p.write_bytes(data)
+
+          translations = {
+              'en': [
+                  'ntdb.interface = NTDB interface',
+                  'ntdb.available_national_teams = Available National Teams',
+                  'ntdb.links = Links',
+                  'ntdb.u21_schedule = U21s schedule',
+                  'ntdb.nt_schedule = NTs schedule'],
+              'es': [
+                  'ntdb.interface = Interfaz NTDB',
+                  'ntdb.available_national_teams = Selecciones nacionales disponibles',
+                  'ntdb.links = Enlaces',
+                  'ntdb.u21_schedule = Calendario U21',
+                  'ntdb.nt_schedule = Calendario NT'],
+              'fr': [
+                  'ntdb.interface = Interface NTDB',
+                  r'ntdb.available_national_teams = \u00C9quipes nationales disponibles',
+                  'ntdb.links = Liens',
+                  'ntdb.u21_schedule = Calendrier U21',
+                  'ntdb.nt_schedule = Calendrier NT'],
+              'it': [
+                  'ntdb.interface = Interfaccia NTDB',
+                  'ntdb.available_national_teams = Nazionali disponibili',
+                  'ntdb.links = Collegamenti',
+                  'ntdb.u21_schedule = Calendario U21',
+                  'ntdb.nt_schedule = Calendario NT']
+          }
+          for lang, lines in translations.items():
+              p = root / ('ApplicationResources_' + lang + '.properties')
+              data = p.read_bytes()
+              if b'ntdb.interface' not in data:
+                  data += b'\r\n' + ('\r\n'.join(lines) + '\r\n').encode('ascii')
+                  p.write_bytes(data)
+
+          jsp = Path('sokker/WebContent/jsp/asistente/ntdb_menu.jsp')
+          text = jsp.read_text(encoding='utf-8')
+
+          ntdb_import = '<%@page import="com.formulamanager.sokker.bo.NtdbBO"%>'
+          idioma_import = '<%@page import="com.formulamanager.sokker.acciones.asistente.Idioma"%>'
+          if idioma_import not in text:
+              if ntdb_import not in text:
+                  raise SystemExit('ntdb_menu.jsp: NtdbBO import marker missing')
+              text = text.replace(ntdb_import, ntdb_import + '\n' + idioma_import, 1)
+
+          exact = {
+              '<title><fmt:message key="common.sokker_asistente" /> - NTDB interface</title>':
+                  '<title><fmt:message key="common.sokker_asistente" /> - <fmt:message key="ntdb.interface" /></title>',
+              '<c:forEach var="lang" items="<%= new String[] { "EN", "ES", "FR", "IT" } %>">':
+                  '<c:forEach var="lang" items="<%= Idioma.IDIOMAS %>">',
+              '<div class="cabecera">Available National Teams</div>':
+                  '<div class="cabecera"><fmt:message key="ntdb.available_national_teams" /></div>',
+              '<div class="cabecera">Links</div>':
+                  '<div class="cabecera"><fmt:message key="ntdb.links" /></div>'
+          }
+          for old, new in exact.items():
+              if old not in text:
+                  raise SystemExit('ntdb_menu.jsp: expected marker missing: ' + old)
+              text = text.replace(old, new, 1)
+
+          for old, key in (('U21s schedule', 'ntdb.u21_schedule'), ('NTs schedule', 'ntdb.nt_schedule')):
+              if old not in text:
+                  raise SystemExit('ntdb_menu.jsp: expected UI text missing: ' + old)
+              text = text.replace(old, '<fmt:message key="' + key + '" />', 1)
+
+          jsp.write_text(text, encoding='utf-8', newline='')
+
+          # Repair the path typo introduced only in the CI wiring commit.
+          workflow = Path('.github/workflows/java8-compile.yml')
+          wf = workflow.read_text(encoding='utf-8')
+          bad = 'jar tf /tmp/sokker-war > /tmp/sokker-war-entries.txt'
+          if bad in wf:
+              wf = wf.replace(bad, 'jar tf /tmp/sokker.war > /tmp/sokker-war-entries.txt')
+          workflow.write_text(wf, encoding='utf-8', newline='')
+          PY
+
+          git diff --check
+          git diff --stat
+
+      - name: Commit Slovak localization
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            sokker/src/com/formulamanager/sokker/idiomas/ApplicationResources_*.properties \
+            sokker/WebContent/jsp/asistente/ntdb_menu.jsp \
+            .github/workflows/java8-compile.yml
+          git commit -m 'Complete Slovak localization'
+          git push origin HEAD:fix/update-json-only
