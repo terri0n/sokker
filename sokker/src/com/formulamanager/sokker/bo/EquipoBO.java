@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Locale;
 
 import com.formulamanager.sokker.auxiliares.JSONUtil;
+import com.formulamanager.sokker.auxiliares.SokkerTrainingFormations;
 import com.formulamanager.sokker.entity.Jugador.DEMARCACION;
 import com.formulamanager.sokker.entity.Usuario;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
@@ -93,14 +94,19 @@ public class EquipoBO {
 	@SuppressWarnings("unchecked")
 	private static TIPO_ENTRENAMIENTO[] obtener_entrenamientos(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 		Object document = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/training/formations");
-		List<LinkedHashMap<String, Object>> formaciones = JsonPath.read(document, "$.formations");
+		List<LinkedHashMap<String, Object>> formaciones = SokkerTrainingFormations.normalize(document);
 		TIPO_ENTRENAMIENTO[] tipos = new TIPO_ENTRENAMIENTO[DEMARCACION.values().length];
+		boolean[] vistos = new boolean[tipos.length];
 
 		for (LinkedHashMap<String, Object> formacion : formaciones) {
 			Integer codigo = JSONUtil.getInteger(formacion, "formation.code");
 			if (codigo == null || codigo < 0 || codigo >= tipos.length) {
 				throw new IllegalArgumentException("Demarcación de entrenamiento desconocida: " + codigo);
 			}
+			if (vistos[codigo]) {
+				throw new IllegalArgumentException("Demarcación de entrenamiento duplicada: " + codigo);
+			}
+			vistos[codigo] = true;
 			tipos[codigo] = obtener_tipo_entrenamiento(JSONUtil.getString(formacion, "type.name"));
 		}
 
