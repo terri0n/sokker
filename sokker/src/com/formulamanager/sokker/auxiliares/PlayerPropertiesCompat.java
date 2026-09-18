@@ -12,7 +12,7 @@ public final class PlayerPropertiesCompat {
 
     public static boolean isPlayerDatabase(String fileName) {
         return fileName != null
-                && fileName.matches("[0-9]+(?:_historico)?(?:_juveniles)?\\.properties");
+                && fileName.matches("[0-9]+(?:(?:_historico)?(?:_juveniles)?|_juveniles_historico)?\\.properties");
     }
 
     public static void preserveUnmanagedKeys(Properties previous, Properties next) {
