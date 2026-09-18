@@ -24,14 +24,8 @@ jobs:
           from pathlib import Path
           path = Path('sokker/src/com/formulamanager/sokker/auxiliares/SokkerXmlCompat.java')
           text = path.read_text(encoding='utf-8')
-          old = '''\t\t\tif (formation == null) {
-\t\t\t\t// El algoritmo legado no puede procesar un playerStats sin formación.
-\t\t\t\tcontinue;
-\t\t\t}'''
-          new = '''\t\t\tif (formation == null) {
-\t\t\t\t// Sin formación no se puede reconstruir el entrenamiento con seguridad.
-\t\t\t\treturn false;
-\t\t\t}'''
+          old = '\t\t\tif (formation == null) {\n\t\t\t\t// El algoritmo legado no puede procesar un playerStats sin formación.\n\t\t\t\tcontinue;\n\t\t\t}'
+          new = '\t\t\tif (formation == null) {\n\t\t\t\t// Sin formación no se puede reconstruir el entrenamiento con seguridad.\n\t\t\t\treturn false;\n\t\t\t}'
           count = text.count(old)
           if count != 1:
               raise SystemExit('Unexpected formation target count: %d' % count)
