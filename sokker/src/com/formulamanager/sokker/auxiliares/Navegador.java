@@ -125,6 +125,12 @@ public abstract class Navegador {
 						return (P) paginaEntrenadores;
 					}
 
+					paginaJson = SokkerTrainerXmlCompat.getXmlPage(this, url);
+					if (paginaJson != null) {
+						paginaEntrenadores = paginaJson;
+						return (P) paginaEntrenadores;
+					}
+
 					P pagina = super.getPage(url);
 					if (pagina instanceof XmlPage) {
 						paginaEntrenadores = (XmlPage) pagina;
@@ -251,11 +257,11 @@ public abstract class Navegador {
 	protected Integer getJornadaMod(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 		return getJornadaMod(obtener_jornada(navegador));
 	}
-
+	
 	public boolean isIncrementar_edad() {
 		return incrementar_edad;
 	}
-
+	
 	public void setIncrementar_edad(boolean incrementar_edad) {
 		this.incrementar_edad = incrementar_edad;
 	}
