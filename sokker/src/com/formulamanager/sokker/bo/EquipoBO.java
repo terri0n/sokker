@@ -162,9 +162,14 @@ public class EquipoBO {
 		return login == null ? null : login.asText();
 	}
 
+	@SuppressWarnings("unchecked")
 	public static String obtener_nombre(int tid, WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
-		XmlPage pagina = navegador.getPage(AsistenteBO.SOKKER_URL + "/xml/team-" + tid + ".xml");
-		DomText nombre = pagina.getFirstByXPath("//teamdata/team/name/text()");
-		return nombre.asText();
+		Object document = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/team/" + tid);
+		LinkedHashMap<String, Object> datos_equipo = JsonPath.read(document, "$");
+		String nombre = JSONUtil.getString(datos_equipo, "name");
+		if (nombre == null) {
+			throw new IllegalArgumentException("El equipo no tiene nombre");
+		}
+		return nombre;
 	}
 }
