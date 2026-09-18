@@ -1,0 +1,104 @@
+name: Apply player properties fix
+
+on:
+  push:
+    branches:
+      - fix/update-json-only
+    paths:
+      - .github/workflows/apply-player-properties-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/update-json-only
+          fetch-depth: 0
+
+      - name: Apply focused AsistenteBO persistence patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java')
+          raw = path.read_bytes()
+          try:
+              text = raw.decode('utf-8')
+              encoding = 'utf-8'
+          except UnicodeDecodeError:
+              text = raw.decode('cp1252')
+              encoding = 'cp1252'
+
+          nl = '\r\n' if '\r\n' in text else '\n'
+
+          import_old = 'import com.formulamanager.sokker.auxiliares.Navegador;' + nl
+          import_new = import_old + 'import com.formulamanager.sokker.auxiliares.PlayerPropertiesCompat;' + nl
+          if 'import com.formulamanager.sokker.auxiliares.PlayerPropertiesCompat;' not in text:
+              if text.count(import_old) != 1:
+                  raise SystemExit('Unexpected Navegador import count')
+              text = text.replace(import_old, import_new, 1)
+
+          loop_old = (nl.join([
+              '\t\t\tfor (String key : keys) {',
+              '\t\t\t\tString linea = prop.getProperty(key);'
+          ]))
+          loop_new = (nl.join([
+              '\t\t\tfor (String key : keys) {',
+              '\t\t\t\tif (!PlayerPropertiesCompat.isManagedPlayerKey(key)) {',
+              '\t\t\t\t\tcontinue;',
+              '\t\t\t\t}',
+              '\t\t\t\tString linea = prop.getProperty(key);'
+          ]))
+          count = text.count(loop_old)
+          if count != 2:
+              raise SystemExit('Expected 2 player/juvenile read loops, found %d' % count)
+          text = text.replace(loop_old, loop_new)
+
+          player_save_old = (nl.join([
+              '\t\tString ruta = SystemUtil.getVar(SystemUtil.PATH) + tid + (historico ? "_historico" : "") + ".properties";',
+              '\t\tUtil.guardar_properties(prop, ruta);'
+          ]))
+          player_save_new = (nl.join([
+              '\t\tString ruta = SystemUtil.getVar(SystemUtil.PATH) + tid + (historico ? "_historico" : "") + ".properties";',
+              '\t\tPlayerPropertiesCompat.preserveUnmanagedKeys(new File(ruta), prop);',
+              '\t\tUtil.guardar_properties(prop, ruta);'
+          ]))
+          if text.count(player_save_old) != 1:
+              raise SystemExit('Unexpected player save block count')
+          text = text.replace(player_save_old, player_save_new, 1)
+
+          junior_save_old = (nl.join([
+              '\t\tString ruta = SystemUtil.getVar(SystemUtil.PATH) + tid + (historico ? "_historico" : "") + "_juveniles.properties";',
+              '\t\tUtil.guardar_properties(prop, ruta);'
+          ]))
+          junior_save_new = (nl.join([
+              '\t\tString ruta = SystemUtil.getVar(SystemUtil.PATH) + tid + (historico ? "_historico" : "") + "_juveniles.properties";',
+              '\t\tPlayerPropertiesCompat.preserveUnmanagedKeys(new File(ruta), prop);',
+              '\t\tUtil.guardar_properties(prop, ruta);'
+          ]))
+          if text.count(junior_save_old) != 1:
+              raise SystemExit('Unexpected juvenile save block count')
+          text = text.replace(junior_save_old, junior_save_new, 1)
+
+          path.write_bytes(text.encode(encoding))
+          PY
+
+          git diff --check
+          git diff -- sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java
+
+      - name: Commit focused fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Terrion"
+          git config user.email "63014185+terri0n@users.noreply.github.com"
+          git add sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java
+          git diff --cached --quiet && exit 0
+          git commit -m "Preserve unmanaged player database entries"
+          git push origin HEAD:fix/update-json-only
