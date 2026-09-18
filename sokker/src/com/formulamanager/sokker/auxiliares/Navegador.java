@@ -89,7 +89,21 @@ public abstract class Navegador {
 	}
 
 	private WebClient crear_navegador() {
-		WebClient navegador = new WebClient();
+		WebClient navegador = new WebClient() {
+			private static final long serialVersionUID = 1L;
+
+			@SuppressWarnings("unchecked")
+			@Override
+			public <P extends Page> P getPage(String url) throws IOException, FailingHttpStatusCodeException, MalformedURLException {
+				if ((AsistenteBO.SOKKER_URL + "/xml/juniors.xml").equals(url)) {
+					XmlPage paginaJson = SokkerJuniorsXmlCompat.getXmlPage(this, url);
+					if (paginaJson != null) {
+						return (P) paginaJson;
+					}
+				}
+				return super.getPage(url);
+			}
+		};
 		navegador.getOptions().setJavaScriptEnabled(false);
 		navegador.getOptions().setCssEnabled(false);
 		navegador.getOptions().setUseInsecureSSL(true);
