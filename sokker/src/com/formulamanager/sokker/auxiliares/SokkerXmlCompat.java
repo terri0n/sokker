@@ -255,9 +255,9 @@ public final class SokkerXmlCompat {
 			int number = bench ? benchNumber++ : starterNumber++;
 
 			Integer formation = integer(player,
-					"formation.code", "formation", "position.code", "player.formation.code");
+					"formation.code", "formation", "player.formation.code");
 			if (formation == null && statsPlayer != null) {
-				formation = integer(statsPlayer, "formation.code", "formation", "position.code", "player.formation.code");
+				formation = integer(statsPlayer, "formation.code", "formation", "player.formation.code");
 			}
 			if (formation == null) {
 				// El algoritmo legado no puede procesar un playerStats sin formación.
@@ -289,6 +289,10 @@ public final class SokkerXmlCompat {
 				if (bench) {
 					timeIn = played == 0 ? 0 : 91 - played;
 					timeOut = played == 0 ? 0 : 90;
+				} else if (played == 0) {
+					// El XML legado usa timeOut=0 para indicar que jugó hasta el final.
+					timeIn = 91;
+					timeOut = 90;
 				} else {
 					timeIn = 0;
 					timeOut = played;
