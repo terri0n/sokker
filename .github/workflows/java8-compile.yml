@@ -90,7 +90,6 @@ jobs:
           PY
 
           if ! git diff --quiet -- sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java; then
-            git diff --check
             git config user.name "Terrion"
             git config user.email "63014185+terri0n@users.noreply.github.com"
             git add sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java
