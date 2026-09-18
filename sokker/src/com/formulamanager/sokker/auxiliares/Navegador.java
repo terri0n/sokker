@@ -91,6 +91,7 @@ public abstract class Navegador {
 	private WebClient crear_navegador() {
 		WebClient navegador = new WebClient() {
 			private static final long serialVersionUID = 1L;
+			private XmlPage paginaJuniors;
 
 			@SuppressWarnings("unchecked")
 			@Override
@@ -101,10 +102,21 @@ public abstract class Navegador {
 				}
 
 				if ((AsistenteBO.SOKKER_URL + "/xml/juniors.xml").equals(url)) {
+					if (paginaJuniors != null) {
+						return (P) paginaJuniors;
+					}
+
 					paginaJson = SokkerJuniorsXmlCompat.getXmlPage(this, url);
 					if (paginaJson != null) {
-						return (P) paginaJson;
+						paginaJuniors = paginaJson;
+						return (P) paginaJuniors;
 					}
+
+					P pagina = super.getPage(url);
+					if (pagina instanceof XmlPage) {
+						paginaJuniors = (XmlPage) pagina;
+					}
+					return pagina;
 				}
 				return super.getPage(url);
 			}
