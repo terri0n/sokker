@@ -1,4 +1,5 @@
 <%@page import="com.formulamanager.sokker.bo.NtdbBO"%>
+<%@page import="com.formulamanager.sokker.acciones.asistente.Idioma"%>
 <%@page import="javax.servlet.jsp.jstl.core.LoopTagStatus"%>
 <%@page import="javax.servlet.jsp.jstl.core.LoopTagSupport"%>
 <%@page import="java.util.Date"%>
@@ -77,7 +78,7 @@
 	<meta property="og:url" content="https://raqueto.com${pageContext.request.contextPath}/asistente">
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<meta http-equiv=”Content-Language” content=”${sessionScope['javax.servlet.jsp.jstl.fmt.locale.session'].language}”/>
-	<title><fmt:message key="common.sokker_asistente" /> - NTDB interface</title>
+	<title><fmt:message key="common.sokker_asistente" /> - <fmt:message key="ntdb.interface" /></title>
 
 	<!-- Global site tag (gtag.js) - Google Analytics -->
 	<script>
@@ -126,7 +127,7 @@
 	<%-- IDIOMA --%>
 	<%------------%>
 	<tags:desplegable onchange="idioma_change()" value="${fn:toUpperCase(sessionScope['javax.servlet.jsp.jstl.fmt.locale.session'].language)}" style="position: fixed; top: 0px; right: 0px; z-index: 3;" class_="dropdown_opacity">
-		<c:forEach var="lang" items="<%= new String[] { \"EN\", \"ES\", \"FR\", \"IT\" } %>">
+		<c:forEach var="lang" items="<%= Idioma.IDIOMAS %>">
 			<li onClick="dropdown_click(this)" data-toggle="${lang}" title="<%= Util.initCap(new Locale(((String)pageContext.getAttribute("lang"))).getDisplayLanguage()) %>">
 				<img src="${pageContext.request.contextPath}/img/banderas/${lang == 'EN' ? 'GB' : lang}.png" class="margin-right"/>
 			</li>
@@ -145,7 +146,7 @@
 		
 		<br />
 
-		<div class="cabecera">Available National Teams</div>
+		<div class="cabecera"><fmt:message key="ntdb.available_national_teams" /></div>
 		<div class="fin_bloque doble">
 			<div align="left" style="display: inline-block;">
 				<%
@@ -178,7 +179,7 @@
 
 		<br />
 
-		<div class="cabecera">Links</div>
+		<div class="cabecera"><fmt:message key="ntdb.links" /></div>
 		<div class="fin_bloque doble">
 			<div class="boton grande" onclick="javascript:location.href='${pageContext.request.contextPath}/asistente/ntdb'">
 				<span class="material-icons" style="color: brown">directions_run</span>
@@ -190,14 +191,14 @@
 			<div class="boton grande" onclick="javascript:location.href='${pageContext.request.contextPath}/asistente/horario?tid=400'">
 				<span class="material-icons azul">outlined_flag</span>
 				<div class="peque">
-					U21s schedule
+					<fmt:message key="ntdb.u21_schedule" />
 				</div>
 			</div>
 
 			<div class="boton grande" onclick="javascript:location.href='${pageContext.request.contextPath}/asistente/horario?tid=0'">
 				<span class="material-icons azul">flag</span>
 				<div class="peque">
-					NTs schedule
+					<fmt:message key="ntdb.nt_schedule" />
 				</div>
 			</div>
 
