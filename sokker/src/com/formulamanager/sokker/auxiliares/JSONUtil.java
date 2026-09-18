@@ -10,7 +10,7 @@ import com.jayway.jsonpath.Configuration;
 
 public class JSONUtil {
 	public static Object getJson(WebClient navegador, String url) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
-		String json = navegador.getPage(url).getWebResponse().getContentAsString();
+		String json = SokkerApiHttp.get(navegador, url);
 		return Configuration.defaultConfiguration().jsonProvider().parse(json);
 	}
 	
