@@ -16,6 +16,7 @@ public class TrainingMatchMappingHarness {
         rejectsMissingLeagueId();
         rejectsMissingFinishedState();
         rejectsPageMatchMissingId();
+        rejectsUnresolvableWeekDay();
     }
 
     private static void rejectsMissingTiming() {
@@ -98,6 +99,19 @@ public class TrainingMatchMappingHarness {
         String xml = SokkerXmlCompat.buildMatchesXml(new LinkedHashMap<String, Object>(), collected);
         if (xml != null) {
             throw new AssertionError("A page match without id must reject the JSON compatibility mapping instead of disappearing from the match list");
+        }
+    }
+
+    private static void rejectsUnresolvableWeekDay() {
+        Map<String, Object> match = new LinkedHashMap<String, Object>();
+        match.put("id", Integer.valueOf(988));
+        match.put("wasPlayed", Boolean.TRUE);
+        List<Object> matches = new ArrayList<Object>();
+        matches.add(match);
+
+        String xml = SokkerXmlCompat.buildMatchesXml(new LinkedHashMap<String, Object>(), matches);
+        if (xml != null) {
+            throw new AssertionError("A match without resolvable week/day must reject the JSON compatibility mapping instead of disappearing from the match list");
         }
     }
 
