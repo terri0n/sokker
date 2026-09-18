@@ -1,0 +1,105 @@
+name: Apply incomplete match fallback
+
+on:
+  push:
+    branches:
+      - fix/update-json-only
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/update-json-only
+
+      - name: Reject incomplete JSON match timing
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('sokker/src/com/formulamanager/sokker/auxiliares/SokkerXmlCompat.java')
+          text = path.read_text(encoding='utf-8')
+
+          old = '''\t\tStringWebResponse response = new StringWebResponse(xml, new URL(url));
+\t\treturn new XmlPage(response, navegador.getCurrentWindow());'''
+          new = '''\t\tif (xml == null) {
+\t\t\treturn null;
+\t\t}
+
+\t\tStringWebResponse response = new StringWebResponse(xml, new URL(url));
+\t\treturn new XmlPage(response, navegador.getCurrentWindow());'''
+          if text.count(old) != 1:
+              raise SystemExit('Unexpected getXmlPage target count: %d' % text.count(old))
+          text = text.replace(old, new)
+
+          old = '''\t\tappendPlayers(xml, list(lineup, "homePlayers", "home.players", "lineup.homePlayers"), stats);
+\t\tappendPlayers(xml, list(lineup, "awayPlayers", "away.players", "lineup.awayPlayers"), stats);
+\t\treturn xml.append("</playerStatsList></match>").toString();'''
+          new = '''\t\tif (!appendPlayers(xml, list(lineup, "homePlayers", "home.players", "lineup.homePlayers"), stats)
+\t\t\t\t|| !appendPlayers(xml, list(lineup, "awayPlayers", "away.players", "lineup.awayPlayers"), stats)) {
+\t\t\treturn null;
+\t\t}
+\t\treturn xml.append("</playerStatsList></match>").toString();'''
+          if text.count(old) != 1:
+              raise SystemExit('Unexpected buildMatchXml target count: %d' % text.count(old))
+          text = text.replace(old, new)
+
+          old = '\tprivate static void appendPlayers(StringBuilder xml, List<?> players, Object stats) {'
+          new = '\tprivate static boolean appendPlayers(StringBuilder xml, List<?> players, Object stats) {'
+          if text.count(old) != 1:
+              raise SystemExit('Unexpected appendPlayers signature count: %d' % text.count(old))
+          text = text.replace(old, new)
+
+          old = '''\t\t\t\tif (minutes == null) {
+\t\t\t\t\t// Sin minutos no fabricamos 90' para titulares: una estimación falsa
+\t\t\t\t\t// contaminaría el cálculo provisional de entrenamiento de la semana.
+\t\t\t\t\tcontinue;
+\t\t\t\t}'''
+          new = '''\t\t\t\tif (minutes == null) {
+\t\t\t\t\t// Si no podemos reconstruir el tiempo jugado de un miembro de la alineación,
+\t\t\t\t\t// rechazamos todo el adaptador para que el llamador use el XML real.
+\t\t\t\t\treturn false;
+\t\t\t\t}'''
+          if text.count(old) != 1:
+              raise SystemExit('Unexpected missing-minutes target count: %d' % text.count(old))
+          text = text.replace(old, new)
+
+          old = '''\t\t\txml.append("<playerStats><playerID>").append(id).append("</playerID>")
+\t\t\t\t.append("<number>").append(number).append("</number>")
+\t\t\t\t.append("<timeIn>").append(timeIn).append("</timeIn>")
+\t\t\t\t.append("<timeOut>").append(timeOut).append("</timeOut>")
+\t\t\t\t.append("<formation>").append(formation).append("</formation></playerStats>");
+\t\t}
+\t}'''
+          new = '''\t\t\txml.append("<playerStats><playerID>").append(id).append("</playerID>")
+\t\t\t\t.append("<number>").append(number).append("</number>")
+\t\t\t\t.append("<timeIn>").append(timeIn).append("</timeIn>")
+\t\t\t\t.append("<timeOut>").append(timeOut).append("</timeOut>")
+\t\t\t\t.append("<formation>").append(formation).append("</formation></playerStats>");
+\t\t}
+\t\treturn true;
+\t}'''
+          if text.count(old) != 1:
+              raise SystemExit('Unexpected appendPlayers ending count: %d' % text.count(old))
+          text = text.replace(old, new)
+
+          path.write_text(text, encoding='utf-8', newline='')
+          PY
+
+      - name: Commit fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Terrion'
+          git config user.email '63014185+terri0n@users.noreply.github.com'
+          git add sokker/src/com/formulamanager/sokker/auxiliares/SokkerXmlCompat.java
+          git diff --cached --check
+          git commit -m 'Fallback when JSON match timing is incomplete'
+          git push origin HEAD:fix/update-json-only
