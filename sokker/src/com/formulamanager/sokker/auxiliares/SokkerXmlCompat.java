@@ -222,6 +222,9 @@ public final class SokkerXmlCompat {
 				}
 
 				Boolean finished = bool(match, "time.wasPlayed", "wasPlayed", "isFinished");
+				if (finished == null) {
+					return null;
+				}
 				xml.append("<match><matchID>").append(id).append("</matchID>")
 					.append("<week>").append(week).append("</week>")
 					.append("<day>").append(day).append("</day>")
