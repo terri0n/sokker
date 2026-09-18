@@ -11,6 +11,7 @@ public class TrainingMatchMappingHarness {
         rejectsMissingFormation();
         rejectsMissingPlayerId();
         rejectsMissingLeagueId();
+        rejectsMissingFinishedState();
     }
 
     private static void rejectsMissingTiming() {
@@ -56,6 +57,20 @@ public class TrainingMatchMappingHarness {
         String xml = SokkerXmlCompat.buildMatchXml(new LinkedHashMap<String, Object>(), lineup(player), null);
         if (xml != null) {
             throw new AssertionError("Missing league id must reject the JSON compatibility mapping instead of inventing leagueID=0");
+        }
+    }
+
+    private static void rejectsMissingFinishedState() {
+        Map<String, Object> match = new LinkedHashMap<String, Object>();
+        match.put("id", Integer.valueOf(987));
+        match.put("week", Integer.valueOf(12));
+        match.put("day", Integer.valueOf(3));
+        List<Object> matches = new ArrayList<Object>();
+        matches.add(match);
+
+        String xml = SokkerXmlCompat.buildMatchesXml(new LinkedHashMap<String, Object>(), matches);
+        if (xml != null) {
+            throw new AssertionError("Missing match finished state must reject the JSON compatibility mapping instead of assuming isFinished=0");
         }
     }
 
