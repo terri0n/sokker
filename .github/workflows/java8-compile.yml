@@ -3,7 +3,8 @@ name: Java 8 compile
 on:
   push:
     branches:
-      - fix/update-json-only
+      - main
+      - 'fix/**'
   workflow_dispatch:
 
 jobs:
@@ -76,7 +77,8 @@ jobs:
             .github/harness/TeamIdThresholdHarness.java \
             .github/harness/CurrentApiHarness.java \
             .github/harness/UpdateAtomicityHarness.java \
-            .github/harness/I18nParityHarness.java
+            .github/harness/I18nParityHarness.java \
+            .github/harness/ApiTransportHarness.java
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" PersistenceRoundTrip
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainerMappingHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainingMatchMappingHarness
@@ -84,6 +86,7 @@ jobs:
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" CurrentApiHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" UpdateAtomicityHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" I18nParityHarness
+          java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" ApiTransportHarness
 
       - name: Verify team ID classification uses shared threshold
         shell: bash
