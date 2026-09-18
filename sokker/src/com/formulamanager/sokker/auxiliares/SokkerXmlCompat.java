@@ -98,7 +98,11 @@ public final class SokkerXmlCompat {
 	private static void agregarPartidos(Object pagina, List<Object> partidos, Set<Integer> ids) {
 		for (Object partido : list(pagina, "matches")) {
 			Integer mid = integer(partido, "id", "matchID");
-			if (mid != null && ids.add(mid)) {
+			if (mid == null) {
+				partidos.add(partido);
+				continue;
+			}
+			if (ids.add(mid)) {
 				partidos.add(partido);
 				partidosJson.put(mid, partido);
 				guardarLiga(partido);
@@ -202,7 +206,7 @@ public final class SokkerXmlCompat {
 			for (Object match : matches) {
 				Integer id = integer(match, "id", "matchID");
 				if (id == null) {
-					continue;
+					return null;
 				}
 
 				Integer week = integer(match, "week", "time.week");
