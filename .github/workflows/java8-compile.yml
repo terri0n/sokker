@@ -36,4 +36,4 @@ jobs:
           MAVEN_CP="$(cat /tmp/maven-classpath.txt)"
           CP="sokker/WebContent/WEB-INF/lib/*:${MAVEN_CP}:${SERVLET}:${JSP}"
           find sokker/src -name '*.java' -print0 \
-            | xargs -0 javac -source 8 -target 8 -encoding UTF-8 -cp "$CP" -d /tmp/sokker-classes
+            | xargs -0 javac -source 8 -target 8 -encoding windows-1252 -cp "$CP" -d /tmp/sokker-classes
