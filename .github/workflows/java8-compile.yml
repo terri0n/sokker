@@ -57,3 +57,23 @@ jobs:
           CP="sokker/WebContent/WEB-INF/lib/*:${MAVEN_CP}:${SERVLET}:${JSP}"
           find /tmp/sokker-src -name '*.java' -print0 \
             | xargs -0 javac -source 8 -target 8 -encoding UTF-8 -cp "$CP" -d /tmp/sokker-classes
+
+      - name: Assemble and verify WAR
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/sokker-war
+          mkdir -p /tmp/sokker-war/WEB-INF/classes
+          cp -a sokker/WebContent/. /tmp/sokker-war/
+          cp -a /tmp/sokker-classes/. /tmp/sokker-war/WEB-INF/classes/
+
+          test -f /tmp/sokker-war/WEB-INF/web.xml
+          test -f /tmp/sokker-war/WEB-INF/classes/com/formulamanager/sokker/bo/AsistenteBO.class
+          test -d /tmp/sokker-war/WEB-INF/lib
+          test "$(find /tmp/sokker-war/WEB-INF/lib -type f -name '*.jar' | wc -l)" -gt 0
+
+          jar cf /tmp/sokker.war -C /tmp/sokker-war .
+          jar tf /tmp/sokker.war > /tmp/sokker-war-entries.txt
+          grep -Fxq 'WEB-INF/web.xml' /tmp/sokker-war-entries.txt
+          grep -Fxq 'WEB-INF/classes/com/formulamanager/sokker/bo/AsistenteBO.class' /tmp/sokker-war-entries.txt
+          test -s /tmp/sokker.war
