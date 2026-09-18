@@ -48,12 +48,23 @@ public final class SokkerJuniorsXmlCompat {
         List<?> juniors = (List<?>) juniorsValue;
         Map<Integer, Boolean> savedPositions = loadSavedPositions(tid);
 
+        Set<Integer> currentIds = new HashSet<Integer>();
         Set<Integer> pending = new HashSet<Integer>();
         for (Object junior : juniors) {
             Integer id = integer(junior, "id");
-            if (id != null && !savedPositions.containsKey(id)) {
-                pending.add(id);
+            if (id != null) {
+                currentIds.add(id);
+                if (!savedPositions.containsKey(id) || savedPositions.get(id) == null) {
+                    pending.add(id);
+                }
             }
+        }
+
+        // Una baja real en la escuela es destructiva para el fichero actual.
+        // Si el JSON omite un PID guardado, confirmamos la desaparición usando
+        // el XML legado en vez de asumir que la respuesta JSON es completa.
+        if (!currentIds.containsAll(savedPositions.keySet())) {
+            return null;
         }
 
         Map<Integer, String> newsPositions = pending.isEmpty()
@@ -139,12 +150,16 @@ public final class SokkerJuniorsXmlCompat {
             if (fields.length < 2) {
                 continue;
             }
-            String position = fields[1];
-            if (!"true".equalsIgnoreCase(position) && !"false".equalsIgnoreCase(position)) {
-                continue;
-            }
             try {
-                result.put(Integer.valueOf(key), Boolean.valueOf(position));
+                Integer id = Integer.valueOf(key);
+                String position = fields[1];
+                if ("true".equalsIgnoreCase(position) || "false".equalsIgnoreCase(position)) {
+                    result.put(id, Boolean.valueOf(position));
+                } else {
+                    // Conservamos el PID para que una respuesta JSON que lo omita
+                    // no pueda convertir una posición corrupta/desconocida en una baja.
+                    result.put(id, null);
+                }
             } catch (NumberFormatException ignored) {
                 // La lectura histórica de juveniles solo admite PID numérico.
             }
