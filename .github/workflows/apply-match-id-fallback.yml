@@ -1,0 +1,53 @@
+name: Apply match id fallback
+
+on:
+  push:
+    branches:
+      - fix/update-json-only
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/update-json-only
+
+      - name: Preserve malformed match and reject missing id
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('sokker/src/com/formulamanager/sokker/auxiliares/SokkerXmlCompat.java')
+          text = path.read_text(encoding='utf-8')
+
+          old_collect = '\t\tfor (Object partido : list(pagina, "matches")) {\n\t\t\tInteger mid = integer(partido, "id", "matchID");\n\t\t\tif (mid != null && ids.add(mid)) {\n\t\t\t\tpartidos.add(partido);\n\t\t\t\tpartidosJson.put(mid, partido);\n\t\t\t\tguardarLiga(partido);\n\t\t\t}\n\t\t}'
+          new_collect = '\t\tfor (Object partido : list(pagina, "matches")) {\n\t\t\tInteger mid = integer(partido, "id", "matchID");\n\t\t\tif (mid == null) {\n\t\t\t\tpartidos.add(partido);\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\tif (ids.add(mid)) {\n\t\t\t\tpartidos.add(partido);\n\t\t\t\tpartidosJson.put(mid, partido);\n\t\t\t\tguardarLiga(partido);\n\t\t\t}\n\t\t}'
+
+          old_build = '\t\t\t\tInteger id = integer(match, "id", "matchID");\n\t\t\t\tif (id == null) {\n\t\t\t\t\tcontinue;\n\t\t\t\t}'
+          new_build = '\t\t\t\tInteger id = integer(match, "id", "matchID");\n\t\t\t\tif (id == null) {\n\t\t\t\t\treturn null;\n\t\t\t\t}'
+
+          if text.count(old_collect) != 1:
+              raise SystemExit('Unexpected agregarPartidos target count: %d' % text.count(old_collect))
+          if text.count(old_build) != 1:
+              raise SystemExit('Unexpected buildMatchesXml id target count: %d' % text.count(old_build))
+
+          text = text.replace(old_collect, new_collect)
+          text = text.replace(old_build, new_build)
+          path.write_text(text, encoding='utf-8', newline='')
+          PY
+
+      - name: Commit fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Terrion'
+          git config user.email '63014185+terri0n@users.noreply.github.com'
+          git add sokker/src/com/formulamanager/sokker/auxiliares/SokkerXmlCompat.java
+          git diff --cached --check
+          git commit -m 'Fallback when JSON match id is missing'
+          git push origin HEAD:fix/update-json-only
