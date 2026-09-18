@@ -3,6 +3,7 @@ package com.formulamanager.sokker.auxiliares;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.LinkedHashMap;
 
 import com.formulamanager.sokker.bo.AsistenteBO;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
@@ -17,6 +18,7 @@ import com.gargoylesoftware.htmlunit.xml.XmlPage;
 public final class SokkerPlayerXmlCompat {
     private SokkerPlayerXmlCompat() {}
 
+    @SuppressWarnings("unchecked")
     public static XmlPage getXmlPage(WebClient navegador, String url)
             throws FailingHttpStatusCodeException, MalformedURLException, IOException {
         String prefix = AsistenteBO.SOKKER_URL + "/xml/player-";
@@ -31,16 +33,20 @@ public final class SokkerPlayerXmlCompat {
             return null;
         }
 
-        final Object player;
+        final Object response;
         try {
-            player = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/player/" + pid);
+            response = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/player/" + pid);
         } catch (FailingHttpStatusCodeException e) {
             if (e.getStatusCode() == 404) {
                 return xmlPage(navegador, url, "<player></player>");
             }
             throw e;
         }
+        if (!(response instanceof LinkedHashMap<?, ?>)) {
+            return null;
+        }
 
+        LinkedHashMap<String, Object> player = (LinkedHashMap<String, Object>) response;
         String name = JSONUtil.getString(player, "info.name.full");
         Integer teamId = JSONUtil.getInteger(player, "info.team.id");
         if (name == null || teamId == null) {
