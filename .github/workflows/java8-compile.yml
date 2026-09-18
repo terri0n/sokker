@@ -58,20 +58,22 @@ jobs:
           find /tmp/sokker-src -name '*.java' -print0 \
             | xargs -0 javac -source 8 -target 8 -encoding UTF-8 -cp "$CP" -d /tmp/sokker-classes
 
-      - name: Verify persistence round trips
+      - name: Verify compatibility harnesses
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p /tmp/persistence-harness
+          mkdir -p /tmp/compat-harness
           SERVLET="$HOME/.m2/repository/javax/servlet/javax.servlet-api/4.0.1/javax.servlet-api-4.0.1.jar"
           JSP="$HOME/.m2/repository/javax/servlet/jsp/javax.servlet.jsp-api/2.3.3/javax.servlet.jsp-api-2.3.3.jar"
           MAVEN_CP="$(cat /tmp/maven-classpath.txt)"
           CP="sokker/WebContent/WEB-INF/lib/*:${MAVEN_CP}:${SERVLET}:${JSP}"
           javac -source 8 -target 8 -encoding UTF-8 \
             -cp "/tmp/sokker-classes:${CP}" \
-            -d /tmp/persistence-harness \
-            .github/harness/PersistenceRoundTrip.java
-          java -cp "/tmp/persistence-harness:/tmp/sokker-classes:${CP}" PersistenceRoundTrip
+            -d /tmp/compat-harness \
+            .github/harness/PersistenceRoundTrip.java \
+            .github/harness/TrainerMappingHarness.java
+          java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" PersistenceRoundTrip
+          java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainerMappingHarness
 
       - name: Assemble and verify WAR
         shell: bash
