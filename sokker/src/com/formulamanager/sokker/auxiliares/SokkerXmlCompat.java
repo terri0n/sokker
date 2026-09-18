@@ -252,7 +252,7 @@ public final class SokkerXmlCompat {
 			Object player = players.get(i);
 			Integer id = integer(player, "id", "player.id");
 			if (id == null) {
-				continue;
+				return false;
 			}
 
 			Object statsPlayer = findPlayer(stats, id);
