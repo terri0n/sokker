@@ -234,8 +234,11 @@ public final class SokkerXmlCompat {
 	public static String buildMatchXml(Object detail, Object lineup, Object stats) {
 		Integer leagueId = integer(detail,
 				"league.id", "leagueID", "info.league.id", "info.leagueID", "match.league.id");
+		if (leagueId == null) {
+			return null;
+		}
 		StringBuilder xml = new StringBuilder("<match><info><leagueID>")
-				.append(leagueId == null ? 0 : leagueId)
+				.append(leagueId)
 				.append("</leagueID></info><playerStatsList>");
 
 		if (!appendPlayers(xml, list(lineup, "homePlayers", "home.players", "lineup.homePlayers"), stats)
