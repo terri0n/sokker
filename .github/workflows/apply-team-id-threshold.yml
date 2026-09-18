@@ -26,19 +26,24 @@ jobs:
           from pathlib import Path
           import re
 
-          def replace_required(path, old, new):
+          def replace_all(path, replacements):
               p = Path(path)
               data = p.read_bytes()
-              count = data.count(old)
-              if count == 0:
-                  raise SystemExit('%s: expected occurrence of %r' % (path, old))
-              p.write_bytes(data.replace(old, new))
-              print('%s: replaced %d occurrence(s) of %r' % (path, count, old))
+              total = 0
+              for old, new in replacements:
+                  count = data.count(old)
+                  if count:
+                      data = data.replace(old, new)
+                      total += count
+                      print('%s: replaced %d x %r' % (path, count, old))
+              p.write_bytes(data)
+              return total
 
-          replace_required(
-              'sokker/src/com/formulamanager/sokker/bo/NtdbBO.java',
-              b'MAX_ID_SELECCION = 1000;',
-              b'MAX_ID_SELECCION = 800;')
+          ntdb = Path('sokker/src/com/formulamanager/sokker/bo/NtdbBO.java')
+          data = ntdb.read_bytes()
+          if data.count(b'MAX_ID_SELECCION = 1000;') != 1:
+              raise SystemExit('NtdbBO.java: expected exactly one old threshold declaration')
+          ntdb.write_bytes(data.replace(b'MAX_ID_SELECCION = 1000;', b'MAX_ID_SELECCION = 800;'))
 
           grabar = Path('sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java')
           data = grabar.read_bytes()
@@ -48,26 +53,17 @@ jobs:
               if data.count(marker) != 1:
                   raise SystemExit('Grabar.java: AsistenteBO import marker not unique')
               data = data.replace(marker, marker + b'import com.formulamanager.sokker.bo.NtdbBO;' + nl, 1)
-          if b'tid < 1000' not in data:
-              raise SystemExit('Grabar.java: expected hardcoded threshold not found')
-          data = data.replace(b'tid < 1000', b'tid < NtdbBO.MAX_ID_SELECCION')
-          grabar.write_bytes(data)
-
-          asistente = Path('sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java')
-          data = asistente.read_bytes()
-          if b'tid < 1000' not in data and b'tid > 1000' not in data:
-              raise SystemExit('AsistenteBO.java: expected hardcoded threshold not found')
           data = data.replace(b'tid < 1000', b'tid < NtdbBO.MAX_ID_SELECCION')
           data = data.replace(b'tid > 1000', b'tid > NtdbBO.MAX_ID_SELECCION')
-          asistente.write_bytes(data)
+          grabar.write_bytes(data)
 
-          config = Path('sokker/WebContent/jsp/asistente/config.jsp')
-          data = config.read_bytes()
-          if b'sessionScope.usuario.def_tid > 1000' not in data or b'sessionScope.usuario.def_tid < 1000' not in data:
-              raise SystemExit('config.jsp: expected hardcoded thresholds not found')
-          data = data.replace(b'sessionScope.usuario.def_tid > 1000', b'sessionScope.usuario.def_tid > MAX_ID_SELECCION')
-          data = data.replace(b'sessionScope.usuario.def_tid < 1000', b'sessionScope.usuario.def_tid < MAX_ID_SELECCION')
-          config.write_bytes(data)
+          replace_all('sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java', [
+              (b'tid < 1000', b'tid < NtdbBO.MAX_ID_SELECCION'),
+              (b'tid > 1000', b'tid > NtdbBO.MAX_ID_SELECCION')])
+
+          replace_all('sokker/WebContent/jsp/asistente/config.jsp', [
+              (b'sessionScope.usuario.def_tid < 1000', b'sessionScope.usuario.def_tid < MAX_ID_SELECCION'),
+              (b'sessionScope.usuario.def_tid > 1000', b'sessionScope.usuario.def_tid > MAX_ID_SELECCION')])
 
           tag = Path('sokker/WebContent/WEB-INF/tags/jugadores.tag')
           data = tag.read_bytes()
@@ -83,8 +79,7 @@ jobs:
               if data.count(bundle_marker) != 1:
                   raise SystemExit('jugadores.tag: bundle marker not unique')
               data = data.replace(bundle_marker, bundle_marker + set_marker + nl, 1)
-          if b'sessionScope.usuario.def_tid > 1000' not in data:
-              raise SystemExit('jugadores.tag: expected hardcoded threshold not found')
+          data = data.replace(b'sessionScope.usuario.def_tid < 1000', b'sessionScope.usuario.def_tid < MAX_ID_SELECCION')
           data = data.replace(b'sessionScope.usuario.def_tid > 1000', b'sessionScope.usuario.def_tid > MAX_ID_SELECCION')
           tag.write_bytes(data)
 
