@@ -92,6 +92,7 @@ public abstract class Navegador {
 		WebClient navegador = new WebClient() {
 			private static final long serialVersionUID = 1L;
 			private XmlPage paginaJuniors;
+			private XmlPage paginaEntrenadores;
 
 			@SuppressWarnings("unchecked")
 			@Override
@@ -115,6 +116,18 @@ public abstract class Navegador {
 					P pagina = super.getPage(url);
 					if (pagina instanceof XmlPage) {
 						paginaJuniors = (XmlPage) pagina;
+					}
+					return pagina;
+				}
+
+				if ((AsistenteBO.SOKKER_URL + "/xml/trainers.xml").equals(url)) {
+					if (paginaEntrenadores != null) {
+						return (P) paginaEntrenadores;
+					}
+
+					P pagina = super.getPage(url);
+					if (pagina instanceof XmlPage) {
+						paginaEntrenadores = (XmlPage) pagina;
 					}
 					return pagina;
 				}
