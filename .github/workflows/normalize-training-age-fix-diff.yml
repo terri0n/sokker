@@ -1,0 +1,107 @@
+name: Normalize training age fix diff
+
+on:
+  push:
+    branches:
+      - fix/training-age-season-boundary-v2
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/training-age-season-boundary-v2
+          fetch-depth: 0
+
+      - name: Restore original line endings and reapply focused changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=2e948e1c8c66abb14c5f4f9383e7c21e45b6647d
+          for path in \
+            sokker/src/com/formulamanager/sokker/auxiliares/Navegador.java \
+            sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java \
+            sokker/src/com/formulamanager/sokker/acciones/asistente/Actualizar.java \
+            sokker/src/com/formulamanager/sokker/acciones/asistente/Registro.java \
+            sokker/src/com/formulamanager/sokker/acciones/asistente/CambiarPassword.java
+          do
+            git show "$BASE:$path" > "$path"
+          done
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def transform(path, replacements):
+              p = Path(path)
+              raw = p.read_bytes()
+              text = raw.decode('utf-8')
+              newline = '\r\n' if b'\r\n' in raw else '\n'
+              normalized = text.replace('\r\n', '\n')
+              for old, new in replacements:
+                  count = normalized.count(old)
+                  if count != 1:
+                      raise SystemExit(f'{path}: expected one occurrence, found {count}: {old!r}')
+                  normalized = normalized.replace(old, new)
+              if newline == '\r\n':
+                  normalized = normalized.replace('\n', '\r\n')
+              p.write_bytes(normalized.encode('utf-8'))
+
+          nav = 'sokker/src/com/formulamanager/sokker/auxiliares/Navegador.java'
+          transform(nav, [
+              ('\tprivate boolean incrementar_edad;\n',
+               '\tprivate boolean incrementar_edad;\n\tprivate int ajuste_edad;\n'),
+              ('\t\treturn week - (dia >= 5 ? 0 : 1);\n\t}\n\n\t@SuppressWarnings("unchecked")',
+               '''\t\treturn week - (dia >= 5 ? 0 : 1);\n\t}\n\n\t/**\n\t * Ajuste entre la edad que devuelve Sokker hoy y la edad que corresponde\n\t * a la jornada de entrenamiento que estamos guardando. El cumpleaños de\n\t * temporada ocurre el sábado: hasta el miércoles seguimos guardando el\n\t * entrenamiento del jueves anterior, por lo que hay que restar un año.\n\t * Se conserva la corrección histórica del jueves de la última jornada.\n\t */\n\tpublic static int calcular_ajuste_edad(LinkedHashMap<String, Object> actual) throws IOException {\n\t\tint jornada_actual = calcular_jornada_actual(actual);\n\t\tInteger dia = JSONUtil.getInteger(actual, "today.day");\n\t\tif (dia == null) {\n\t\t\tthrow new IOException("Incomplete /api/current payload: missing today.day");\n\t\t}\n\t\tif (AsistenteBO.getJornadaMod(jornada_actual) == 12 && dia < 5) {\n\t\t\treturn -1;\n\t\t}\n\t\tif (AsistenteBO.getJornadaMod(jornada_actual) == 12 && dia == 5) {\n\t\t\treturn 1;\n\t\t}\n\t\treturn 0;\n\t}\n\n\t@SuppressWarnings("unchecked")'''),
+              ('''\t\tint jornada_actual = calcular_jornada_actual(actual);\n\t\tInteger dia = JSONUtil.getInteger(actual, "today.day");\n\t\tsetJornada(jornada_actual);\n\n\t\tif (getJornadaMod(jornada_actual) == 12 && dia == 5) {\n\t\t\tincrementar_edad = true;\n\t\t}\n''',
+               '''\t\tint jornada_actual = calcular_jornada_actual(actual);\n\t\tsetJornada(jornada_actual);\n\n\t\tajuste_edad = calcular_ajuste_edad(actual);\n\t\tincrementar_edad = ajuste_edad > 0;\n'''),
+              ('''\tpublic boolean isIncrementar_edad() {\n\t\treturn incrementar_edad;\n\t}\n\t\n\tpublic void setIncrementar_edad(boolean incrementar_edad) {\n\t\tthis.incrementar_edad = incrementar_edad;\n\t}\n''',
+               '''\tpublic boolean isIncrementar_edad() {\n\t\treturn incrementar_edad;\n\t}\n\n\tpublic int getAjuste_edad() {\n\t\treturn ajuste_edad;\n\t}\n\t\n\tpublic void setIncrementar_edad(boolean incrementar_edad) {\n\t\tthis.incrementar_edad = incrementar_edad;\n\t\tthis.ajuste_edad = incrementar_edad ? 1 : 0;\n\t}\n''')
+          ])
+
+          bo = 'sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java'
+          transform(bo, [
+              ('\tpublic static List<Jugador> actualizar_equipo(Usuario _usuario, int jornada_actual, boolean incrementar_edad, boolean registro, WebClient navegadorXML, WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {\n\t\tList<Jugador> jugadores_actualizados = new ArrayList<Jugador>();',
+               '''\tpublic static List<Jugador> actualizar_equipo(Usuario _usuario, int jornada_actual, boolean incrementar_edad, boolean registro, WebClient navegadorXML, WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {\n\t\treturn actualizar_equipo(_usuario, jornada_actual, incrementar_edad ? 1 : 0, registro, navegadorXML, navegador);\n\t}\n\n\tpublic static List<Jugador> actualizar_equipo(Usuario _usuario, int jornada_actual, int ajuste_edad, boolean registro, WebClient navegadorXML, WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {\n\t\tList<Jugador> jugadores_actualizados = new ArrayList<Jugador>();\n\t\tboolean incrementar_edad = ajuste_edad > 0;'''),
+              ('''\t\t} else {\n\t\t\tjugadores_nuevos = AsistenteDAO.obtener_jugadores(tid, jornada_actual, incrementar_edad, _usuario, navegador);\n\t\t}\n\t\tList<Jugador> jugadores = AsistenteBO.leer_jugadores''',
+               '''\t\t} else {\n\t\t\tjugadores_nuevos = AsistenteDAO.obtener_jugadores(tid, jornada_actual, incrementar_edad, _usuario, navegador);\n\t\t}\n\t\tif (ajuste_edad < 0) {\n\t\t\tfor (Jugador jugador : jugadores_nuevos) {\n\t\t\t\tjugador.setEdad(jugador.getEdad() + ajuste_edad);\n\t\t\t}\n\t\t}\n\t\tList<Jugador> jugadores = AsistenteBO.leer_jugadores'''),
+              ('''\t\t\t\tJugador actualizado = AsistenteDAO.obtener_jugador(j.getPid(), tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, incrementar_edad, _usuario, navegador);\n\t\t\t\tif (actualizado == null) {''',
+               '''\t\t\t\tJugador actualizado = AsistenteDAO.obtener_jugador(j.getPid(), tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, incrementar_edad, _usuario, navegador);\n\t\t\t\tif (actualizado != null && ajuste_edad < 0) {\n\t\t\t\t\tactualizado.setEdad(actualizado.getEdad() + ajuste_edad);\n\t\t\t\t}\n\t\t\t\tif (actualizado == null) {'''),
+              ('''\t\tList<Juvenil> juveniles_nuevos = obtener_juveniles(jornada_actual, incrementar_edad, _usuario, navegadorXML);\n\t\tList<Juvenil> juveniles = leer_juveniles''',
+               '''\t\tList<Juvenil> juveniles_nuevos = obtener_juveniles(jornada_actual, incrementar_edad, _usuario, navegadorXML);\n\t\tif (ajuste_edad < 0) {\n\t\t\tfor (Juvenil juvenil : juveniles_nuevos) {\n\t\t\t\tjuvenil.setEdad(juvenil.getEdad() + ajuste_edad);\n\t\t\t}\n\t\t}\n\t\tList<Juvenil> juveniles = leer_juveniles'''),
+              ('''\t\t\tInteger[] jornada_actual = new Integer[1];\n\t\t\tnew Navegador(true, null) {''',
+               '''\t\t\tInteger[] jornada_actual = new Integer[1];\n\t\t\tInteger[] ajuste_edad = new Integer[1];\n\t\t\tnew Navegador(true, null) {'''),
+              ('''\t\t\t\t\tjornada_actual[0] = obtener_jornada(navegador);\n\t\t\t\t}\n\t\t\t};''',
+               '''\t\t\t\t\tjornada_actual[0] = obtener_jornada(navegador);\n\t\t\t\t\tajuste_edad[0] = getAjuste_edad();\n\t\t\t\t}\n\t\t\t};'''),
+              ('actualizar_equipo(usuario, jornada_actual[0], isIncrementar_edad(), false, navegadorXML, navegador);',
+               'actualizar_equipo(usuario, jornada_actual[0], ajuste_edad[0], false, navegadorXML, navegador);')
+          ])
+
+          for path in [
+              'sokker/src/com/formulamanager/sokker/acciones/asistente/Actualizar.java',
+              'sokker/src/com/formulamanager/sokker/acciones/asistente/Registro.java',
+              'sokker/src/com/formulamanager/sokker/acciones/asistente/CambiarPassword.java',
+          ]:
+              transform(path, [('isIncrementar_edad(),', 'getAjuste_edad(),')])
+
+          Path('.github/workflows/normalize-training-age-fix-diff.yml').unlink()
+          PY
+
+      - name: Verify focused diff and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sokker/src/com/formulamanager/sokker/auxiliares/Navegador.java \
+                  sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java \
+                  sokker/src/com/formulamanager/sokker/acciones/asistente/Actualizar.java \
+                  sokker/src/com/formulamanager/sokker/acciones/asistente/Registro.java \
+                  sokker/src/com/formulamanager/sokker/acciones/asistente/CambiarPassword.java \
+                  .github/workflows/normalize-training-age-fix-diff.yml
+          git commit -m 'Keep training age fix diff focused'
+          git push origin HEAD:fix/training-age-season-boundary-v2
