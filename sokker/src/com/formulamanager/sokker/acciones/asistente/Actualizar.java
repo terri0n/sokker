@@ -74,7 +74,7 @@ public class Actualizar extends SERVLET_ASISTENTE {
 								}
 							}
 
-							AsistenteBO.actualizar_equipo(usuario, jornada_actual, isIncrementar_edad(), false, navegador, navegador);
+							AsistenteBO.actualizar_equipo(usuario, jornada_actual, getAjuste_edad(), false, navegador, navegador);
 
 							mensaje[0] = "?mensaje=updated";
 						} catch (Exception e) {
