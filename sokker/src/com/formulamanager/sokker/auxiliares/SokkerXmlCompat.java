@@ -67,8 +67,7 @@ public final class SokkerXmlCompat {
 			return null;
 		}
 
-		StringWebResponse response = new StringWebResponse(xml, new URL(url));
-		return new XmlPage(response, navegador.getCurrentWindow());
+		return SokkerXmlPageFactory.create(navegador, xml, url);
 	}
 
 	private static String obtenerPartidosXml(WebClient navegador, int tid) throws FailingHttpStatusCodeException, MalformedURLException, IOException {

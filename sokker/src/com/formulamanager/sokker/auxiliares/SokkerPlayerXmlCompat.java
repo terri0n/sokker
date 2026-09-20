@@ -60,8 +60,7 @@ public final class SokkerPlayerXmlCompat {
 
     private static XmlPage xmlPage(WebClient navegador, String url, String xml)
             throws MalformedURLException, IOException {
-        StringWebResponse response = new StringWebResponse(xml, new URL(url));
-        return new XmlPage(response, navegador.getCurrentWindow());
+        return SokkerXmlPageFactory.create(navegador, xml, url);
     }
 
     private static String escape(String text) {
