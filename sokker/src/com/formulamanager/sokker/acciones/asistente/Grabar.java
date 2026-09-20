@@ -80,6 +80,7 @@ _log(request, pid + " " + condicion + " " + rapidez + " " + tecnica + " " + pase
 				@Override
 				protected void execute(WebClient navegadorXML) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 					int jornada_actual = obtener_jornada(navegadorXML);
+					final int ajuste_edad = getAjuste_edad();
 					
 					try {
 						// Leo los valores públicos del jugador
@@ -99,8 +100,8 @@ _log(request, pid + " " + condicion + " " + rapidez + " " + tecnica + " " + pase
 									
 									UsuarioBO.grabar_usuario(usuario2);
 								} else {
-									// La edición manual modifica el estado actual; la edad debe ser la real de Sokker.
-									j_nuevo = AsistenteDAO.obtener_jugador(pid, tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, false, _usuario, navegador);
+									// Conservamos el +1 histórico del jueves, pero nunca aplicamos el -1 al estado actual.
+									j_nuevo = AsistenteDAO.obtener_jugador(pid, tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, ajuste_edad > 0, _usuario, navegador);
 
 									// Entrenamiento avanzado
 									Set<Integer> avanzados = AsistenteDAO.obtener_entrenamiento_avanzado(navegador);
