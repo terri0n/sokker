@@ -677,14 +677,11 @@ SERVLET_ASISTENTE._log_linea(usuario.getLogin(), "\t" + clave + ": " + tiempo_to
 //		List<Jugador> jugadores_nuevos = AsistenteBO.obtener_jugadores(tid, jornada_actual, _usuario, navegador);
 		List<Jugador> jugadores_nuevos;
 		if (tid > NtdbBO.MAX_ID_SELECCION) {
-			jugadores_nuevos = AsistenteDAO.obtener_entrenamiento(_usuario, jornada_actual, incrementar_edad, navegador);
+			// El objeto actual representa el estado vivo del jugador y debe conservar la edad real de Sokker.
+			// El entrenamiento histórico se calcula desde original en Jugador.calcular_entrenamiento2().
+			jugadores_nuevos = AsistenteDAO.obtener_entrenamiento(_usuario, jornada_actual, false, navegador);
 		} else {
-			jugadores_nuevos = AsistenteDAO.obtener_jugadores(tid, jornada_actual, incrementar_edad, _usuario, navegador);
-		}
-		if (ajuste_edad < 0) {
-			for (Jugador jugador : jugadores_nuevos) {
-				jugador.setEdad(jugador.getEdad() + ajuste_edad);
-			}
+			jugadores_nuevos = AsistenteDAO.obtener_jugadores(tid, jornada_actual, false, _usuario, navegador);
 		}
 		List<Jugador> jugadores = AsistenteBO.leer_jugadores(tid, _usuario.getDef_equipo(), false, _usuario);
 		List<Jugador> jugadores_historico = AsistenteBO.leer_jugadores(tid, _usuario.getDef_equipo(), true, _usuario);
@@ -713,10 +710,7 @@ if (nuevo.getLesion() > 0) {
 			boolean ascender = j.getPid() > 0 && tid < NtdbBO.MAX_ID_SELECCION && tid > NtdbBO.DIF_NT_U21 && j.getEdad() > 21;
 			
 			if (j.getPid() > 0 && !jugadores_nuevos.contains(j) || ascender) {
-				Jugador actualizado = AsistenteDAO.obtener_jugador(j.getPid(), tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, incrementar_edad, _usuario, navegador);
-				if (actualizado != null && ajuste_edad < 0) {
-					actualizado.setEdad(actualizado.getEdad() + ajuste_edad);
-				}
+				Jugador actualizado = AsistenteDAO.obtener_jugador(j.getPid(), tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, false, _usuario, navegador);
 				if (actualizado == null) {
 					// Archivo los jugadores despedidos
 					jugadores_historico.add(j);
