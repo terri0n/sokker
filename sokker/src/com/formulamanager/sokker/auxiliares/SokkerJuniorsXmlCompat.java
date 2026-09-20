@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,7 +15,6 @@ import java.util.Set;
 
 import com.formulamanager.sokker.bo.AsistenteBO;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
-import com.gargoylesoftware.htmlunit.StringWebResponse;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.xml.XmlPage;
 
@@ -82,8 +80,7 @@ public final class SokkerJuniorsXmlCompat {
             // exactamente el formato antiguo, el llamador debe usar el XML legado.
             return null;
         }
-        StringWebResponse webResponse = new StringWebResponse(xml, new URL(url));
-        return new XmlPage(webResponse, navegador.getCurrentWindow());
+        return SokkerXmlPageFactory.create(navegador, xml, url);
     }
 
     private static Map<Integer, Boolean> loadSavedPositions(int tid) throws IOException {
