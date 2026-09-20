@@ -11,8 +11,9 @@ public final class TrainingAgeBoundaryHarness {
 
     public static void main(String[] args) throws Exception {
         seasonBoundaryAdjustment();
-        updateFlowUsesAdjustment();
-        manualPlayerSaveKeepsSignedAdjustment();
+        updateFlowKeepsCurrentPlayerAge();
+        manualPlayerSaveKeepsCurrentPlayerAge();
+        currentTrainingRowUsesCurrentSnapshot();
     }
 
     private static void seasonBoundaryAdjustment() throws Exception {
@@ -36,14 +37,18 @@ public final class TrainingAgeBoundaryHarness {
                 "Ordinary weeks must not change the boundary");
     }
 
-    private static void updateFlowUsesAdjustment() throws Exception {
+    private static void updateFlowKeepsCurrentPlayerAge() throws Exception {
         String bo = read("sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java");
         require(bo.contains("int ajuste_edad, boolean registro"),
-                "Team update must receive the season-boundary signal");
+                "Team update must still receive the season-boundary signal for compatibility");
         require(!bo.contains("jugador.setEdad(jugador.getEdad() + ajuste_edad)"),
                 "The current player snapshot must keep the real age returned by Sokker");
-        require(bo.contains("jugador.setJornada(jornada_actual + 1)"),
-                "After the birthday, the partial current training must live in the new-age row");
+        require(bo.contains("AsistenteDAO.obtener_entrenamiento(_usuario, jornada_actual, false, navegador)"),
+                "Club training snapshots must use the real player age from the API");
+        require(bo.contains("AsistenteDAO.obtener_jugadores(tid, jornada_actual, false, _usuario, navegador)"),
+                "National-team player snapshots must use the real player age from the API");
+        require(bo.contains("AsistenteDAO.obtener_jugador(j.getPid(), tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, false, _usuario, navegador)"),
+                "Individually refreshed players must use the real player age from the API");
         require(bo.contains("juvenil.setEdad(juvenil.getEdad() + ajuste_edad)"),
                 "Junior handling must remain unchanged by this player-only fix");
         require(bo.contains("ajuste_edad[0] = getAjuste_edad()"),
@@ -54,14 +59,22 @@ public final class TrainingAgeBoundaryHarness {
         assertCallerUsesAdjustment("sokker/src/com/formulamanager/sokker/acciones/asistente/CambiarPassword.java");
     }
 
-    private static void manualPlayerSaveKeepsSignedAdjustment() throws Exception {
+    private static void manualPlayerSaveKeepsCurrentPlayerAge() throws Exception {
         String source = read("sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java");
         require(source.contains("final int ajuste_edad = getAjuste_edad();"),
-                "Manual player save must carry the season-boundary signal from the outer /api/current lookup");
+                "Manual player save must still carry the season-boundary signal from /api/current");
+        require(source.contains("j_nuevo = AsistenteDAO.obtener_jugador(pid, tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, false, _usuario, navegador)"),
+                "Manual player save must read the real current age from Sokker");
         require(!source.contains("j_nuevo.setEdad(j_nuevo.getEdad() + ajuste_edad)"),
-                "Manual player save must keep the real current age returned by Sokker");
-        require(source.contains("j_nuevo.setJornada(jornada_actual + 1)"),
-                "Manual player save must put post-birthday partial training in the new-age row");
+                "Manual player save must not rewrite the current age for the previous training boundary");
+    }
+
+    private static void currentTrainingRowUsesCurrentSnapshot() throws Exception {
+        String jugador = read("sokker/src/com/formulamanager/sokker/entity/Jugador.java");
+        require(jugador.contains("original.getEntrenamientosTemporada2(habilidad, entrenamiento_act)"),
+                "Completed training history must continue to be calculated from original snapshots");
+        require(jugador.contains("actual.jornadas.add(this);"),
+                "The partial current training row must continue to use the current player snapshot");
     }
 
     private static void assertCallerUsesAdjustment(String path) throws Exception {
