@@ -42,6 +42,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java .github/workflows/apply-international-cup-fix.yml
-          git diff --cached --check
           git commit -m 'Recognize international cups as official training'
           git push origin HEAD:fix/international-cup-training-percentage
