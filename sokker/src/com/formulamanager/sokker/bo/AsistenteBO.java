@@ -34,6 +34,7 @@ import com.formulamanager.sokker.auxiliares.EmailSenderService;
 import com.formulamanager.sokker.auxiliares.FileUtil;
 import com.formulamanager.sokker.auxiliares.Navegador;
 import com.formulamanager.sokker.auxiliares.PlayerPropertiesCompat;
+import com.formulamanager.sokker.auxiliares.SokkerLegacyXmlParser;
 import com.formulamanager.sokker.auxiliares.SERVLET_ASISTENTE;
 import com.formulamanager.sokker.auxiliares.SystemUtil;
 import com.formulamanager.sokker.auxiliares.Util;
@@ -867,15 +868,16 @@ if (nuevo.getLesion() > 0) {
 		try {
 			XmlPage pagina = navegador.getPage(AsistenteBO.SOKKER_URL + "/xml/juniors.xml");
 
-			ArrayList<DomNode> juniors = (ArrayList<DomNode>) pagina.getByXPath("//junior");
-			for (DomNode junior : juniors) {
-				int pid = new Integer(((DomText) junior.getFirstByXPath("ID/text()")).asText());
-				String nombre = ((DomText) junior.getFirstByXPath("name/text()")).asText()
-						+ " " + ((DomText) junior.getFirstByXPath("surname/text()")).asText();
-				int edad = new Integer(((DomText) junior.getFirstByXPath("age/text()")).asText()) + (incrementar_edad ? 1 : 0);
-				int skill = new Integer(((DomText) junior.getFirstByXPath("skill/text()")).asText());
-				int weeks = new Integer(((DomText) junior.getFirstByXPath("weeks/text()")).asText());
-				boolean formation = Util.stringToBoolean(((DomText) junior.getFirstByXPath("formation/text()")).asText());
+			List<Map<String, String>> juniors = SokkerLegacyXmlParser.parseElements(
+					pagina.getWebResponse().getContentAsString(), "junior");
+			for (Map<String, String> junior : juniors) {
+				int pid = Integer.valueOf(SokkerLegacyXmlParser.required(junior, "ID").trim());
+				String nombre = SokkerLegacyXmlParser.required(junior, "name")
+						+ " " + SokkerLegacyXmlParser.required(junior, "surname");
+				int edad = Integer.valueOf(SokkerLegacyXmlParser.required(junior, "age").trim()) + (incrementar_edad ? 1 : 0);
+				int skill = Integer.valueOf(SokkerLegacyXmlParser.required(junior, "skill").trim());
+				int weeks = Integer.valueOf(SokkerLegacyXmlParser.required(junior, "weeks").trim());
+				boolean formation = Util.stringToBoolean(SokkerLegacyXmlParser.required(junior, "formation").trim());
 				
 				Juvenil j = new Juvenil(pid, nombre, jornada_actual, edad, skill, weeks, formation, usuario);
 				juveniles.add(j);
@@ -1068,21 +1070,26 @@ if (nuevo.getLesion() > 0) {
 		if (usuario.getDef_tid() > NtdbBO.MAX_ID_SELECCION) {
 			try {
 				XmlPage pagina = Navegador.getXmlPage(navegador, AsistenteBO.SOKKER_URL + "/xml/trainers.xml");
-				ArrayList<DomNode> entrenadores = (ArrayList<DomNode>) pagina.getByXPath("//trainer");
+				List<Map<String, String>> entrenadores = SokkerLegacyXmlParser.parseElements(
+						pagina.getWebResponse().getContentAsString(), "trainer");
 				
 				List<BigDecimal> nivel_asistentes = new ArrayList<>();
 				
-				for (DomNode entrenador : entrenadores) {
-					TIPO_ENTRENADOR tipo = TIPO_ENTRENADOR.values()[new Integer(((DomText) entrenador.getFirstByXPath("job/text()")).asText()) - 1];
-					int condicion = new Integer(((DomText) entrenador.getFirstByXPath("skillStamina/text()")).asText());
-					int rapidez = new Integer(((DomText) entrenador.getFirstByXPath("skillPace/text()")).asText());
-					int tecnica = new Integer(((DomText) entrenador.getFirstByXPath("skillTechnique/text()")).asText());
-					int pases = new Integer(((DomText) entrenador.getFirstByXPath("skillPassing/text()")).asText());
-					int porteria = new Integer(((DomText) entrenador.getFirstByXPath("skillKeeper/text()")).asText());
-					int defensa = new Integer(((DomText) entrenador.getFirstByXPath("skillDefending/text()")).asText());
-					int creacion = new Integer(((DomText) entrenador.getFirstByXPath("skillPlaymaking/text()")).asText());
-					int anotacion = new Integer(((DomText) entrenador.getFirstByXPath("skillScoring/text()")).asText());
-					int media = new Integer(((DomText) entrenador.getFirstByXPath("skillCoach/text()")).asText());
+				for (Map<String, String> entrenador : entrenadores) {
+					int job = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "job").trim());
+					if (job < 1 || job > TIPO_ENTRENADOR.values().length) {
+						throw new IOException("Tipo de entrenador desconocido: " + job);
+					}
+					TIPO_ENTRENADOR tipo = TIPO_ENTRENADOR.values()[job - 1];
+					int condicion = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillStamina").trim());
+					int rapidez = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillPace").trim());
+					int tecnica = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillTechnique").trim());
+					int pases = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillPassing").trim());
+					int porteria = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillKeeper").trim());
+					int defensa = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillDefending").trim());
+					int creacion = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillPlaymaking").trim());
+					int anotacion = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillScoring").trim());
+					int media = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillCoach").trim());
 					
 					Jugador j = new Jugador(new Integer[] { condicion, rapidez, tecnica, pases, porteria, defensa, creacion, anotacion, media });
 					
