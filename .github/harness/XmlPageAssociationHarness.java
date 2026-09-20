@@ -7,6 +7,7 @@ import com.formulamanager.sokker.auxiliares.SokkerXmlPageFactory;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.xml.XmlPage;
 
+/** Regression for HtmlUnit XmlPage XPath failures seen on production Java 26. */
 public final class XmlPageAssociationHarness {
     private XmlPageAssociationHarness() {}
 
