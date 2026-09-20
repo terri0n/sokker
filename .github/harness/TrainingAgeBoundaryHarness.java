@@ -25,7 +25,7 @@ public final class TrainingAgeBoundaryHarness {
         require(invoke(adjust, current(1002, 1)) == -1,
                 "Sunday after the birthday must keep the previous Thursday as the training boundary");
         require(invoke(adjust, current(1002, 4)) == -1,
-                "Wednesday before the first new-season training must still use the previous training boundary");
+                "Wednesday before the first new-season training must still keep the boundary signal");
 
         require(invoke(adjust, current(1001, 5)) == 1,
                 "Keep the historical Thursday season-boundary signal unchanged");
@@ -41,14 +41,16 @@ public final class TrainingAgeBoundaryHarness {
         String bo = read("sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java");
         require(bo.contains("int ajuste_edad, boolean registro"),
                 "Team update must still receive the season-boundary signal for compatibility");
+        require(bo.contains("boolean incrementar_edad = ajuste_edad > 0;"),
+                "The historical Thursday +1 path must remain available");
         require(!bo.contains("jugador.setEdad(jugador.getEdad() + ajuste_edad)"),
-                "The current player snapshot must keep the real age returned by Sokker");
-        require(bo.contains("AsistenteDAO.obtener_entrenamiento(_usuario, jornada_actual, false, navegador)"),
-                "Club training snapshots must use the real player age from the API");
-        require(bo.contains("AsistenteDAO.obtener_jugadores(tid, jornada_actual, false, _usuario, navegador)"),
-                "National-team player snapshots must use the real player age from the API");
-        require(bo.contains("AsistenteDAO.obtener_jugador(j.getPid(), tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, false, _usuario, navegador)"),
-                "Individually refreshed players must use the real player age from the API");
+                "The negative boundary signal must not rewrite the live player age");
+        require(bo.contains("AsistenteDAO.obtener_entrenamiento(_usuario, jornada_actual, incrementar_edad, navegador)"),
+                "Club training snapshots must preserve the historical Thursday +1 path");
+        require(bo.contains("AsistenteDAO.obtener_jugadores(tid, jornada_actual, incrementar_edad, _usuario, navegador)"),
+                "National-team snapshots must preserve the historical Thursday +1 path");
+        require(bo.contains("AsistenteDAO.obtener_jugador(j.getPid(), tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, incrementar_edad, _usuario, navegador)"),
+                "Individually refreshed players must preserve the historical Thursday +1 path");
         require(bo.contains("juvenil.setEdad(juvenil.getEdad() + ajuste_edad)"),
                 "Junior handling must remain unchanged by this player-only fix");
         require(bo.contains("ajuste_edad[0] = getAjuste_edad()"),
@@ -61,12 +63,12 @@ public final class TrainingAgeBoundaryHarness {
 
     private static void manualPlayerSaveKeepsCurrentPlayerAge() throws Exception {
         String source = read("sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java");
-        require(!source.contains("final int ajuste_edad = getAjuste_edad();"),
-                "Manual player save must not apply the training-boundary age correction to current state");
-        require(source.contains("j_nuevo = AsistenteDAO.obtener_jugador(pid, tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, false, _usuario, navegador)"),
-                "Manual player save must read the real current age from Sokker");
+        require(source.contains("final int ajuste_edad = getAjuste_edad();"),
+                "Manual player save must keep the season-boundary signal so Thursday +1 is not lost");
+        require(source.contains("j_nuevo = AsistenteDAO.obtener_jugador(pid, tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, ajuste_edad > 0, _usuario, navegador)"),
+                "Manual player save must preserve the historical Thursday +1 path");
         require(!source.contains("j_nuevo.setEdad(j_nuevo.getEdad() + ajuste_edad)"),
-                "Manual player save must not rewrite the current age for the previous training boundary");
+                "Manual player save must not apply the negative signal to the live age");
     }
 
     private static void currentTrainingRowUsesCurrentSnapshot() throws Exception {
