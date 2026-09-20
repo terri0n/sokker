@@ -79,8 +79,11 @@ jobs:
 
       - name: Verify targeted diff
         run: |
-          git diff --check
+          git diff --numstat -- sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java
           git diff -- sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java
+          changed=$(git diff --name-only | grep -v '^\.github/workflows/apply-current-age-fix.yml$' || true)
+          expected=$'sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java\nsokker/src/com/formulamanager/sokker/bo/AsistenteBO.java'
+          test "$changed" = "$expected"
 
       - name: Commit source fix and remove one-shot workflow
         run: |
