@@ -41,7 +41,7 @@ public final class CorregirEdadJornada13 {
     private CorregirEdadJornada13() {}
 
     public static void main(String[] args) throws Exception {
-        File directory = new File(SystemUtil.getVar(SystemUtil.PATH));
+        File directory = resolveDataDirectory(args);
         if (!directory.isDirectory()) {
             throw new IOException("No existe el directorio de datos: " + directory.getAbsolutePath());
         }
@@ -71,6 +71,37 @@ public final class CorregirEdadJornada13 {
         }
 
         System.out.println("Registros modificados: " + modifiedRecords);
+    }
+
+    private static File resolveDataDirectory(String[] args) throws IOException {
+        if (args != null && args.length > 1) {
+            throw new IOException("Uso: CorregirEdadJornada13 [directorio_datos]");
+        }
+        if (args != null && args.length == 1 && args[0] != null && !args[0].trim().isEmpty()) {
+            return new File(args[0]);
+        }
+
+        if (SystemUtil.REAL_PATH == null) {
+            try {
+                File classes = new File(CorregirEdadJornada13.class
+                        .getProtectionDomain().getCodeSource().getLocation().toURI());
+                File webInf = classes.getParentFile();
+                if (classes.isDirectory()
+                        && "classes".equals(classes.getName())
+                        && webInf != null
+                        && "WEB-INF".equals(webInf.getName())
+                        && webInf.getParentFile() != null) {
+                    SystemUtil.REAL_PATH = webInf.getParentFile().getAbsolutePath() + File.separator;
+                }
+            } catch (Exception e) {
+                throw new IOException("No se puede localizar automáticamente el despliegue de Tomcat", e);
+            }
+        }
+
+        if (SystemUtil.REAL_PATH == null) {
+            throw new IOException("Indica el directorio de datos como único argumento");
+        }
+        return new File(SystemUtil.getVar(SystemUtil.PATH));
     }
 
     private static int repairFile(Path path) throws IOException {
