@@ -75,6 +75,7 @@ jobs:
             .github/harness/TrainerMappingHarness.java \
             .github/harness/TrainingMatchMappingHarness.java \
             .github/harness/TrainingAgeBoundaryHarness.java \
+            .github/harness/AgeWeek13RepairHarness.java \
             .github/harness/TeamIdThresholdHarness.java \
             .github/harness/CurrentApiHarness.java \
             .github/harness/UpdateAtomicityHarness.java \
@@ -86,6 +87,7 @@ jobs:
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainerMappingHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainingMatchMappingHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainingAgeBoundaryHarness
+          java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" com.formulamanager.sokker.mantenimiento.AgeWeek13RepairHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TeamIdThresholdHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" CurrentApiHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" UpdateAtomicityHarness
