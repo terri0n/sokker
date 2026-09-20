@@ -1,0 +1,124 @@
+name: Apply legacy XML parser hotfix
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/apply-legacy-xml-parser-hotfix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch AsistenteBO XML consumers
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java')
+          data = path.read_bytes()
+          eol = b'\r\n' if b'\r\n' in data else b'\n'
+
+          def block(lines):
+              return eol.join(line.encode('utf-8') for line in lines) + eol
+
+          def replace_once(old_lines, new_lines, label):
+              global data
+              old = block(old_lines)
+              new = block(new_lines)
+              count = data.count(old)
+              if count != 1:
+                  raise SystemExit('%s: expected exactly one match, found %d' % (label, count))
+              data = data.replace(old, new, 1)
+
+          replace_once(
+              ['import com.formulamanager.sokker.auxiliares.PlayerPropertiesCompat;'],
+              ['import com.formulamanager.sokker.auxiliares.PlayerPropertiesCompat;',
+               'import com.formulamanager.sokker.auxiliares.SokkerLegacyXmlParser;'],
+              'parser import')
+
+          replace_once(
+              ['\t\t\tArrayList<DomNode> juniors = (ArrayList<DomNode>) pagina.getByXPath("//junior");',
+               '\t\t\tfor (DomNode junior : juniors) {',
+               '\t\t\t\tint pid = new Integer(((DomText) junior.getFirstByXPath("ID/text()")).asText());',
+               '\t\t\t\tString nombre = ((DomText) junior.getFirstByXPath("name/text()")).asText()',
+               '\t\t\t\t\t\t+ " " + ((DomText) junior.getFirstByXPath("surname/text()")).asText();',
+               '\t\t\t\tint edad = new Integer(((DomText) junior.getFirstByXPath("age/text()")).asText()) + (incrementar_edad ? 1 : 0);',
+               '\t\t\t\tint skill = new Integer(((DomText) junior.getFirstByXPath("skill/text()")).asText());',
+               '\t\t\t\tint weeks = new Integer(((DomText) junior.getFirstByXPath("weeks/text()")).asText());',
+               '\t\t\t\tboolean formation = Util.stringToBoolean(((DomText) junior.getFirstByXPath("formation/text()")).asText());'],
+              ['\t\t\tList<Map<String, String>> juniors = SokkerLegacyXmlParser.parseElements(',
+               '\t\t\t\t\tpagina.getWebResponse().getContentAsString(), "junior");',
+               '\t\t\tfor (Map<String, String> junior : juniors) {',
+               '\t\t\t\tint pid = Integer.valueOf(SokkerLegacyXmlParser.required(junior, "ID").trim());',
+               '\t\t\t\tString nombre = SokkerLegacyXmlParser.required(junior, "name")',
+               '\t\t\t\t\t\t+ " " + SokkerLegacyXmlParser.required(junior, "surname");',
+               '\t\t\t\tint edad = Integer.valueOf(SokkerLegacyXmlParser.required(junior, "age").trim()) + (incrementar_edad ? 1 : 0);',
+               '\t\t\t\tint skill = Integer.valueOf(SokkerLegacyXmlParser.required(junior, "skill").trim());',
+               '\t\t\t\tint weeks = Integer.valueOf(SokkerLegacyXmlParser.required(junior, "weeks").trim());',
+               '\t\t\t\tboolean formation = Util.stringToBoolean(SokkerLegacyXmlParser.required(junior, "formation").trim());'],
+              'junior XML reader')
+
+          replace_once(
+              ['\t\t\t\tArrayList<DomNode> entrenadores = (ArrayList<DomNode>) pagina.getByXPath("//trainer");',
+               '\t\t\t\t',
+               '\t\t\t\tList<BigDecimal> nivel_asistentes = new ArrayList<>();',
+               '\t\t\t\t',
+               '\t\t\t\tfor (DomNode entrenador : entrenadores) {',
+               '\t\t\t\t\tTIPO_ENTRENADOR tipo = TIPO_ENTRENADOR.values()[new Integer(((DomText) entrenador.getFirstByXPath("job/text()")).asText()) - 1];',
+               '\t\t\t\t\tint condicion = new Integer(((DomText) entrenador.getFirstByXPath("skillStamina/text()")).asText());',
+               '\t\t\t\t\tint rapidez = new Integer(((DomText) entrenador.getFirstByXPath("skillPace/text()")).asText());',
+               '\t\t\t\t\tint tecnica = new Integer(((DomText) entrenador.getFirstByXPath("skillTechnique/text()")).asText());',
+               '\t\t\t\t\tint pases = new Integer(((DomText) entrenador.getFirstByXPath("skillPassing/text()")).asText());',
+               '\t\t\t\t\tint porteria = new Integer(((DomText) entrenador.getFirstByXPath("skillKeeper/text()")).asText());',
+               '\t\t\t\t\tint defensa = new Integer(((DomText) entrenador.getFirstByXPath("skillDefending/text()")).asText());',
+               '\t\t\t\t\tint creacion = new Integer(((DomText) entrenador.getFirstByXPath("skillPlaymaking/text()")).asText());',
+               '\t\t\t\t\tint anotacion = new Integer(((DomText) entrenador.getFirstByXPath("skillScoring/text()")).asText());',
+               '\t\t\t\t\tint media = new Integer(((DomText) entrenador.getFirstByXPath("skillCoach/text()")).asText());'],
+              ['\t\t\t\tList<Map<String, String>> entrenadores = SokkerLegacyXmlParser.parseElements(',
+               '\t\t\t\t\t\tpagina.getWebResponse().getContentAsString(), "trainer");',
+               '\t\t\t\t',
+               '\t\t\t\tList<BigDecimal> nivel_asistentes = new ArrayList<>();',
+               '\t\t\t\t',
+               '\t\t\t\tfor (Map<String, String> entrenador : entrenadores) {',
+               '\t\t\t\t\tint job = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "job").trim());',
+               '\t\t\t\t\tif (job < 1 || job > TIPO_ENTRENADOR.values().length) {',
+               '\t\t\t\t\t\tthrow new IOException("Tipo de entrenador desconocido: " + job);',
+               '\t\t\t\t\t}',
+               '\t\t\t\t\tTIPO_ENTRENADOR tipo = TIPO_ENTRENADOR.values()[job - 1];',
+               '\t\t\t\t\tint condicion = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillStamina").trim());',
+               '\t\t\t\t\tint rapidez = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillPace").trim());',
+               '\t\t\t\t\tint tecnica = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillTechnique").trim());',
+               '\t\t\t\t\tint pases = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillPassing").trim());',
+               '\t\t\t\t\tint porteria = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillKeeper").trim());',
+               '\t\t\t\t\tint defensa = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillDefending").trim());',
+               '\t\t\t\t\tint creacion = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillPlaymaking").trim());',
+               '\t\t\t\t\tint anotacion = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillScoring").trim());',
+               '\t\t\t\t\tint media = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillCoach").trim());'],
+              'trainer XML reader')
+
+          path.write_bytes(data)
+          PY
+
+          git diff --check
+          git diff -- sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java
+
+      - name: Commit hotfix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java
+          git commit -m 'Read trainers and juniors without HtmlUnit XPath'
+          git push origin HEAD:main
