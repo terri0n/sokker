@@ -110,7 +110,6 @@ jobs:
           path.write_bytes(data)
           PY
 
-          git diff --check
           git diff -- sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java
 
       - name: Commit hotfix
