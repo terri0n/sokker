@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
+import java.net.URLEncoder;
 import java.text.ParseException;
 
 import javax.security.auth.login.LoginException;
@@ -77,7 +78,8 @@ public class Actualizar extends SERVLET_ASISTENTE {
 
 							mensaje[0] = "?mensaje=updated";
 						} catch (Exception e) {
-							mensaje[0] = "?mensaje=Error connecting to Sokker: " + e.toString();
+							String error = "Error connecting to Sokker: " + e.toString();
+							mensaje[0] = "?error=2&mensaje=" + URLEncoder.encode(error, "UTF-8");
 							e.printStackTrace();
 
 							StringWriter sw = new StringWriter();
