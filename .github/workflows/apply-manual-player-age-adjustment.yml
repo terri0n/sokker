@@ -57,10 +57,27 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git diff --check
           changed="$(git diff --name-only | sort)"
           expected="$(printf '%s\n' .github/workflows/apply-manual-player-age-adjustment.yml sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java | sort)"
           test "$changed" = "$expected"
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java')
+          raw = p.read_bytes()
+          if b'\r\n' in raw and b'\n' in raw.replace(b'\r\n', b''):
+              raise SystemExit('Grabar.java now has mixed line endings')
+          text = raw.decode('utf-8').replace('\r\n', '\n')
+          required = [
+              'final int ajuste_edad = getAjuste_edad();',
+              'jornada_actual, ajuste_edad > 0, _usuario, navegador);',
+              'j_nuevo.setEdad(j_nuevo.getEdad() + ajuste_edad);'
+          ]
+          for item in required:
+              if item not in text:
+                  raise SystemExit('missing expected change: ' + item)
+          if 'jornada_actual, isIncrementar_edad(), _usuario, navegador);' in text:
+              raise SystemExit('manual save still reads the inner boolean adjustment')
+          PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
