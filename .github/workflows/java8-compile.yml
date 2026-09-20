@@ -78,7 +78,9 @@ jobs:
           EOF
           mvn -q -f /tmp/jspc-pom.xml dependency:build-classpath -Dmdep.outputFile=/tmp/jspc-classpath.txt
           mkdir -p /tmp/jspc
-          JSPC_CP="$(cat /tmp/jspc-classpath.txt):/tmp/sokker-classes:sokker/WebContent/WEB-INF/lib/*"
+          JASPER_JAR="$HOME/.m2/repository/org/apache/tomcat/tomcat-jasper/9.0.98/tomcat-jasper-9.0.98.jar"
+          test -f "$JASPER_JAR"
+          JSPC_CP="$JASPER_JAR:$(cat /tmp/jspc-classpath.txt):/tmp/sokker-classes:sokker/WebContent/WEB-INF/lib/*"
           java -cp "$JSPC_CP" org.apache.jasper.JspC \
             -uriroot sokker/WebContent \
             -d /tmp/jspc \
