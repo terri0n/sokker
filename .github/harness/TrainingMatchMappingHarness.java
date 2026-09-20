@@ -1,4 +1,7 @@
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -17,6 +20,7 @@ public class TrainingMatchMappingHarness {
         rejectsMissingFinishedState();
         rejectsPageMatchMissingId();
         rejectsUnresolvableWeekDay();
+        recognizesInternationalCupAsOfficialTraining();
     }
 
     private static void rejectsMissingTiming() {
@@ -112,6 +116,14 @@ public class TrainingMatchMappingHarness {
         String xml = SokkerXmlCompat.buildMatchesXml(new LinkedHashMap<String, Object>(), matches);
         if (xml != null) {
             throw new AssertionError("A match without resolvable week/day must reject the JSON compatibility mapping instead of disappearing from the match list");
+        }
+    }
+
+    private static void recognizesInternationalCupAsOfficialTraining() throws Exception {
+        String source = new String(Files.readAllBytes(Paths.get(
+                "sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java")), StandardCharsets.UTF_8);
+        if (!source.contains("tipo == 13")) {
+            throw new AssertionError("Sokker league type 13 (international cup) must use official training percentage");
         }
     }
 
