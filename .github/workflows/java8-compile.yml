@@ -69,8 +69,8 @@ jobs:
             <groupId>tmp</groupId><artifactId>jspc</artifactId><version>1</version>
             <dependencies>
               <dependency>
-                <groupId>org.apache.tomcat</groupId>
-                <artifactId>tomcat-jasper</artifactId>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-jasper</artifactId>
                 <version>9.0.98</version>
               </dependency>
             </dependencies>
@@ -78,13 +78,15 @@ jobs:
           EOF
           mvn -q -f /tmp/jspc-pom.xml dependency:build-classpath -Dmdep.outputFile=/tmp/jspc-classpath.txt
           mkdir -p /tmp/jspc
-          JASPER_JAR="$HOME/.m2/repository/org/apache/tomcat/tomcat-jasper/9.0.98/tomcat-jasper-9.0.98.jar"
+          JASPER_JAR="$HOME/.m2/repository/org/apache/tomcat/embed/tomcat-embed-jasper/9.0.98/tomcat-embed-jasper-9.0.98.jar"
           test -f "$JASPER_JAR"
+          jar tf "$JASPER_JAR" | grep -Fxq 'org/apache/jasper/JspC.class'
           JSPC_CP="$JASPER_JAR:$(cat /tmp/jspc-classpath.txt):/tmp/sokker-classes:sokker/WebContent/WEB-INF/lib/*"
           java -cp "$JSPC_CP" org.apache.jasper.JspC \
             -uriroot sokker/WebContent \
             -d /tmp/jspc \
             -classpath "$JSPC_CP" \
+            -source 8 -target 8 \
             -compile \
             jsp/asistente/corregirEdadJornada13.jsp
 
