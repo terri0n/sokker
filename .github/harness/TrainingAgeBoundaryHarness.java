@@ -61,8 +61,8 @@ public final class TrainingAgeBoundaryHarness {
 
     private static void manualPlayerSaveKeepsCurrentPlayerAge() throws Exception {
         String source = read("sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java");
-        require(source.contains("final int ajuste_edad = getAjuste_edad();"),
-                "Manual player save must still carry the season-boundary signal from /api/current");
+        require(!source.contains("final int ajuste_edad = getAjuste_edad();"),
+                "Manual player save must not apply the training-boundary age correction to current state");
         require(source.contains("j_nuevo = AsistenteDAO.obtener_jugador(pid, tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, false, _usuario, navegador)"),
                 "Manual player save must read the real current age from Sokker");
         require(!source.contains("j_nuevo.setEdad(j_nuevo.getEdad() + ajuste_edad)"),
