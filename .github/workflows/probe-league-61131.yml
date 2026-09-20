@@ -1,0 +1,21 @@
+name: Probe Sokker league 61131
+
+on:
+  push:
+    branches:
+      - fix/league-training-61131
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe JSON league endpoint
+        shell: bash
+        run: |
+          set +e
+          echo '=== /api/league/61131 ==='
+          curl -sS -i --max-time 20 -H 'User-Agent: FormulaManagerSokker/1.0' 'https://sokker.org/api/league/61131'
+          echo
+          echo '=== public league page ==='
+          curl -sS -i --max-time 20 -H 'User-Agent: FormulaManagerSokker/1.0' 'https://sokker.org/league/leagueID/61131' | head -c 20000
+          echo
