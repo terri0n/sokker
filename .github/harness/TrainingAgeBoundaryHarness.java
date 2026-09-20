@@ -12,6 +12,7 @@ public final class TrainingAgeBoundaryHarness {
     public static void main(String[] args) throws Exception {
         seasonBoundaryAdjustment();
         updateFlowUsesAdjustment();
+        manualPlayerSaveKeepsSignedAdjustment();
     }
 
     private static void seasonBoundaryAdjustment() throws Exception {
@@ -49,6 +50,16 @@ public final class TrainingAgeBoundaryHarness {
         assertCallerUsesAdjustment("sokker/src/com/formulamanager/sokker/acciones/asistente/Actualizar.java");
         assertCallerUsesAdjustment("sokker/src/com/formulamanager/sokker/acciones/asistente/Registro.java");
         assertCallerUsesAdjustment("sokker/src/com/formulamanager/sokker/acciones/asistente/CambiarPassword.java");
+    }
+
+    private static void manualPlayerSaveKeepsSignedAdjustment() throws Exception {
+        String source = read("sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java");
+        require(source.contains("final int ajuste_edad = getAjuste_edad();"),
+                "Manual player save must carry the signed adjustment from the outer /api/current lookup");
+        require(source.contains("ajuste_edad > 0"),
+                "Manual player save must preserve the historical +1 path when reading the player");
+        require(source.contains("j_nuevo.setEdad(j_nuevo.getEdad() + ajuste_edad)"),
+                "Manual player save must apply the -1 path after reading the player");
     }
 
     private static void assertCallerUsesAdjustment(String path) throws Exception {
