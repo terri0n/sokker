@@ -78,7 +78,7 @@ _log(request, "");
 					usuario_.setLogin_sokker(ilogin);
 					usuario_.setIntentos_fallidos(0);
 
-					List<Jugador> jugadores_actualizados = AsistenteBO.actualizar_equipo(usuario_, jornada_actual, isIncrementar_edad(), false, navegador, navegador);
+					List<Jugador> jugadores_actualizados = AsistenteBO.actualizar_equipo(usuario_, jornada_actual, getAjuste_edad(), false, navegador, navegador);
 					request.getSession().setAttribute("usuario", usuario_);
 				}
 			};

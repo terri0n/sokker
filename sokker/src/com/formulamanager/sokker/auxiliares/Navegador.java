@@ -31,6 +31,7 @@ public abstract class Navegador {
 	private Integer jornada;
 	private Usuario usuario;
 	private boolean incrementar_edad;
+	private int ajuste_edad;
 
 	// Crea un navegador sin hacer login en Sokker
 	public Navegador() throws FailingHttpStatusCodeException, MalformedURLException, LoginException, IOException, ParseException {
@@ -253,6 +254,28 @@ public abstract class Navegador {
 		return week - (dia >= 5 ? 0 : 1);
 	}
 
+	/**
+	 * Ajuste entre la edad que devuelve Sokker hoy y la edad que corresponde
+	 * a la jornada de entrenamiento que estamos guardando. El cumpleaños de
+	 * temporada ocurre el sábado: hasta el miércoles seguimos guardando el
+	 * entrenamiento del jueves anterior, por lo que hay que restar un año.
+	 * Se conserva la corrección histórica del jueves de la última jornada.
+	 */
+	public static int calcular_ajuste_edad(LinkedHashMap<String, Object> actual) throws IOException {
+		int jornada_actual = calcular_jornada_actual(actual);
+		Integer dia = JSONUtil.getInteger(actual, "today.day");
+		if (dia == null) {
+			throw new IOException("Incomplete /api/current payload: missing today.day");
+		}
+		if (AsistenteBO.getJornadaMod(jornada_actual) == 12 && dia < 5) {
+			return -1;
+		}
+		if (AsistenteBO.getJornadaMod(jornada_actual) == 12 && dia == 5) {
+			return 1;
+		}
+		return 0;
+	}
+
 	@SuppressWarnings("unchecked")
 	public Integer obtener_jornada_json(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 		if (jornada != null) {
@@ -261,12 +284,10 @@ public abstract class Navegador {
 
 		LinkedHashMap<String, Object> actual = (LinkedHashMap<String, Object>) JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/current");
 		int jornada_actual = calcular_jornada_actual(actual);
-		Integer dia = JSONUtil.getInteger(actual, "today.day");
 		setJornada(jornada_actual);
 
-		if (getJornadaMod(jornada_actual) == 12 && dia == 5) {
-			incrementar_edad = true;
-		}
+		ajuste_edad = calcular_ajuste_edad(actual);
+		incrementar_edad = ajuste_edad > 0;
 
 		return jornada;
 	}
@@ -304,8 +325,13 @@ public abstract class Navegador {
 	public boolean isIncrementar_edad() {
 		return incrementar_edad;
 	}
+
+	public int getAjuste_edad() {
+		return ajuste_edad;
+	}
 	
 	public void setIncrementar_edad(boolean incrementar_edad) {
 		this.incrementar_edad = incrementar_edad;
+		this.ajuste_edad = incrementar_edad ? 1 : 0;
 	}
 }

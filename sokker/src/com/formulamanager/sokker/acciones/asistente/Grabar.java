@@ -80,6 +80,7 @@ _log(request, pid + " " + condicion + " " + rapidez + " " + tecnica + " " + pase
 				@Override
 				protected void execute(WebClient navegadorXML) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 					int jornada_actual = obtener_jornada(navegadorXML);
+					final int ajuste_edad = getAjuste_edad();
 					
 					try {
 						// Leo los valores públicos del jugador
@@ -99,7 +100,10 @@ _log(request, pid + " " + condicion + " " + rapidez + " " + tecnica + " " + pase
 									
 									UsuarioBO.grabar_usuario(usuario2);
 								} else {
-									j_nuevo = AsistenteDAO.obtener_jugador(pid, tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, isIncrementar_edad(), _usuario, navegador);
+									j_nuevo = AsistenteDAO.obtener_jugador(pid, tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, ajuste_edad > 0, _usuario, navegador);
+									if (j_nuevo != null && ajuste_edad < 0) {
+										j_nuevo.setEdad(j_nuevo.getEdad() + ajuste_edad);
+									}
 
 									// Entrenamiento avanzado
 									Set<Integer> avanzados = AsistenteDAO.obtener_entrenamiento_avanzado(navegador);
