@@ -18,9 +18,6 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.formulamanager.sokker.auxiliares.SystemUtil;
-import com.formulamanager.sokker.bo.AsistenteBO;
-
 /**
  * Reparación puntual de las edades guardadas con +1 en la última semana de
  * temporada. Se puede eliminar después de ejecutarla una vez en producción.
@@ -35,13 +32,27 @@ import com.formulamanager.sokker.bo.AsistenteBO;
  * Properties, de modo que claves desconocidas y campos futuros quedan intactos.
  */
 public final class CorregirEdadJornada13 {
+    // Valores vigentes en AsistenteBO. Se duplican aquí deliberadamente para
+    // que esta utilidad de una sola ejecución no dependa de ninguna clase web.
+    private static final int JORNADAS_TEMPORADA = 13;
+    private static final int JORNADA_NUEVO_SISTEMA_LIGAS = 976;
+    private static final int JORNADA_NUEVO_ENTRENO = 993;
+
     private static final Pattern TEAM_FILE = Pattern.compile("[0-9]+\\.properties");
     private static final Pattern PLAYER_LINE = Pattern.compile("(?m)^([0-9]+)([=:])(.*?)(\\r?)$");
 
     private CorregirEdadJornada13() {}
 
     public static void main(String[] args) throws Exception {
-        File directory = resolveDataDirectory(args);
+        if (args.length == 1 && "--self-test".equals(args[0])) {
+            selfTest();
+            return;
+        }
+        if (args.length != 1) {
+            throw new IOException("Uso: CorregirEdadJornada13 <directorio_datos>");
+        }
+
+        File directory = new File(args[0]);
         if (!directory.isDirectory()) {
             throw new IOException("No existe el directorio de datos: " + directory.getAbsolutePath());
         }
@@ -73,37 +84,6 @@ public final class CorregirEdadJornada13 {
         System.out.println("Registros modificados: " + modifiedRecords);
     }
 
-    private static File resolveDataDirectory(String[] args) throws IOException {
-        if (args != null && args.length > 1) {
-            throw new IOException("Uso: CorregirEdadJornada13 [directorio_datos]");
-        }
-        if (args != null && args.length == 1 && args[0] != null && !args[0].trim().isEmpty()) {
-            return new File(args[0]);
-        }
-
-        if (SystemUtil.REAL_PATH == null) {
-            try {
-                File classes = new File(CorregirEdadJornada13.class
-                        .getProtectionDomain().getCodeSource().getLocation().toURI());
-                File webInf = classes.getParentFile();
-                if (classes.isDirectory()
-                        && "classes".equals(classes.getName())
-                        && webInf != null
-                        && "WEB-INF".equals(webInf.getName())
-                        && webInf.getParentFile() != null) {
-                    SystemUtil.REAL_PATH = webInf.getParentFile().getAbsolutePath() + File.separator;
-                }
-            } catch (Exception e) {
-                throw new IOException("No se puede localizar automáticamente el despliegue de Tomcat", e);
-            }
-        }
-
-        if (SystemUtil.REAL_PATH == null) {
-            throw new IOException("Indica el directorio de datos como único argumento");
-        }
-        return new File(SystemUtil.getVar(SystemUtil.PATH));
-    }
-
     private static int repairFile(Path path) throws IOException {
         byte[] originalBytes = Files.readAllBytes(path);
         String original = new String(originalBytes, StandardCharsets.ISO_8859_1);
@@ -133,7 +113,6 @@ public final class CorregirEdadJornada13 {
                     StandardOpenOption.TRUNCATE_EXISTING,
                     StandardOpenOption.WRITE);
 
-            // Comprobación final antes del reemplazo atómico.
             String written = new String(Files.readAllBytes(temp), StandardCharsets.ISO_8859_1);
             if (!written.equals(repaired.content)) {
                 throw new IOException("Error verificando el fichero temporal de " + path.getFileName());
@@ -167,7 +146,7 @@ public final class CorregirEdadJornada13 {
             }
 
             ParsedPlayer parsed = parsePlayer(unescapePropertyValue(rawValue));
-            if (parsed == null || AsistenteBO.getJornadaMod(parsed.jornada) != 12) {
+            if (parsed == null || getJornadaMod(parsed.jornada) != 12) {
                 continue;
             }
 
@@ -177,7 +156,7 @@ public final class CorregirEdadJornada13 {
             if (parsed.previousJornada != null
                     && parsed.previousEdad != null
                     && parsed.jornada > parsed.previousJornada
-                    && parsed.jornada - parsed.previousJornada < AsistenteBO.JORNADAS_TEMPORADA
+                    && parsed.jornada - parsed.previousJornada < JORNADAS_TEMPORADA
                     && parsed.edad == parsed.previousEdad + 1) {
                 contaminated = true;
             }
@@ -213,7 +192,6 @@ public final class CorregirEdadJornada13 {
                 return null;
             }
 
-            // Bloque opcional introducido por salario negativo.
             if (startsWithMinus(tokens, index)) {
                 index += 4; // salario, altura, peso, IMC
                 if (index >= tokens.length) {
@@ -270,9 +248,8 @@ public final class CorregirEdadJornada13 {
         }
         index += 9;
 
-        // Lesión, cuando existe, se guarda con signo negativo.
         if (startsWithMinus(tokens, index)) {
-            index++;
+            index++; // lesión
         }
 
         // forma, demarcación de entrenamiento, minutos
@@ -281,23 +258,27 @@ public final class CorregirEdadJornada13 {
         }
         index += 3;
 
-        // experiencia, disciplina táctica y trabajo en equipo.
         if (startsWithMinus(tokens, index)) {
             if (index + 3 > tokens.length) {
                 return -1;
             }
-            index += 3;
+            index += 3; // experiencia, disciplina táctica, trabajo en equipo
         }
 
-        // Desde el nuevo sistema de entrenamiento se guarda el flag avanzado.
-        if (jornada >= AsistenteBO.JORNADA_NUEVO_ENTRENO) {
+        if (jornada >= JORNADA_NUEVO_ENTRENO) {
             if (index >= tokens.length) {
                 return -1;
             }
-            index++;
+            index++; // entrenamiento avanzado
         }
 
         return index;
+    }
+
+    private static int getJornadaMod(int jornada) {
+        return jornada < JORNADA_NUEVO_SISTEMA_LIGAS
+                ? jornada % 16
+                : (jornada - JORNADA_NUEVO_SISTEMA_LIGAS) % JORNADAS_TEMPORADA;
     }
 
     private static boolean startsWithMinus(String[] tokens, int index) {
@@ -335,6 +316,38 @@ public final class CorregirEdadJornada13 {
             result.append(tokens[i]);
         }
         return result.toString();
+    }
+
+    private static void selfTest() throws Exception {
+        String contaminated =
+                "# cabecera\n" +
+                "future_key=keep\\:exactly\n" +
+                "1=Jugador Uno,1000,DEF,1,20/09/2026 10\\:00,true,0,0,0,,,-1000,180,750,2400,-,false,\\#,-,-false,1001,21,100000,5,5,5,5,5,5,5,5,-0,10,DEF,100.0,-1,1,1,true,1000,20,90000,5,5,5,5,5,5,5,5,-0,10,DEF,100.0,-1,1,1,true,*\n" +
+                "2=Jugador Nuevo,1000,MID,1,20/09/2026 10\\:00,true,0,0,0,,,-1000,180,750,2400,-,false,\\#,-,-false,1001,30,100000,5,5,5,5,5,5,5,5,-0,10,MID,100.0,-1,1,1,true,*\n";
+
+        RepairResult fixed = repairContent(contaminated);
+        require(fixed.modifiedRecords == 2, "Debe corregir todos los jugadores del fichero contaminado");
+        require(fixed.content.contains(",1001,20,100000,"), "Debe restar uno al jugador con histórico");
+        require(fixed.content.contains(",1001,29,100000,"), "Debe restar uno al jugador nuevo");
+        require(fixed.content.contains("future_key=keep\\:exactly"), "Debe conservar claves desconocidas");
+
+        RepairResult second = repairContent(fixed.content);
+        require(second.modifiedRecords == 0, "La reparación debe ser idempotente");
+        require(second.content.equals(fixed.content), "La segunda ejecución no debe modificar datos");
+
+        String ordinary = contaminated
+                .replace(",1001,21,", ",1002,21,")
+                .replace(",1001,30,", ",1002,30,");
+        RepairResult untouched = repairContent(ordinary);
+        require(untouched.modifiedRecords == 0, "No debe tocar jornadas que no sean la 13");
+
+        System.out.println("OK");
+    }
+
+    private static void require(boolean condition, String message) {
+        if (!condition) {
+            throw new AssertionError(message);
+        }
     }
 
     static final class RepairResult {
