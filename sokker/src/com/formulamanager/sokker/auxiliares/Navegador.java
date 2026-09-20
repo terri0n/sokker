@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.ParseException;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 
 import javax.security.auth.login.LoginException;
@@ -14,14 +15,20 @@ import org.apache.http.conn.HttpHostConnectException;
 import com.formulamanager.sokker.bo.AsistenteBO;
 import com.formulamanager.sokker.bo.FactorxBO;
 import com.formulamanager.sokker.entity.Usuario;
+import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.HttpMethod;
 import com.gargoylesoftware.htmlunit.Page;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.WebRequest;
+import com.gargoylesoftware.htmlunit.util.NameValuePair;
 import com.gargoylesoftware.htmlunit.xml.XmlPage;
 
 public abstract class Navegador {
+	// Cloudflare returns 403 to clients that claim to be Chrome but whose TLS fingerprint is not.
+	// HtmlUnit poses as Chrome by default, so we identify ourselves by our own name instead.
+	public static final String USER_AGENT = "FormulaManagerSokker/1.0";
+
 	protected HttpServletRequest request;
 	private Integer jornada;
 	private Usuario usuario;
@@ -85,11 +92,43 @@ public abstract class Navegador {
 			navegador.close();
 			throw e;
 		}
+
+		try {
+			startXmlSession(navegador, login, password);
+		} catch (IOException | LoginException e) {
+			navegador.close();
+			throw e;
+		}
+
 		return navegador;
 	}
 
+	// Sokker keeps a second session for the XML files, documented at https://sokker.org/xmlinfo:
+	// ilogin/ipassword are posted to start.php?session=xml, which sets the XMLSESSID cookie.
+	// The JSON login alone does not grant it: without this call every /xml/*.xml redirects to /xmlinfo.
+	private void startXmlSession(WebClient navegador, String login, String password)
+			throws IOException, LoginException {
+		WebRequest peticion = new WebRequest(new URL(AsistenteBO.SOKKER_URL + "/start.php?session=xml"), HttpMethod.POST);
+		peticion.setRequestParameters(Arrays.asList(
+				new NameValuePair("ilogin", login),
+				new NameValuePair("ipassword", password)));
+
+		// Replies "OK" or "FAILED errorno=N" (1 bad password, 3 no team, 4 banned, 5 bankrupt, 6 IP blacklisted).
+		String respuesta = navegador.getPage(peticion).getWebResponse().getContentAsString().trim();
+		if (!respuesta.startsWith("OK")) {
+			throw new LoginException("Could not open the Sokker XML session: " + respuesta);
+		}
+	}
+
+	// Same behaviour as HtmlUnit's Chrome profile, without impersonating it in the header
+	public static BrowserVersion createBrowserVersion() {
+		BrowserVersion version = BrowserVersion.CHROME.clone();
+		version.setUserAgent(USER_AGENT);
+		return version;
+	}
+
 	private WebClient crear_navegador() {
-		WebClient navegador = new WebClient() {
+		WebClient navegador = new WebClient(createBrowserVersion()) {
 			private static final long serialVersionUID = 1L;
 			private XmlPage paginaJuniors;
 			private XmlPage paginaEntrenadores;
