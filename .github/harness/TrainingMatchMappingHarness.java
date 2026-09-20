@@ -119,6 +119,7 @@ public class TrainingMatchMappingHarness {
         }
     }
 
+    // Regression for /api/league payloads with type.code=13 (international cup).
     private static void recognizesInternationalCupAsOfficialTraining() throws Exception {
         String source = new String(Files.readAllBytes(Paths.get(
                 "sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java")), StandardCharsets.UTF_8);
