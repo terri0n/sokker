@@ -59,6 +59,33 @@ jobs:
           find /tmp/sokker-src -name '*.java' -print0 \
             | xargs -0 javac -source 8 -target 8 -encoding UTF-8 -cp "$CP" -d /tmp/sokker-classes
 
+      - name: Compile one-shot repair JSP
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/jspc-pom.xml <<'EOF'
+          <project xmlns="http://maven.apache.org/POM/4.0.0">
+            <modelVersion>4.0.0</modelVersion>
+            <groupId>tmp</groupId><artifactId>jspc</artifactId><version>1</version>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.tomcat</groupId>
+                <artifactId>tomcat-jasper</artifactId>
+                <version>9.0.98</version>
+              </dependency>
+            </dependencies>
+          </project>
+          EOF
+          mvn -q -f /tmp/jspc-pom.xml dependency:build-classpath -Dmdep.outputFile=/tmp/jspc-classpath.txt
+          mkdir -p /tmp/jspc
+          JSPC_CP="$(cat /tmp/jspc-classpath.txt):/tmp/sokker-classes:sokker/WebContent/WEB-INF/lib/*"
+          java -cp "$JSPC_CP" org.apache.jasper.JspC \
+            -uriroot sokker/WebContent \
+            -d /tmp/jspc \
+            -classpath "$JSPC_CP" \
+            -compile \
+            jsp/asistente/corregirEdadJornada13.jsp
+
       - name: Verify compatibility harnesses
         shell: bash
         run: |
@@ -115,6 +142,7 @@ jobs:
 
           test -f /tmp/sokker-war/WEB-INF/web.xml
           test -f /tmp/sokker-war/WEB-INF/classes/com/formulamanager/sokker/bo/AsistenteBO.class
+          test -f /tmp/sokker-war/jsp/asistente/corregirEdadJornada13.jsp
           test -d /tmp/sokker-war/WEB-INF/lib
           test "$(find /tmp/sokker-war/WEB-INF/lib -type f -name '*.jar' | wc -l)" -gt 0
 
@@ -122,4 +150,5 @@ jobs:
           jar tf /tmp/sokker.war > /tmp/sokker-war-entries.txt
           grep -Fxq 'WEB-INF/web.xml' /tmp/sokker-war-entries.txt
           grep -Fxq 'WEB-INF/classes/com/formulamanager/sokker/bo/AsistenteBO.class' /tmp/sokker-war-entries.txt
+          grep -Fxq 'jsp/asistente/corregirEdadJornada13.jsp' /tmp/sokker-war-entries.txt
           test -s /tmp/sokker.war
