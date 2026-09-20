@@ -59,6 +59,12 @@ jobs:
           find /tmp/sokker-src -name '*.java' -print0 \
             | xargs -0 javac -source 8 -target 8 -encoding UTF-8 -cp "$CP" -d /tmp/sokker-classes
 
+      - name: Verify one-shot age repair self-test
+        shell: bash
+        run: |
+          set -euo pipefail
+          java -cp /tmp/sokker-classes com.formulamanager.sokker.mantenimiento.CorregirEdadJornada13 --self-test
+
       - name: Verify compatibility harnesses
         shell: bash
         run: |
