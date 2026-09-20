@@ -1,0 +1,87 @@
+name: Apply current age boundary fix
+
+on:
+  push:
+    branches:
+      - fix/current-age-training-row
+    paths:
+      - .github/workflows/apply-current-age-positive-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/current-age-training-row
+          fetch-depth: 0
+
+      - name: Preserve +1 and remove only negative senior correction
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              data = p.read_bytes()
+              nl = b"\r\n" if b"\r\n" in data else b"\n"
+              old_b = old.encode("utf-8").replace(b"\n", nl)
+              new_b = new.encode("utf-8").replace(b"\n", nl)
+              count = data.count(old_b)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected exactly one match, found {count}: {old!r}")
+              p.write_bytes(data.replace(old_b, new_b, 1))
+
+          bo = "sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java"
+          replace_once(
+              bo,
+              "\t\t\t// El objeto actual representa el estado vivo del jugador y debe conservar la edad real de Sokker.\n"
+              "\t\t\t// El entrenamiento histórico se calcula desde original en Jugador.calcular_entrenamiento2().\n"
+              "\t\t\tjugadores_nuevos = AsistenteDAO.obtener_entrenamiento(_usuario, jornada_actual, false, navegador);",
+              "\t\t\t// El -1 corresponde al entrenamiento ya completado antes del cumpleaños, no al estado actual.\n"
+              "\t\t\t// Conservamos el +1 histórico del jueves para el periodo que entrenará tras el cumpleaños.\n"
+              "\t\t\tjugadores_nuevos = AsistenteDAO.obtener_entrenamiento(_usuario, jornada_actual, incrementar_edad, navegador);"
+          )
+          replace_once(
+              bo,
+              "\t\t\tjugadores_nuevos = AsistenteDAO.obtener_jugadores(tid, jornada_actual, false, _usuario, navegador);",
+              "\t\t\tjugadores_nuevos = AsistenteDAO.obtener_jugadores(tid, jornada_actual, incrementar_edad, _usuario, navegador);"
+          )
+          replace_once(
+              bo,
+              "\t\t\t\tJugador actualizado = AsistenteDAO.obtener_jugador(j.getPid(), tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, false, _usuario, navegador);",
+              "\t\t\t\tJugador actualizado = AsistenteDAO.obtener_jugador(j.getPid(), tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, incrementar_edad, _usuario, navegador);"
+          )
+
+          grabar = "sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java"
+          replace_once(
+              grabar,
+              "\t\t\t\t\tint jornada_actual = obtener_jornada(navegadorXML);",
+              "\t\t\t\t\tint jornada_actual = obtener_jornada(navegadorXML);\n\t\t\t\t\tfinal int ajuste_edad = getAjuste_edad();"
+          )
+          replace_once(
+              grabar,
+              "\t\t\t\t\t\t\t\t\t// La edición manual modifica el estado actual; la edad debe ser la real de Sokker.\n"
+              "\t\t\t\t\t\t\t\t\tj_nuevo = AsistenteDAO.obtener_jugador(pid, tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, false, _usuario, navegador);",
+              "\t\t\t\t\t\t\t\t\t// Conservamos el +1 histórico del jueves, pero nunca aplicamos el -1 al estado actual.\n"
+              "\t\t\t\t\t\t\t\t\tj_nuevo = AsistenteDAO.obtener_jugador(pid, tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, ajuste_edad > 0, _usuario, navegador);"
+          )
+
+      - name: Verify targeted diff
+        run: |
+          git diff --numstat -- sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java
+          changed=$(git diff --name-only | grep -v '^\.github/workflows/apply-current-age-positive-fix.yml$' || true)
+          expected=$'sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java\nsokker/src/com/formulamanager/sokker/bo/AsistenteBO.java'
+          test "$changed" = "$expected"
+
+      - name: Commit and remove one-shot workflow
+        run: |
+          git config user.name "Terrion"
+          git config user.email "63014185+terri0n@users.noreply.github.com"
+          git rm .github/workflows/apply-current-age-positive-fix.yml
+          git add sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java
+          git commit -m "Preserve real current age after season birthday"
+          git push origin HEAD:fix/current-age-training-row
