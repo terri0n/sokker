@@ -664,7 +664,12 @@ SERVLET_ASISTENTE._log_linea(usuario.getLogin(), "\t" + clave + ": " + tiempo_to
 	}
 
 	public static List<Jugador> actualizar_equipo(Usuario _usuario, int jornada_actual, boolean incrementar_edad, boolean registro, WebClient navegadorXML, WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {
+		return actualizar_equipo(_usuario, jornada_actual, incrementar_edad ? 1 : 0, registro, navegadorXML, navegador);
+	}
+
+	public static List<Jugador> actualizar_equipo(Usuario _usuario, int jornada_actual, int ajuste_edad, boolean registro, WebClient navegadorXML, WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {
 		List<Jugador> jugadores_actualizados = new ArrayList<Jugador>();
+		boolean incrementar_edad = ajuste_edad > 0;
 		
 		int tid = _usuario.getDef_tid();
 		
@@ -674,6 +679,11 @@ SERVLET_ASISTENTE._log_linea(usuario.getLogin(), "\t" + clave + ": " + tiempo_to
 			jugadores_nuevos = AsistenteDAO.obtener_entrenamiento(_usuario, jornada_actual, incrementar_edad, navegador);
 		} else {
 			jugadores_nuevos = AsistenteDAO.obtener_jugadores(tid, jornada_actual, incrementar_edad, _usuario, navegador);
+		}
+		if (ajuste_edad < 0) {
+			for (Jugador jugador : jugadores_nuevos) {
+				jugador.setEdad(jugador.getEdad() + ajuste_edad);
+			}
 		}
 		List<Jugador> jugadores = AsistenteBO.leer_jugadores(tid, _usuario.getDef_equipo(), false, _usuario);
 		List<Jugador> jugadores_historico = AsistenteBO.leer_jugadores(tid, _usuario.getDef_equipo(), true, _usuario);
@@ -703,6 +713,9 @@ if (nuevo.getLesion() > 0) {
 			
 			if (j.getPid() > 0 && !jugadores_nuevos.contains(j) || ascender) {
 				Jugador actualizado = AsistenteDAO.obtener_jugador(j.getPid(), tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, incrementar_edad, _usuario, navegador);
+				if (actualizado != null && ajuste_edad < 0) {
+					actualizado.setEdad(actualizado.getEdad() + ajuste_edad);
+				}
 				if (actualizado == null) {
 					// Archivo los jugadores despedidos
 					jugadores_historico.add(j);
@@ -763,6 +776,11 @@ if (nuevo.getLesion() > 0) {
 
 		// Juveniles
 		List<Juvenil> juveniles_nuevos = obtener_juveniles(jornada_actual, incrementar_edad, _usuario, navegadorXML);
+		if (ajuste_edad < 0) {
+			for (Juvenil juvenil : juveniles_nuevos) {
+				juvenil.setEdad(juvenil.getEdad() + ajuste_edad);
+			}
+		}
 		List<Juvenil> juveniles = leer_juveniles(tid, false, _usuario);
 		List<Juvenil> juveniles_historico = leer_juveniles(tid, true, _usuario);
 		List<Juvenil> juveniles_actualizados = new ArrayList<Juvenil>();
@@ -1778,10 +1796,12 @@ System.out.println("OK");
 System.out.print("Actualizaciones automáticas...");
 		try {
 			Integer[] jornada_actual = new Integer[1];
+			Integer[] ajuste_edad = new Integer[1];
 			new Navegador(true, null) {
 				@Override
 				protected void execute(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 					jornada_actual[0] = obtener_jornada(navegador);
+					ajuste_edad[0] = getAjuste_edad();
 				}
 			};
 
@@ -1804,7 +1824,7 @@ System.out.print("Actualizaciones automáticas...");
 									@Override
 									protected void execute(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {
 										SERVLET_ASISTENTE._log_linea(usuario.getLogin(), "Actualización automática");
-										actualizar_equipo(usuario, jornada_actual[0], isIncrementar_edad(), false, navegadorXML, navegador);
+										actualizar_equipo(usuario, jornada_actual[0], ajuste_edad[0], false, navegadorXML, navegador);
 										file.setLastModified(lastModified);
 									}
 								};

@@ -87,7 +87,7 @@ public class Registro extends SERVLET_ASISTENTE {
 				
 _log(request, "");
 
-						List<Jugador> jugadores_actualizados = AsistenteBO.actualizar_equipo(usuario, jornada_actual, isIncrementar_edad(), true, navegador, navegador);
+						List<Jugador> jugadores_actualizados = AsistenteBO.actualizar_equipo(usuario, jornada_actual, getAjuste_edad(), true, navegador, navegador);
 						AsistenteDAO.obtener_datos_NT(navegador, usuario);
 					
 						request.getSession().setAttribute("usuario", usuario);
