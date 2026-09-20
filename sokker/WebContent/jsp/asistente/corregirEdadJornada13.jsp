@@ -9,7 +9,7 @@
 <%@ page import="java.nio.file.StandardOpenOption" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.Calendar" %>
+<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Properties" %>
@@ -32,19 +32,8 @@
             throw new IOException("No existe el directorio de datos: " + directory.getAbsolutePath());
         }
 
-        Calendar start = Calendar.getInstance();
-        start.set(Calendar.HOUR_OF_DAY, 0);
-        start.set(Calendar.MINUTE, 0);
-        start.set(Calendar.SECOND, 0);
-        start.set(Calendar.MILLISECOND, 0);
-        long startToday = start.getTimeInMillis();
-        start.add(Calendar.DAY_OF_MONTH, 1);
-        long startTomorrow = start.getTimeInMillis();
-
         File[] files = directory.listFiles(file -> file.isFile()
-                && TEAM_FILE_REPAIR.matcher(file.getName()).matches()
-                && file.lastModified() >= startToday
-                && file.lastModified() < startTomorrow);
+                && TEAM_FILE_REPAIR.matcher(file.getName()).matches());
         if (files == null) {
             throw new IOException("No se puede listar el directorio de datos: " + directory.getAbsolutePath());
         }
@@ -113,9 +102,8 @@
     }
 
     private RepairResult repairContent(String content) throws IOException {
-        List<PlayerLine> players = new ArrayList<PlayerLine>();
+        List<PlayerRepair> repairs = new ArrayList<PlayerRepair>();
         Matcher matcher = PLAYER_LINE_REPAIR.matcher(content);
-        boolean contaminated = false;
 
         while (matcher.find()) {
             String rawValue = matcher.group(3);
@@ -124,51 +112,88 @@
             }
 
             ParsedPlayer parsed = parsePlayer(unescapePropertyValue(rawValue));
-            if (parsed == null || getJornadaModRepair(parsed.jornada) != 12) {
+            if (parsed == null) {
                 continue;
             }
 
-            PlayerLine line = new PlayerLine(matcher.start(3), matcher.end(3), rawValue, parsed);
-            players.add(line);
-            if (isReliablePrevious(parsed) && parsed.edad == parsed.previousEdad.intValue() + 1) {
-                contaminated = true;
+            List<Integer> ageIndices = findAgeIndicesToRepair(parsed);
+            if (!ageIndices.isEmpty()) {
+                repairs.add(new PlayerRepair(
+                        matcher.start(3),
+                        matcher.end(3),
+                        rawValue,
+                        ageIndices,
+                        parsed.snapshots.get(0).edad - 1));
             }
         }
 
-        if (!contaminated || players.isEmpty()) {
+        if (repairs.isEmpty()) {
             return new RepairResult(content, 0);
         }
 
         StringBuilder fixed = new StringBuilder(content);
         int modified = 0;
-        for (int i = players.size() - 1; i >= 0; i--) {
-            PlayerLine player = players.get(i);
+        for (int i = repairs.size() - 1; i >= 0; i--) {
+            PlayerRepair repair = repairs.get(i);
+            String[] rawTokens = repair.rawValue.split(",", -1);
 
-            // Si hay una jornada anterior fiable y la edad ya coincide, este
-            // jugador pudo haberse corregido después: no lo tocamos otra vez.
-            if (isReliablePrevious(player.parsed)
-                    && player.parsed.edad != player.parsed.previousEdad.intValue() + 1) {
-                continue;
+            for (Integer ageIndex : repair.ageIndices) {
+                if (ageIndex < 0 || ageIndex >= rawTokens.length) {
+                    throw new IOException("Formato de jugador inconsistente durante la reparación");
+                }
+                rawTokens[ageIndex] = Integer.toString(repair.targetAge);
+                modified++;
             }
 
-            String[] rawTokens = player.rawValue.split(",", -1);
-            if (player.parsed.edadIndex >= rawTokens.length) {
-                throw new IOException("Formato de jugador inconsistente durante la reparación");
-            }
-
-            rawTokens[player.parsed.edadIndex] = Integer.toString(player.parsed.edad - 1);
-            fixed.replace(player.valueStart, player.valueEnd, join(rawTokens));
-            modified++;
+            fixed.replace(repair.valueStart, repair.valueEnd, join(rawTokens));
         }
 
         return new RepairResult(fixed.toString(), modified);
     }
 
-    private boolean isReliablePrevious(ParsedPlayer parsed) {
-        return parsed.previousJornada != null
-                && parsed.previousEdad != null
-                && parsed.jornada > parsed.previousJornada.intValue()
-                && parsed.jornada - parsed.previousJornada.intValue() < JORNADAS_TEMPORADA_REPAIR;
+    private List<Integer> findAgeIndicesToRepair(ParsedPlayer parsed) {
+        if (parsed.snapshots.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Snapshot latest = parsed.snapshots.get(0);
+        if (getJornadaModRepair(latest.jornada) != 12) {
+            return Collections.emptyList();
+        }
+
+        int season = getSeasonRepair(latest.jornada);
+        int currentAge = latest.edad;
+        int previousJornada = Integer.MAX_VALUE;
+        List<Integer> sameAgeBlock = new ArrayList<Integer>();
+
+        for (Snapshot snapshot : parsed.snapshots) {
+            if (snapshot.jornada >= previousJornada) {
+                return Collections.emptyList();
+            }
+            previousJornada = snapshot.jornada;
+
+            if (getSeasonRepair(snapshot.jornada) != season) {
+                break;
+            }
+
+            if (snapshot.edad == currentAge) {
+                sameAgeBlock.add(snapshot.edadIndex);
+                continue;
+            }
+
+            // Dentro de una misma temporada la edad no cambia. Si tras un bloque
+            // final con la edad actual aparece la edad actual - 1, ese bloque es
+            // el que se contaminó al actualizar después del cumpleaños.
+            if (snapshot.edad == currentAge - 1) {
+                return sameAgeBlock;
+            }
+            return Collections.emptyList();
+        }
+
+        // Sin una jornada anterior de la misma temporada que demuestre el +1
+        // no tocamos el jugador. Es preferible dejar un caso ambiguo pendiente
+        // antes que restar dos veces a un registro ya correcto.
+        return Collections.emptyList();
     }
 
     private ParsedPlayer parsePlayer(String value) {
@@ -203,24 +228,24 @@
                 }
             }
 
-            if (index + 1 >= tokens.length) {
-                return null;
+            List<Snapshot> snapshots = new ArrayList<Snapshot>();
+            while (index < tokens.length && !"*".equals(tokens[index])) {
+                if (index + 1 >= tokens.length) {
+                    return null;
+                }
+
+                int jornada = Integer.parseInt(tokens[index]);
+                int edad = Integer.parseInt(tokens[index + 1]);
+                snapshots.add(new Snapshot(jornada, edad, index + 1));
+
+                int next = afterSnapshot(tokens, index, jornada);
+                if (next <= index) {
+                    return null;
+                }
+                index = next;
             }
 
-            int jornadaIndex = index;
-            int edadIndex = index + 1;
-            int jornada = Integer.parseInt(tokens[jornadaIndex]);
-            int edad = Integer.parseInt(tokens[edadIndex]);
-
-            int next = afterSnapshot(tokens, jornadaIndex, jornada);
-            Integer previousJornada = null;
-            Integer previousEdad = null;
-            if (next >= 0 && next + 1 < tokens.length && !"*".equals(tokens[next])) {
-                previousJornada = Integer.valueOf(tokens[next]);
-                previousEdad = Integer.valueOf(tokens[next + 1]);
-            }
-
-            return new ParsedPlayer(jornada, edad, edadIndex, previousJornada, previousEdad);
+            return snapshots.isEmpty() ? null : new ParsedPlayer(snapshots);
         } catch (RuntimeException e) {
             return null;
         }
@@ -268,6 +293,12 @@
                 : (jornada - JORNADA_NUEVO_SISTEMA_LIGAS_REPAIR) % JORNADAS_TEMPORADA_REPAIR;
     }
 
+    private int getSeasonRepair(int jornada) {
+        return jornada < JORNADA_NUEVO_SISTEMA_LIGAS_REPAIR
+                ? jornada / 16
+                : (jornada - JORNADA_NUEVO_SISTEMA_LIGAS_REPAIR) / JORNADAS_TEMPORADA_REPAIR;
+    }
+
     private boolean startsWithMinus(String[] tokens, int index) {
         return index < tokens.length && tokens[index] != null && tokens[index].startsWith("-");
     }
@@ -305,31 +336,34 @@
         return result.toString();
     }
 
+    private String snapshot(int jornada, int edad) {
+        return jornada + "," + edad + ",100000,5,5,5,5,5,5,5,5,-0,10,DEF,100.0,-1,1,1,true";
+    }
+
+    private String player(int pid, String snapshots) {
+        return pid + "=Jugador " + pid + ",1000,DEF,1,20/09/2026 10\\:00,true,0,0,0,,,-1000,180,750,2400,-,false,\\#,-,-false," + snapshots + ",*\n";
+    }
+
     private void selfTestRepair() throws Exception {
         String contaminated =
                 "# cabecera\n" +
                 "future_key=keep\\:exactly\n" +
-                "1=Jugador Uno,1000,DEF,1,20/09/2026 10\\:00,true,0,0,0,,,-1000,180,750,2400,-,false,\\#,-,-false,1001,21,100000,5,5,5,5,5,5,5,5,-0,10,DEF,100.0,-1,1,1,true,1000,20,90000,5,5,5,5,5,5,5,5,-0,10,DEF,100.0,-1,1,1,true,*\n" +
-                "2=Jugador Nuevo,1000,MID,1,20/09/2026 10\\:00,true,0,0,0,,,-1000,180,750,2400,-,false,\\#,-,-false,1001,30,100000,5,5,5,5,5,5,5,5,-0,10,MID,100.0,-1,1,1,true,*\n" +
-                "3=Jugador Ya Corregido,1000,DEF,1,20/09/2026 10\\:00,true,0,0,0,,,-1000,180,750,2400,-,false,\\#,-,-false,1001,25,100000,5,5,5,5,5,5,5,5,-0,10,DEF,100.0,-1,1,1,true,1000,25,90000,5,5,5,5,5,5,5,5,-0,10,DEF,100.0,-1,1,1,true,*\n";
+                player(1, snapshot(1209, 29) + "," + snapshot(1208, 29) + "," + snapshot(1207, 28)) +
+                player(2, snapshot(1209, 30) + "," + snapshot(1208, 30) + "," + snapshot(1207, 30) + "," + snapshot(1206, 29)) +
+                player(3, snapshot(1209, 28) + "," + snapshot(1208, 28) + "," + snapshot(1207, 28)) +
+                player(4, snapshot(1210, 29) + "," + snapshot(1209, 28));
 
         RepairResult fixed = repairContent(contaminated);
-        requireRepair(fixed.modifiedRecords == 2, "Debe corregir solo los registros contaminados o sin histórico fiable");
-        requireRepair(fixed.content.contains(",1001,20,100000,"), "Debe restar uno al jugador contaminado con histórico");
-        requireRepair(fixed.content.contains(",1001,29,100000,"), "Debe restar uno al jugador nuevo del equipo contaminado");
-        requireRepair(fixed.content.contains(",1001,25,100000,"), "No debe tocar un jugador que ya esté corregido");
+        requireRepair(fixed.modifiedRecords == 5, "Debe corregir bloques finales de dos o tres jornadas");
+        requireRepair(fixed.content.contains(snapshot(1209, 28) + "," + snapshot(1208, 28) + "," + snapshot(1207, 28)),
+                "Debe corregir las dos jornadas contaminadas");
+        requireRepair(fixed.content.contains(snapshot(1209, 29) + "," + snapshot(1208, 29) + "," + snapshot(1207, 29) + "," + snapshot(1206, 29)),
+                "Debe corregir las tres jornadas contaminadas");
         requireRepair(fixed.content.contains("future_key=keep\\:exactly"), "Debe conservar claves desconocidas");
 
         RepairResult second = repairContent(fixed.content);
         requireRepair(second.modifiedRecords == 0, "La reparación debe ser idempotente");
         requireRepair(second.content.equals(fixed.content), "Una segunda ejecución no debe modificar datos");
-
-        String ordinary = contaminated
-                .replace(",1001,21,", ",1002,21,")
-                .replace(",1001,30,", ",1002,30,")
-                .replace(",1001,25,", ",1002,25,");
-        RepairResult untouched = repairContent(ordinary);
-        requireRepair(untouched.modifiedRecords == 0, "No debe tocar jornadas que no sean la 13");
     }
 
     private void requireRepair(boolean condition, String message) {
@@ -359,33 +393,39 @@
         }
     }
 
-    private static final class PlayerLine {
+    private static final class PlayerRepair {
         final int valueStart;
         final int valueEnd;
         final String rawValue;
-        final ParsedPlayer parsed;
+        final List<Integer> ageIndices;
+        final int targetAge;
 
-        PlayerLine(int valueStart, int valueEnd, String rawValue, ParsedPlayer parsed) {
+        PlayerRepair(int valueStart, int valueEnd, String rawValue, List<Integer> ageIndices, int targetAge) {
             this.valueStart = valueStart;
             this.valueEnd = valueEnd;
             this.rawValue = rawValue;
-            this.parsed = parsed;
+            this.ageIndices = ageIndices;
+            this.targetAge = targetAge;
         }
     }
 
     private static final class ParsedPlayer {
+        final List<Snapshot> snapshots;
+
+        ParsedPlayer(List<Snapshot> snapshots) {
+            this.snapshots = snapshots;
+        }
+    }
+
+    private static final class Snapshot {
         final int jornada;
         final int edad;
         final int edadIndex;
-        final Integer previousJornada;
-        final Integer previousEdad;
 
-        ParsedPlayer(int jornada, int edad, int edadIndex, Integer previousJornada, Integer previousEdad) {
+        Snapshot(int jornada, int edad, int edadIndex) {
             this.jornada = jornada;
             this.edad = edad;
             this.edadIndex = edadIndex;
-            this.previousJornada = previousJornada;
-            this.previousEdad = previousEdad;
         }
     }
 %>
@@ -436,7 +476,7 @@
     <pre><%= escapeHtmlRepair(error) %></pre>
 <% } else { %>
     <h2>Corregir edad de la jornada 13</h2>
-    <p>Corrige únicamente los equipos actualizados hoy en los que se detecte el +1 erróneo.</p>
+    <p>Corrige el bloque final de jornadas de la temporada que heredó la edad posterior al cumpleaños.</p>
     <form method="post">
         <input type="hidden" name="csrf" value="<%= escapeHtmlRepair(csrf) %>">
         <button type="submit">Corregir ahora</button>
