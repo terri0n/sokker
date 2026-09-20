@@ -8,6 +8,7 @@ public final class LeagueTrainingCompatHarness {
 
     public static void main(String[] args) {
         unknownNonOfficialLeagueFallsBackToFriendlyLegacyType();
+        unknownOfficialLeagueIsNotReclassifiedWithoutEvidence();
         knownJuniorLeagueKeepsNoTrainingType();
         knownOfficialLeagueTypeIsPreserved();
         incompleteLeaguePayloadKeepsLegacyMissingTypeFallback();
@@ -17,6 +18,12 @@ public final class LeagueTrainingCompatHarness {
         String xml = SokkerXmlCompat.buildLeagueXml(league(3, false));
         require(xml.contains("<type>0</type><isOfficial>0</isOfficial>"),
                 "An unknown non-official JSON league must map to legacy friendly type 0");
+    }
+
+    private static void unknownOfficialLeagueIsNotReclassifiedWithoutEvidence() {
+        String xml = SokkerXmlCompat.buildLeagueXml(league(3, true));
+        require(xml.contains("<type>3</type><isOfficial>1</isOfficial>"),
+                "An unknown official type must remain visible instead of inventing semantics");
     }
 
     private static void knownJuniorLeagueKeepsNoTrainingType() {
