@@ -1,0 +1,53 @@
+name: Apply league training compatibility fix
+
+on:
+  push:
+    branches:
+      - fix/league-training-61131
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/league-training-61131
+          fetch-depth: 0
+
+      - name: Apply focused compatibility change
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('sokker/src/com/formulamanager/sokker/auxiliares/SokkerXmlCompat.java')
+          raw = path.read_bytes()
+          old = b'''\t\tif (type != null && official != null) {\n\t\t\txml.append("<type>").append(type).append("</type><isOfficial>")\n\t\t\t\t.append(official.booleanValue() ? 1 : 0).append("</isOfficial>");\n\t\t}\n'''
+          new = b'''\t\tif (type != null && official != null) {\n\t\t\tint legacyType = type.intValue();\n\t\t\t// La API puede devolver tipos nuevos para competiciones no oficiales.\n\t\t\t// El consumidor legado representa cualquier amistoso como type=0 + isOfficial=0.\n\t\t\tif (!official.booleanValue()\n\t\t\t\t\t&& legacyType != 0 && legacyType != 1 && legacyType != 2\n\t\t\t\t\t&& legacyType != 7 && legacyType != 9) {\n\t\t\t\tlegacyType = 0;\n\t\t\t}\n\t\t\txml.append("<type>").append(legacyType).append("</type><isOfficial>")\n\t\t\t\t.append(official.booleanValue() ? 1 : 0).append("</isOfficial>");\n\t\t}\n'''
+          count = raw.count(old)
+          if count != 1:
+              raise SystemExit('Expected buildLeagueXml block exactly once, found %d' % count)
+          path.write_bytes(raw.replace(old, new, 1))
+          PY
+
+          rm -f .github/workflows/probe-league-61131.yml
+          rm -f .github/workflows/apply-league-training-fix.yml
+          git diff --check
+          git diff --exit-code -- . ':(exclude)sokker/src/com/formulamanager/sokker/auxiliares/SokkerXmlCompat.java' ':(exclude).github/workflows/probe-league-61131.yml' ':(exclude).github/workflows/apply-league-training-fix.yml' || true
+
+      - name: Commit focused fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sokker/src/com/formulamanager/sokker/auxiliares/SokkerXmlCompat.java \
+                  .github/workflows/probe-league-61131.yml \
+                  .github/workflows/apply-league-training-fix.yml
+          git commit -m 'Handle new non-official league types as friendlies'
+          git push origin HEAD:fix/league-training-61131
