@@ -589,7 +589,8 @@ SERVLET_ASISTENTE._log_linea(usuario.getLogin(), "\t" + clave + ": " + tiempo_to
 							if (tipo == 0 && oficial	// Liga
 									|| tipo == 1		// Copa
 									|| tipo == 2		// Promoci�n
-									|| tipo == 9) {		// Champions Cup
+									|| tipo == 9		// Champions Cup
+									|| tipo == 13) {		// International Cup
 								return AsistenteBO.PORCENTAJE_OFICIALES / 90f;
 							} else if (tipo == 0 && !oficial) {
 								return AsistenteBO.PORCENTAJE_AMISTOSOS / 90f;
