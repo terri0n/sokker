@@ -1,0 +1,68 @@
+name: Apply manual player age adjustment
+
+on:
+  push:
+    branches:
+      - fix/training-age-season-boundary-clean
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/training-age-season-boundary-clean
+          fetch-depth: 0
+
+      - name: Apply focused Grabar fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java')
+          raw = path.read_bytes()
+          text = raw.decode('utf-8')
+          newline = '\r\n' if b'\r\n' in raw else '\n'
+          s = text.replace('\r\n', '\n')
+
+          replacements = [
+              (
+                  '\t\t\t\t\tint jornada_actual = obtener_jornada(navegadorXML);\n',
+                  '\t\t\t\t\tint jornada_actual = obtener_jornada(navegadorXML);\n\t\t\t\t\tfinal int ajuste_edad = getAjuste_edad();\n'
+              ),
+              (
+                  '\t\t\t\t\t\t\t\t\tj_nuevo = AsistenteDAO.obtener_jugador(pid, tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, isIncrementar_edad(), _usuario, navegador);\n',
+                  '\t\t\t\t\t\t\t\t\tj_nuevo = AsistenteDAO.obtener_jugador(pid, tid < NtdbBO.MAX_ID_SELECCION, jornada_actual, ajuste_edad > 0, _usuario, navegador);\n\t\t\t\t\t\t\t\t\tif (j_nuevo != null && ajuste_edad < 0) {\n\t\t\t\t\t\t\t\t\t\tj_nuevo.setEdad(j_nuevo.getEdad() + ajuste_edad);\n\t\t\t\t\t\t\t\t\t}\n'
+              )
+          ]
+
+          for old, new in replacements:
+              count = s.count(old)
+              if count != 1:
+                  raise SystemExit(f'expected one occurrence, found {count}: {old!r}')
+              s = s.replace(old, new)
+
+          if newline == '\r\n':
+              s = s.replace('\n', '\r\n')
+          path.write_bytes(s.encode('utf-8'))
+          Path('.github/workflows/apply-manual-player-age-adjustment.yml').unlink()
+          PY
+
+      - name: Verify and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          changed="$(git diff --name-only | sort)"
+          expected="$(printf '%s\n' .github/workflows/apply-manual-player-age-adjustment.yml sokker/src/com/formulamanager/sokker/acciones/asistente/Grabar.java | sort)"
+          test "$changed" = "$expected"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Keep signed age adjustment when saving player'
+          git push origin HEAD:fix/training-age-season-boundary-clean
