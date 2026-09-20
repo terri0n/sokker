@@ -330,7 +330,15 @@ public final class SokkerXmlCompat {
 		// El código legado trata una liga sin type como oficial. Si la API no da
 		// ambos campos, preservamos exactamente ese fallback en vez de inventar datos.
 		if (type != null && official != null) {
-			xml.append("<type>").append(type).append("</type><isOfficial>")
+			int legacyType = type.intValue();
+			// La API puede devolver tipos nuevos para competiciones no oficiales.
+			// El consumidor legado representa cualquier amistoso como type=0 + isOfficial=0.
+			if (!official.booleanValue()
+					&& legacyType != 0 && legacyType != 1 && legacyType != 2
+					&& legacyType != 7 && legacyType != 9) {
+				legacyType = 0;
+			}
+			xml.append("<type>").append(legacyType).append("</type><isOfficial>")
 				.append(official.booleanValue() ? 1 : 0).append("</isOfficial>");
 		}
 		return xml.append("</info></league>").toString();
