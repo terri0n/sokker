@@ -19,6 +19,7 @@ import com.formulamanager.sokker.auxiliares.SERVLET_ASISTENTE;
 import com.formulamanager.sokker.auxiliares.SystemUtil;
 import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.bo.AsistenteBO;
+import com.formulamanager.sokker.bo.NtBotUpdater;
 import com.formulamanager.sokker.bo.NtdbBO;
 import com.formulamanager.sokker.entity.Usuario;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
@@ -48,12 +49,13 @@ public class Actualizar extends SERVLET_ASISTENTE {
 		
 		if (login(request)) {
 			Usuario usuario = getUsuario(request);
+			final Integer tid_actualizacion = usuario.getDef_tid();
 
-			if (!Util.getBoolean(request, "confirmed") && usuario.getDef_tid() > NtdbBO.MAX_ID_SELECCION) {
+			if (!Util.getBoolean(request, "confirmed") && tid_actualizacion > NtdbBO.MAX_ID_SELECCION) {
 				throw new RuntimeException("Login not confirmed");
 			} else {
-				String ilogin = usuario.getDef_tid() < NtdbBO.MAX_ID_SELECCION && !Util.getBoolean(request, "confirmed") ? SystemUtil.getVar(SystemUtil.LOGIN) : request.getParameter("ilogin");
-				String ipassword = usuario.getDef_tid() < NtdbBO.MAX_ID_SELECCION && !Util.getBoolean(request, "confirmed") ? SystemUtil.getVar(SystemUtil.PASSWORD) : request.getParameter("ipassword");
+				String ilogin = tid_actualizacion < NtdbBO.MAX_ID_SELECCION && !Util.getBoolean(request, "confirmed") ? SystemUtil.getVar(SystemUtil.LOGIN) : request.getParameter("ilogin");
+				String ipassword = tid_actualizacion < NtdbBO.MAX_ID_SELECCION && !Util.getBoolean(request, "confirmed") ? SystemUtil.getVar(SystemUtil.PASSWORD) : request.getParameter("ipassword");
 	
 				new Navegador(false, ilogin, ipassword, request) {
 					@Override
@@ -64,7 +66,7 @@ public class Actualizar extends SERVLET_ASISTENTE {
 		_log(request, "");
 								
 							// Actualizo el login/password por si han cambiado
-							if (usuario.getDef_tid() > NtdbBO.MAX_ID_SELECCION) {
+							if (tid_actualizacion > NtdbBO.MAX_ID_SELECCION) {
 								usuario.setLogin_sokker(ilogin);
 								usuario.setPassword(Util.getMD5(ipassword));
 								if (request.getParameter("actualizacion_automatica") != null) {
@@ -74,7 +76,16 @@ public class Actualizar extends SERVLET_ASISTENTE {
 								}
 							}
 
+							// Si otra petición ha cambiado la selección mientras cargábamos Sokker, no actualizamos un destino distinto.
+							if (!tid_actualizacion.equals(usuario.getDef_tid())) {
+								throw new IOException("Selected team changed while update was running");
+							}
+
 							AsistenteBO.actualizar_equipo(usuario, jornada_actual, getAjuste_edad(), false, navegador, navegador);
+
+							if (tid_actualizacion < NtdbBO.MAX_ID_SELECCION) {
+								NtBotUpdater.programar(tid_actualizacion, jornada_actual);
+							}
 
 							mensaje[0] = "?mensaje=updated";
 						} catch (Exception e) {
@@ -84,7 +95,7 @@ public class Actualizar extends SERVLET_ASISTENTE {
 
 							StringWriter sw = new StringWriter();
 							e.printStackTrace(new PrintWriter(sw));
-							SERVLET_ASISTENTE._log_linea("_EXCEPTIONS", "__TID: " + usuario.getDef_tid() + " -> " + sw.toString() + "\n");
+							SERVLET_ASISTENTE._log_linea("_EXCEPTIONS", "__TID: " + tid_actualizacion + " -> " + sw.toString() + "\n");
 						}
 					}
 				};
