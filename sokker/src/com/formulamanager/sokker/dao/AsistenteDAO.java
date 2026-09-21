@@ -64,19 +64,28 @@ public class AsistenteDAO {
 		Integer dem = JSONUtil.getInteger(jugador, "info.formation.code");
 		j.setDemarcacion_entrenamiento(dem == null ? null : DEMARCACION.values()[dem]);
 		
-		try {
-			j.setCondicion(JSONUtil.getInteger(jugador, "info.skills.stamina"));
-			j.setRapidez(JSONUtil.getInteger(jugador, "info.skills.pace"));
-			j.setTecnica(JSONUtil.getInteger(jugador, "info.skills.technique"));
-			j.setPases(JSONUtil.getInteger(jugador, "info.skills.passing"));
-			j.setPorteria(JSONUtil.getInteger(jugador, "info.skills.keeper"));
-			j.setDefensa(JSONUtil.getInteger(jugador, "info.skills.defending"));
-			j.setCreacion(JSONUtil.getInteger(jugador, "info.skills.playmaking"));
-			j.setAnotacion(JSONUtil.getInteger(jugador, "info.skills.striker"));
+		Integer condicion = JSONUtil.getInteger(jugador, "info.skills.stamina");
+		Integer rapidez = JSONUtil.getInteger(jugador, "info.skills.pace");
+		Integer tecnica = JSONUtil.getInteger(jugador, "info.skills.technique");
+		Integer pases = JSONUtil.getInteger(jugador, "info.skills.passing");
+		Integer porteria = JSONUtil.getInteger(jugador, "info.skills.keeper");
+		Integer defensa = JSONUtil.getInteger(jugador, "info.skills.defending");
+		Integer creacion = JSONUtil.getInteger(jugador, "info.skills.playmaking");
+		Integer anotacion = JSONUtil.getInteger(jugador, "info.skills.striker");
 
+		// En JSON los campos ausentes no lanzan excepción: JSONUtil devuelve null. Solo una
+		// instantánea con las ocho habilidades puede reemplazar habilidades privadas ya conocidas.
+		if (condicion != null && rapidez != null && tecnica != null && pases != null
+				&& porteria != null && defensa != null && creacion != null && anotacion != null) {
+			j.setCondicion(condicion);
+			j.setRapidez(rapidez);
+			j.setTecnica(tecnica);
+			j.setPases(pases);
+			j.setPorteria(porteria);
+			j.setDefensa(defensa);
+			j.setCreacion(creacion);
+			j.setAnotacion(anotacion);
 			j.setActualizado(true); // Actualizado automáticamente
-		} catch (Exception e) {
-			// En las NTs no tendremos las habilidades
 		}
 
 		if (nt && j.getEn_venta() != null) {
