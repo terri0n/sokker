@@ -81,7 +81,8 @@ jobs:
             .github/harness/I18nParityHarness.java \
             .github/harness/CloudflareXmlSessionHarness.java \
             .github/harness/XmlCompatRegressionHarness.java \
-            .github/harness/XmlPageAssociationHarness.java
+            .github/harness/XmlPageAssociationHarness.java \
+            .github/harness/NtBotIsolationHarness.java
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" PersistenceRoundTrip
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainerMappingHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainingMatchMappingHarness
@@ -93,6 +94,7 @@ jobs:
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" com.formulamanager.sokker.auxiliares.CloudflareXmlSessionHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" XmlCompatRegressionHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" XmlPageAssociationHarness
+          java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" NtBotIsolationHarness
 
       - name: Verify team ID classification uses shared threshold
         shell: bash
