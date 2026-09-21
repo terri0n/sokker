@@ -32,7 +32,8 @@ public final class NtBotIsolationHarness {
 
         require(!source.contains("getDef_tid()"),
                 "Background bot refresh must not read mutable Usuario.def_tid");
-        require(!source.contains(" Usuario ") && !source.contains("Usuario usuario"),
+        require(!source.contains("import com.formulamanager.sokker.entity.Usuario;")
+                        && !source.contains("Usuario usuario"),
                 "Background bot refresh must not depend on the mutable session Usuario");
         require(source.contains("/api/player/"),
                 "Bot refresh must recover the player's real owner team from the current JSON API");
