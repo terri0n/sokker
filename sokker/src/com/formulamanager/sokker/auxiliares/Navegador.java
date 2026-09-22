@@ -25,7 +25,9 @@ import com.gargoylesoftware.htmlunit.util.NameValuePair;
 import com.gargoylesoftware.htmlunit.xml.XmlPage;
 
 public abstract class Navegador {
-	public static final String USER_AGENT = "FormulaManagerSokker/1.0";
+	public static final String USER_AGENT = "Sokker Asistente (+https://raqueto.com/sokker/asistente)";
+	public static final String SOKKER_CLIENT_HEADER = "X-Sokker-Client";
+	public static final String SOKKER_CLIENT_KEY = "skc_bae02f2686bf9038d248";
 
 	protected HttpServletRequest request;
 	private Integer jornada;
@@ -121,6 +123,19 @@ public abstract class Navegador {
 		return version;
 	}
 
+	public static WebClient createSokkerWebClient() {
+		WebClient navegador = new WebClient(createBrowserVersion());
+		configureSokkerWebClient(navegador);
+		return navegador;
+	}
+
+	private static void configureSokkerWebClient(WebClient navegador) {
+		navegador.addRequestHeader(SOKKER_CLIENT_HEADER, SOKKER_CLIENT_KEY);
+		navegador.getOptions().setJavaScriptEnabled(false);
+		navegador.getOptions().setCssEnabled(false);
+		navegador.getOptions().setUseInsecureSSL(true);
+	}
+
 	private WebClient crear_navegador() {
 		WebClient navegador = new WebClient(createBrowserVersion()) {
 			private static final long serialVersionUID = 1L;
@@ -173,9 +188,7 @@ public abstract class Navegador {
 				return super.getPage(url);
 			}
 		};
-		navegador.getOptions().setJavaScriptEnabled(false);
-		navegador.getOptions().setCssEnabled(false);
-		navegador.getOptions().setUseInsecureSSL(true);
+		configureSokkerWebClient(navegador);
 		
 		return navegador;
 	}
