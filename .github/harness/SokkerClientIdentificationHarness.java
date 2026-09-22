@@ -10,22 +10,20 @@ public final class SokkerClientIdentificationHarness {
     }
 
     public static void main(String[] args) throws Exception {
-        Path helper = Paths.get("sokker/WebContent/js/sokker-client.js");
-        if (!Files.isRegularFile(helper)) {
-            throw new AssertionError("Missing shared browser Sokker client helper: " + helper);
-        }
-
-        String helperText = read(helper);
-        require(helperText, "X-Sokker-Client", "browser helper must set X-Sokker-Client");
-        require(helperText, CLIENT_KEY, "browser helper must use the assigned Sokker client key");
+        String sharedJs = read(Paths.get("sokker/WebContent/js/desplegable.js"));
+        require(sharedJs, "X-Sokker-Client", "shared assistant JavaScript must set X-Sokker-Client");
+        require(sharedJs, CLIENT_KEY, "shared assistant JavaScript must use the assigned Sokker client key");
+        require(sharedJs, "$.post = function", "shared assistant JavaScript must identify direct Sokker POSTs");
+        require(sharedJs, "originalPost", "shared assistant JavaScript must preserve the original POST implementation");
+        require(sharedJs, "xhr.status === 0", "browser identification must preserve the legacy fallback while Sokker preflight is unavailable");
 
         String login = read(Paths.get("sokker/WebContent/jsp/asistente/login.jsp"));
-        require(login, "/js/sokker-client.js", "assistant login page must load the shared Sokker client helper");
-        require(login, "sokkerPost(", "assistant registration/login precheck must use identified Sokker requests");
+        require(login, "/js/desplegable.js", "assistant login page must load the shared identified-request JavaScript");
+        require(login, "https://sokker.org/start.php?session=xml", "assistant login precheck must still run directly from the browser");
 
         String assistant = read(Paths.get("sokker/WebContent/jsp/asistente/asistente.jsp"));
-        require(assistant, "/js/sokker-client.js", "assistant main page must load the shared Sokker client helper");
-        require(assistant, "sokkerPost(", "assistant update/password prechecks must use identified Sokker requests");
+        require(assistant, "/js/desplegable.js", "assistant main page must load the shared identified-request JavaScript");
+        require(assistant, "https://sokker.org/start.php?session=xml", "assistant update/password prechecks must still run directly from the browser");
 
         System.out.println("Sokker client identification harness OK");
     }
