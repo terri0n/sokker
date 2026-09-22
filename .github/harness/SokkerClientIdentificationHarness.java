@@ -2,6 +2,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Stream;
 
 public final class SokkerClientIdentificationHarness {
     private static final String CLIENT_KEY = "skc_bae02f2686bf9038d248";
@@ -40,6 +41,8 @@ public final class SokkerClientIdentificationHarness {
             throw new AssertionError("desplegable.js must be renamed to util.js");
         }
 
+        verifyNoLegacyBrowserCalls(Paths.get("sokker/WebContent"));
+
         System.out.println("Sokker client identification harness OK");
     }
 
@@ -54,6 +57,33 @@ public final class SokkerClientIdentificationHarness {
         String text = read(Paths.get(path));
         require(text, "/js/util.js", label + " must load util.js");
         forbid(text, "/js/desplegable.js", label + " must not load desplegable.js");
+    }
+
+    private static void verifyNoLegacyBrowserCalls(Path root) throws Exception {
+        try (Stream<Path> paths = Files.walk(root)) {
+            paths.filter(Files::isRegularFile)
+                    .filter(SokkerClientIdentificationHarness::isBrowserSource)
+                    .forEach(path -> {
+                        try {
+                            String text = read(path);
+                            forbid(text, "$.post('https://sokker.org", path + " must use sokkerPost for Sokker POSTs");
+                            forbid(text, "$.post(\"https://sokker.org", path + " must use sokkerPost for Sokker POSTs");
+                            forbid(text, "/js/desplegable.js", path + " must not reference the renamed JavaScript");
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof Exception) {
+                throw (Exception)e.getCause();
+            }
+            throw e;
+        }
+    }
+
+    private static boolean isBrowserSource(Path path) {
+        String name = path.getFileName().toString().toLowerCase();
+        return name.endsWith(".jsp") || name.endsWith(".js") || name.endsWith(".tag");
     }
 
     private static String read(Path path) throws Exception {
