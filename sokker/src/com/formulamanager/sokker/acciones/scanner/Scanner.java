@@ -43,10 +43,7 @@ public class Scanner extends HttpServlet {
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		WebClient navegador = new WebClient(Navegador.createBrowserVersion());
-		navegador.getOptions().setJavaScriptEnabled(false);
-		navegador.getOptions().setCssEnabled(false);
-		navegador.getOptions().setUseInsecureSSL(true);
+		WebClient navegador = Navegador.createSokkerWebClient();
 //
 //		List<Jugador> jugadores = new ArrayList<Jugador>();
 		JugadorBO.hacer_login_xml(navegador, request);
