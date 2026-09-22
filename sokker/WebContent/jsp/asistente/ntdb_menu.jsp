@@ -64,7 +64,7 @@
 	<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-131138380-1"></script>
-	<script type="text/javascript" src="${pageContext.request.contextPath}/js/desplegable.js"></script>
+	<script type="text/javascript" src="${pageContext.request.contextPath}/js/util.js"></script>
 	<link rel="icon" href="favicon.ico" type="image/x-icon" />
 	<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/desplegable.css">
 	<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/asistente.css?4">

@@ -30,6 +30,7 @@
 <html>
 <head>
 	<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+	<script type="text/javascript" src="${pageContext.request.contextPath}/js/util.js"></script>
 	<script type="text/javascript" src="js/ip.js.jsp"></script>
 
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">

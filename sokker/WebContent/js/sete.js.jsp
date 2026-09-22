@@ -208,7 +208,7 @@ function form_submit() {
 	} else {
 		$("form[name='form_login'] input[type='submit']").attr("disabled", true);
 		var data = 'ilogin=' + $("form[name='form_login'] input[name='ilogin']").val() + '&ipassword=' +$("form[name='form_login'] input[name='ipassword']").val();
-		$.post('https://sokker.org/start.php?session=xml&' + data, data).done(
+		sokkerPost('https://sokker.org/start.php?session=xml&' + data, data).done(
 	        function(data) {
 				$("form[name='form_login'] input[type='submit']").attr("disabled", false);
 	        	if (data.startsWith('OK')) {

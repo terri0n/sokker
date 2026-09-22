@@ -7,6 +7,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
 	<title>SETE Mobile</title>
 	<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+	<script type="text/javascript" src="${pageContext.request.contextPath}/js/util.js"></script>
 	<script src='https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js'></script>
 	<%-- This version fixes a bug that didn't let me select a single player with the mobile --%>
 	<script type="text/javascript" src='${pageContext.request.contextPath}/js/jquery.ui.touch-punch.js'></script>
@@ -896,7 +897,7 @@
 			} else {
 				$("form[name='form_login'] input[type='submit']").attr("disabled", true);
 				let data = 'ilogin=' + encodeURIComponent($("form[name='form_login'] input[name='ilogin']").val()) + '&ipassword=' + encodeURIComponent($("form[name='form_login'] input[name='ipassword']").val());
-				$.post('https://sokker.org/start.php?session=xml&' + data, data).done(
+				sokkerPost('https://sokker.org/start.php?session=xml&' + data, data).done(
 			        function(data) {
 						$("form[name='form_login'] input[type='submit']").attr("disabled", false);
 			        	if (data.startsWith('OK')) {

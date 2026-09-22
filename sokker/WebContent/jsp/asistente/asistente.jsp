@@ -63,7 +63,7 @@
 	<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-131138380-1"></script>
-	<script type="text/javascript" src="${pageContext.request.contextPath}/js/desplegable.js"></script>
+	<script type="text/javascript" src="${pageContext.request.contextPath}/js/util.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js"></script>
 	<meta http-equiv="Content-Type" content="text/html; UTF-8">
 	<meta property="og:title" content="Sokker Asistente">
@@ -837,7 +837,7 @@
 			} else {
 				$('#boton_actualizar').attr("disabled", true);
 				let data = 'ilogin=' + encodeURIComponent($("#ilogin").val()) + '&ipassword=' + encodeURIComponent($("#ipassword").val());
-				$.post('https://sokker.org/start.php?session=xml&' + data, data).done(
+				sokkerPost('https://sokker.org/start.php?session=xml&' + data, data).done(
 			        function(data) {
 						$('#boton_actualizar').attr("disabled", false);
 			        	if (data.startsWith('OK')) {
@@ -901,7 +901,7 @@
 			} else {
 				$('#boton_enviar_skmail').attr("disabled", true);
 				let data = 'ilogin=' + encodeURIComponent($("#ilogin2").val()) + '&ipassword=' + encodeURIComponent($("#ipassword2").val());
-				$.post('https://sokker.org/start.php?session=xml&' + data, data).done(
+				sokkerPost('https://sokker.org/start.php?session=xml&' + data, data).done(
 			        function(data) {
 						$('#boton_actualizar').attr("disabled", false);
 			        	if (data.startsWith('OK')) {

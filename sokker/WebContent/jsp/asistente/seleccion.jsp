@@ -61,7 +61,7 @@
 <head>
 	<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
 	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-131138380-1"></script>
-	<script type="text/javascript" src="${pageContext.request.contextPath}/js/desplegable.js"></script>
+	<script type="text/javascript" src="${pageContext.request.contextPath}/js/util.js"></script>
 	<meta http-equiv="Content-Type" content="text/html; UTF-8">
 	<meta property="og:title" content="Sokker Asistente">
 	<meta property="og:description" content="Nuevo asistente online para gestionar tu equipo de Sokker">
