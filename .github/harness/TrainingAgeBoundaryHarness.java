@@ -127,6 +127,7 @@ public final class TrainingAgeBoundaryHarness {
         require(Integer.valueOf(18).equals(newSeason.getOriginal().getEdad()),
                 "Previous-season history did not cross the birthday boundary");
 
+        // La reparación debe ejecutarse sobre la cadena ya completa y antes de persistirla.
         String bo = read("sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java");
         int correction = bo.indexOf("ajustar_edades_historicas(j, ajuste_edad);");
         int save = bo.indexOf("grabar_jugadores(jugadores_actualizados");
