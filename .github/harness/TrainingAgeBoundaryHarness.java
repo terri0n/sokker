@@ -5,6 +5,8 @@ import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 
 import com.formulamanager.sokker.auxiliares.Navegador;
+import com.formulamanager.sokker.bo.AsistenteBO;
+import com.formulamanager.sokker.entity.Jugador;
 
 public final class TrainingAgeBoundaryHarness {
     private TrainingAgeBoundaryHarness() {}
@@ -14,6 +16,7 @@ public final class TrainingAgeBoundaryHarness {
         updateFlowKeepsCurrentPlayerAge();
         manualPlayerSaveKeepsCurrentPlayerAge();
         currentTrainingRowUsesCurrentSnapshot();
+        firstTrainingHistoryKeepsPreBirthdayAge();
     }
 
     private static void seasonBoundaryAdjustment() throws Exception {
@@ -77,6 +80,67 @@ public final class TrainingAgeBoundaryHarness {
                 "Completed training history must continue to be calculated from original snapshots");
         require(jugador.contains("actual.jornadas.add(this);"),
                 "The partial current training row must continue to use the current player snapshot");
+    }
+
+    private static void firstTrainingHistoryKeepsPreBirthdayAge() throws Exception {
+        Method adjustHistory = AsistenteBO.class.getMethod(
+                "ajustar_edades_historicas", Jugador.class, int.class);
+
+        // Caso de RaWm1: no había histórico anterior en esta instalación. Al llegar la
+        // última jornada, el snapshot vivo usa 19 por el ajuste del cumpleaños, pero los
+        // únicos entrenamientos ya completados siguen perteneciendo a los 18 años.
+        Jugador oldest = player(1207, 18);
+        Jugador previous = player(1208, 18);
+        previous.setOriginal(oldest);
+        Jugador current = player(1209, 19);
+        Jugador combined = AsistenteBO.combinar_jugadores(current, previous);
+        adjustHistory.invoke(null, combined, Integer.valueOf(1));
+        require(Integer.valueOf(19).equals(combined.getEdad()),
+                "Historical correction changed the live Thursday age");
+        require(Integer.valueOf(18).equals(combined.getOriginal().getEdad()),
+                "The first historical training inherited age 19");
+        require(Integer.valueOf(18).equals(combined.getOriginal().getOriginal().getEdad()),
+                "The second historical training inherited age 19");
+
+        // Tras el cumpleaños la edad viva ya es realmente 19, pero la frontera del último
+        // entrenamiento sigue siendo la misma hasta el jueves siguiente.
+        Jugador postBirthday = player(1209, 19);
+        postBirthday.setOriginal(player(1208, 19));
+        adjustHistory.invoke(null, postBirthday, Integer.valueOf(-1));
+        require(Integer.valueOf(19).equals(postBirthday.getEdad()),
+                "Post-birthday correction changed the live age");
+        require(Integer.valueOf(18).equals(postBirthday.getOriginal().getEdad()),
+                "Post-birthday history kept the live age");
+
+        // El viernes antes del cumpleaños no se debe anticipar el cambio de edad.
+        Jugador friday = player(1209, 18);
+        friday.setOriginal(player(1208, 18));
+        adjustHistory.invoke(null, friday, Integer.valueOf(0));
+        require(Integer.valueOf(18).equals(friday.getOriginal().getEdad()),
+                "Friday before the birthday incorrectly decremented historical age");
+
+        // Una vez empieza la primera jornada de la temporada nueva, cruzar a la jornada
+        // anterior sí debe restar un año aunque ajuste_edad ya sea 0.
+        Jugador newSeason = player(1210, 19);
+        newSeason.setOriginal(player(1209, 19));
+        adjustHistory.invoke(null, newSeason, Integer.valueOf(0));
+        require(Integer.valueOf(18).equals(newSeason.getOriginal().getEdad()),
+                "Previous-season history did not cross the birthday boundary");
+
+        String bo = read("sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java");
+        int correction = bo.indexOf("ajustar_edades_historicas(j, ajuste_edad);");
+        int save = bo.indexOf("grabar_jugadores(jugadores_actualizados");
+        require(correction >= 0 && save > correction,
+                "Historical ages must be corrected after building history and before saving players");
+    }
+
+    private static Jugador player(int week, int age) {
+        Jugador j = new Jugador(Integer.valueOf(40219073), "Elio Caldera", Integer.valueOf(age),
+                Integer.valueOf(100000), Integer.valueOf(138447), null);
+        j.setJornada(Integer.valueOf(week));
+        j.setCondicion(Integer.valueOf(4));
+        j.setRapidez(Integer.valueOf(10));
+        return j;
     }
 
     private static void assertCallerUsesAdjustment(String path) throws Exception {
