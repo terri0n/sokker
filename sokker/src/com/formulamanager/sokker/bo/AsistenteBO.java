@@ -607,6 +607,31 @@ SERVLET_ASISTENTE._log_linea(usuario.getLogin(), "\t" + clave + ": " + tiempo_to
 		}
 	}
 
+	public static int calcular_edad_historica(int edad_actual, int jornada_actual, int jornada_historica, int ajuste_edad) {
+		// El jueves de la última jornada se usa +1 para representar la edad con la que entrenará
+		// el jugador tras el cumpleaños. Desde el sábado hasta el miércoles, -1 marca la misma
+		// frontera aunque la edad actual de Sokker ya haya cambiado. En ambos casos, el histórico
+		// completado todavía pertenece a la edad anterior.
+		int edad = edad_actual - (ajuste_edad == 0 ? 0 : 1);
+
+		// Fuera de la semana especial, cada inicio de temporada que cruzamos hacia atrás
+		// corresponde a un cumpleaños adicional.
+		for (int jornada = jornada_actual; jornada > jornada_historica; jornada--) {
+			if (getJornadaMod(jornada) == 0) {
+				edad--;
+			}
+		}
+		return edad;
+	}
+
+	public static void ajustar_edades_historicas(Jugador jugador, int ajuste_edad) {
+		Jugador historico = jugador.getOriginal();
+		while (historico != null) {
+			historico.setEdad(calcular_edad_historica(jugador.getEdad(), jugador.getJornada(), historico.getJornada(), ajuste_edad));
+			historico = historico.getOriginal();
+		}
+	}
+
 	public static Jugador combinar_jugadores(Jugador nuevo, Jugador historico) {
 		if (!nuevo.getJornada().equals(historico.getJornada())) {
 			if (nuevo.getCondicion() != null) {
@@ -762,6 +787,12 @@ if (nuevo.getLesion() > 0) {
 			}
 		}
 		
+		// La API solo da la edad actual. Normalizamos las edades de la cadena histórica una vez
+		// terminada de construir (incluidos informes Plus y repesca), sin tocar la edad viva.
+		for (Jugador j : jugadores_actualizados) {
+			ajustar_edades_historicas(j, ajuste_edad);
+		}
+
 		// Actualizamos jornada, país, nombre del equipo y tipo de entrenamiento
 		int jornada_anterior = _usuario.getDef_jornada();
 		EquipoBO.obtener_datos_equipo(_usuario, jornada_anterior, jornada_actual, navegadorXML);
