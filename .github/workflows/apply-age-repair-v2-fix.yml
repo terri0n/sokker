@@ -1,0 +1,69 @@
+name: Apply age repair v2 fix
+
+on:
+  push:
+    branches:
+      - fix/one-off-repair-training-ages-v2
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/one-off-repair-training-ages-v2
+      - name: Fix birthday-week boundary and one-run marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('sokker/WebContent/jsp/asistente/repararEdadesUltimosEntrenamientos.jsp')
+          s = p.read_text(encoding='utf-8')
+
+          replacements = [
+            ('''     * Temporada anterior: 1197..1209\n     * Temporada actual:   1210..1222\n     */\n    private static final int PREVIOUS_SEASON_START_REPAIR = 1197;\n    private static final int PREVIOUS_SEASON_END_REPAIR = 1209;\n    private static final int CURRENT_SEASON_START_REPAIR = 1210;\n    private static final int CURRENT_SEASON_END_REPAIR = 1222;''',
+             '''     * Entrenamientos anteriores al cumpleaños: 1197..1208\n     * Semana del cumpleaños:                1209\n     * Temporada nueva:                      1210..1222\n     */\n    private static final int PRE_BIRTHDAY_TRAINING_START_REPAIR = 1197;\n    private static final int LAST_PRE_BIRTHDAY_TRAINING_REPAIR = 1208;\n    private static final int BIRTHDAY_WEEK_REPAIR = 1209;\n    private static final int CURRENT_SEASON_END_REPAIR = 1222;'''),
+            ('''        // Este JSP es deliberadamente temporal: solo repara el cambio 1209 -> 1210.\n        // Si se deja por error en el servidor durante otra temporada, no tocará nada.\n        if (latest.jornada < CURRENT_SEASON_START_REPAIR || latest.jornada > CURRENT_SEASON_END_REPAIR) {\n            return result;\n        }''',
+             '''        // En la jornada 1209 Sokker ya muestra la edad nueva, pero el último entrenamiento\n        // completado fue el 1208 y pertenece a la edad anterior. Aceptamos también jornadas\n        // posteriores de esta misma transición por si la reparación se ejecuta unos días más tarde.\n        if (latest.jornada < BIRTHDAY_WEEK_REPAIR || latest.jornada > CURRENT_SEASON_END_REPAIR) {\n            return result;\n        }'''),
+            ('''            if (snapshot == latest || snapshot.jornada >= CURRENT_SEASON_START_REPAIR) {\n                continue;\n            }\n\n            if (snapshot.jornada < PREVIOUS_SEASON_START_REPAIR) {\n                break;\n            }\n\n            if (snapshot.jornada <= PREVIOUS_SEASON_END_REPAIR) {\n                if (snapshot.edad == currentAge) {\n                    // Contaminación de la versión anterior: heredó la edad actual.\n                    result.add(snapshot.edadIndex);\n                } else if (snapshot.edad != expectedPreviousAge) {\n                    // Un valor distinto de edad actual / edad anterior es ambiguo. No arriesgamos datos.\n                    return new ArrayList<Integer>();\n                }\n            }''',
+             '''            if (snapshot == latest || snapshot.jornada > LAST_PRE_BIRTHDAY_TRAINING_REPAIR) {\n                // 1209 ya pertenece a la edad actual; no es un entrenamiento pre-cumpleaños.\n                continue;\n            }\n\n            if (snapshot.jornada < PRE_BIRTHDAY_TRAINING_START_REPAIR) {\n                break;\n            }\n\n            if (snapshot.edad == currentAge) {\n                // Contaminación de la versión anterior: el entrenamiento heredó la edad actual.\n                result.add(snapshot.edadIndex);\n            } else if (snapshot.edad != expectedPreviousAge) {\n                // Un valor distinto de edad actual / edad anterior es ambiguo. No arriesgamos datos.\n                return new ArrayList<Integer>();\n            }'''),
+            ('''        String elio = player(1,\n                snapshot(1210, 19) + \",\" + snapshot(1209, 19) + \",\" + snapshot(1208, 19));''',
+             '''        String elio = player(1,\n                snapshot(1210, 19) + \",\" + snapshot(1209, 19) + \",\" + snapshot(1208, 19));'''),
+            ('''        String mixed = player(3,\n                snapshot(1211, 24) + \",\" + snapshot(1210, 24) + \",\" + snapshot(1209, 24) + \",\" + snapshot(1208, 23));''',
+             '''        String mixed = player(3,\n                snapshot(1211, 24) + \",\" + snapshot(1210, 24) + \",\" + snapshot(1209, 24) + \",\" + snapshot(1208, 24) + \",\" + snapshot(1207, 23));'''),
+            ('requireRepair(fixed.modifiedSnapshots == 5, "Debe reparar las cinco edades contaminadas");',
+             'requireRepair(fixed.modifiedSnapshots == 4, "Debe reparar las cuatro edades contaminadas");'),
+            ('''        requireRepair(fixed.content.contains(snapshot(1210, 19) + \",\" + snapshot(1209, 18) + \",\" + snapshot(1208, 18)),\n                "Debe reparar los dos primeros y únicos entrenamientos de Elio");''',
+             '''        requireRepair(fixed.content.contains(snapshot(1210, 19) + \",\" + snapshot(1209, 19) + \",\" + snapshot(1208, 18)),\n                "Debe mantener 1209 con la edad actual y reparar el último entrenamiento completado");'''),
+            ('''        requireRepair(fixed.content.contains(snapshot(1211, 24) + \",\" + snapshot(1210, 24) + \",\" + snapshot(1209, 23) + \",\" + snapshot(1208, 23)),\n                "Debe reparar solo el snapshot contaminado dentro de la temporada anterior");''',
+             '''        requireRepair(fixed.content.contains(snapshot(1211, 24) + \",\" + snapshot(1210, 24) + \",\" + snapshot(1209, 24) + \",\" + snapshot(1208, 23) + \",\" + snapshot(1207, 23)),\n                "Debe conservar 1209 y reparar solo entrenamientos anteriores al cumpleaños");'''),
+            ('application.getAttribute("repairTrainingAges20260922Executed")',
+             'application.getAttribute("repairTrainingAges20260922V2Executed")'),
+            ('application.setAttribute("repairTrainingAges20260922Executed", Boolean.TRUE);',
+             'application.setAttribute("repairTrainingAges20260922V2Executed", Boolean.TRUE);\n                    alreadyExecuted = true;'),
+            ('''                if (summary.concurrentSkips == 0) {\n                    application.setAttribute("repairTrainingAges20260922V2Executed", Boolean.TRUE);\n                    alreadyExecuted = true;\n                    result = "Reparación terminada. Ficheros modificados: " + summary.modifiedFiles\n                            + ", jugadores corregidos: " + summary.modifiedPlayers\n                            + ", edades de entrenamientos corregidas: " + summary.modifiedSnapshots + ".";\n                } else {''',
+             '''                if (summary.concurrentSkips == 0 && summary.modifiedSnapshots > 0) {\n                    application.setAttribute("repairTrainingAges20260922V2Executed", Boolean.TRUE);\n                    alreadyExecuted = true;\n                    result = "Reparación terminada. Ficheros modificados: " + summary.modifiedFiles\n                            + ", jugadores corregidos: " + summary.modifiedPlayers\n                            + ", edades de entrenamientos corregidas: " + summary.modifiedSnapshots + ".";\n                } else if (summary.concurrentSkips == 0) {\n                    result = "No se encontró ningún entrenamiento que corregir. Esta versión no se marca como ejecutada.";\n                } else {'''),
+            ('''    <p>Ya puedes eliminar este JSP del despliegue.</p>\n<% } else if (alreadyExecuted) { %>''',
+             '''    <% if (alreadyExecuted) { %>\n        <p>Ya puedes eliminar este JSP del despliegue.</p>\n    <% } else { %>\n        <p>No elimines todavía este JSP: no se modificó ningún entrenamiento.</p>\n    <% } %>\n<% } else if (alreadyExecuted) { %>'''),
+            ('''    <p>Corrige únicamente jugadores de clubes cuyo snapshot actual pertenece a la temporada 1210-1222.</p>\n    <p>En la temporada anterior (1197-1209), cualquier entrenamiento que heredó por error la edad actual se cambia a edad actual - 1.</p>''',
+             '''    <p>Corrige jugadores de clubes actualizados desde la jornada 1209 durante este cambio de temporada.</p>\n    <p>La jornada 1209 conserva la edad actual. Solo los entrenamientos 1197-1208 que heredaron por error esa edad se cambian a edad actual - 1.</p>''')
+          ]
+
+          for old, new in replacements:
+              if old not in s:
+                  raise SystemExit('No se encontró un bloque esperado para sustituir:\n' + old[:180])
+              s = s.replace(old, new, 1)
+
+          p.write_text(s, encoding='utf-8', newline='')
+          PY
+          rm .github/workflows/apply-age-repair-v2-fix.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sokker/WebContent/jsp/asistente/repararEdadesUltimosEntrenamientos.jsp .github/workflows/apply-age-repair-v2-fix.yml
+          git commit -m 'Fix one-off birthday-week training age repair'
+          git push origin HEAD:fix/one-off-repair-training-ages-v2
