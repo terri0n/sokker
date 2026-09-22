@@ -1,0 +1,93 @@
+name: Apply browser Sokker util refactor
+
+on:
+  push:
+    branches:
+      - fix/browser-sokker-util
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ !contains(github.event.head_commit.message, '[browser-util-applied]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply source edits without changing legacy encodings
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          root = Path('sokker/WebContent')
+
+          replacements = (
+              (b'/js/desplegable.js', b'/js/util.js'),
+              (b"$.post('https://sokker.org", b"sokkerPost('https://sokker.org"),
+              (b'$.post("https://sokker.org', b'sokkerPost("https://sokker.org'),
+          )
+
+          for path in root.rglob('*'):
+              if not path.is_file() or path.suffix.lower() not in {'.jsp', '.js', '.tag'}:
+                  continue
+              data = path.read_bytes()
+              updated = data
+              for old, new in replacements:
+                  updated = updated.replace(old, new)
+              if updated != data:
+                  path.write_bytes(updated)
+
+          def insert_after(path, marker, addition):
+              data = path.read_bytes()
+              if b'/js/util.js' in data:
+                  return
+              if marker not in data:
+                  raise SystemExit('Could not find insertion marker in ' + str(path))
+              path.write_bytes(data.replace(marker, marker + addition, 1))
+
+          insert_after(
+              root / 'jsp/sete/sete.jsp',
+              b"<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>",
+              b'\r\n\t<script type="text/javascript" src="${pageContext.request.contextPath}/js/util.js"></script>'
+          )
+          insert_after(
+              root / 'jsp/sete/oldsete.jsp',
+              b'<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>',
+              b'\n\t<script type="text/javascript" src="${pageContext.request.contextPath}/js/util.js"></script>'
+          )
+
+          test_jsp = root / 'test.jsp'
+          if test_jsp.exists():
+              test_jsp.unlink()
+
+          old_js = root / 'js/desplegable.js'
+          if old_js.exists():
+              old_js.unlink()
+
+          offenders = []
+          for path in root.rglob('*'):
+              if not path.is_file() or path.suffix.lower() not in {'.jsp', '.js', '.tag'}:
+                  continue
+              data = path.read_bytes()
+              if b"$.post('https://sokker.org" in data or b'$.post("https://sokker.org' in data:
+                  offenders.append(str(path))
+              if b'/js/desplegable.js' in data:
+                  offenders.append(str(path) + ' (desplegable.js reference)')
+          if offenders:
+              raise SystemExit('Unmigrated browser Sokker calls/references: ' + ', '.join(offenders))
+          PY
+
+      - name: Commit source edits
+        run: |
+          git config user.name "Terrion"
+          git config user.email "63014185+terri0n@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git add -A
+          git commit -m "refactor: use explicit Sokker browser POST utility [browser-util-applied]"
+          git push origin HEAD:fix/browser-sokker-util
