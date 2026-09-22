@@ -39,7 +39,10 @@ public class Fecha extends HttpServlet {
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		WebClient navegador = Navegador.createSokkerWebClient();
+		WebClient navegador = new WebClient(Navegador.createBrowserVersion());
+		navegador.getOptions().setJavaScriptEnabled(false);
+		navegador.getOptions().setCssEnabled(false);
+		navegador.getOptions().setUseInsecureSSL(true);
 
 		SortedSet<Equipo> equipos = new TreeSet<Equipo>(Equipo.getComparator());
 		JugadorBO.hacer_login_xml(navegador, request);
