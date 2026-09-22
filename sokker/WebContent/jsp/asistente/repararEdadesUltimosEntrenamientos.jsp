@@ -362,6 +362,8 @@
     }
 
     private void selfTestRepair() throws Exception {
+        String elioBirthdayWeek = player(10,
+                snapshot(1209, 19) + "," + snapshot(1208, 19) + "," + snapshot(1207, 19));
         String elio = player(1,
                 snapshot(1210, 19) + "," + snapshot(1209, 19) + "," + snapshot(1208, 19));
         String alreadyCorrect = player(2,
@@ -373,14 +375,17 @@
 
         String content = "# cabecera\n"
                 + "future_key=keep\\:exactly\n"
+                + elioBirthdayWeek
                 + elio
                 + alreadyCorrect
                 + mixed
                 + outsideRepairSeason;
 
         RepairResult fixed = repairContent(content);
-        requireRepair(fixed.modifiedPlayers == 2, "Debe reparar exactamente los dos jugadores contaminados");
-        requireRepair(fixed.modifiedSnapshots == 3, "Debe reparar las tres edades contaminadas");
+        requireRepair(fixed.modifiedPlayers == 3, "Debe reparar también el caso actualizado durante la semana del cumpleaños");
+        requireRepair(fixed.modifiedSnapshots == 5, "Debe reparar las cinco edades contaminadas");
+        requireRepair(fixed.content.contains(snapshot(1209, 19) + "," + snapshot(1208, 18) + "," + snapshot(1207, 18)),
+                "Debe reparar los entrenamientos previos cuando la edad ya cambió en la jornada 1209");
         requireRepair(fixed.content.contains(snapshot(1210, 19) + "," + snapshot(1209, 18) + "," + snapshot(1208, 18)),
                 "Debe reparar los dos primeros y únicos entrenamientos de Elio");
         requireRepair(fixed.content.contains(snapshot(1211, 24) + "," + snapshot(1210, 24) + "," + snapshot(1209, 23) + "," + snapshot(1208, 23)),
