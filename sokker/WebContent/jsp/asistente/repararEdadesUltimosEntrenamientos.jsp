@@ -33,9 +33,6 @@
     private static final int MIN_CLUB_TID_REPAIR = 801;
     private static final int JORNADA_NUEVO_ENTRENO_REPAIR = 993;
 
-    private static final String MARKER_FILE_REPAIR = ".repair_training_ages_20260922.done";
-    private static final String BACKUP_DIR_REPAIR = "repair_training_ages_20260922_backup";
-
     private static final Pattern TEAM_FILE_REPAIR = Pattern.compile("[0-9]+\\.properties");
     private static final Pattern PLAYER_LINE_REPAIR = Pattern.compile("(?m)^([0-9]+)([=:])(.*?)(\\r?)$");
 
@@ -58,10 +55,9 @@
             }
         });
 
-        Path backupDirectory = directory.toPath().resolve(BACKUP_DIR_REPAIR);
         RepairSummary summary = new RepairSummary();
         for (File file : files) {
-            FileRepairResult result = repairFile(file.toPath(), backupDirectory);
+            FileRepairResult result = repairFile(file.toPath());
             summary.modifiedFiles += result.modified ? 1 : 0;
             summary.modifiedPlayers += result.modifiedPlayers;
             summary.modifiedSnapshots += result.modifiedSnapshots;
@@ -70,7 +66,7 @@
         return summary;
     }
 
-    private FileRepairResult repairFile(Path path, Path backupDirectory) throws IOException {
+    private FileRepairResult repairFile(Path path) throws IOException {
         byte[] originalBytes = Files.readAllBytes(path);
         String original = new String(originalBytes, StandardCharsets.ISO_8859_1);
         RepairResult repaired = repairContent(original);
@@ -87,12 +83,6 @@
         // No pisamos una actualización del usuario que haya llegado mientras analizábamos el fichero.
         if (!Arrays.equals(originalBytes, Files.readAllBytes(path))) {
             return new FileRepairResult(false, true, 0, 0);
-        }
-
-        Files.createDirectories(backupDirectory);
-        Path backup = backupDirectory.resolve(path.getFileName().toString());
-        if (!Files.exists(backup)) {
-            Files.copy(path, backup, StandardCopyOption.COPY_ATTRIBUTES);
         }
 
         Path parent = path.toAbsolutePath().getParent();
@@ -352,16 +342,6 @@
         }
     }
 
-    private void markDone(Path directory, RepairSummary summary) throws IOException {
-        Path marker = directory.resolve(MARKER_FILE_REPAIR);
-        String text = "executed=true\n"
-                + "modifiedFiles=" + summary.modifiedFiles + "\n"
-                + "modifiedPlayers=" + summary.modifiedPlayers + "\n"
-                + "modifiedSnapshots=" + summary.modifiedSnapshots + "\n";
-        Files.write(marker, text.getBytes(StandardCharsets.UTF_8),
-                StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
-    }
-
     private String join(String[] tokens) {
         StringBuilder result = new StringBuilder();
         for (int i = 0; i < tokens.length; i++) {
@@ -507,11 +487,10 @@
     }
 
     File dataDirectory = new File(SystemUtil.getVar(SystemUtil.PATH));
-    Path marker = dataDirectory.toPath().resolve(MARKER_FILE_REPAIR);
-    boolean alreadyExecuted = Files.exists(marker);
     String result = null;
     String error = null;
     String csrf = (String) session.getAttribute("repairTrainingAgesCsrf");
+    boolean alreadyExecuted = Boolean.TRUE.equals(application.getAttribute("repairTrainingAges20260922Executed"));
 
     try {
         selfTestRepair();
@@ -528,19 +507,19 @@
         session.removeAttribute("repairTrainingAgesCsrf");
 
         try {
-            if (Files.exists(marker)) {
-                result = "La reparación ya se ejecutó anteriormente. No se ha modificado nada.";
+            if (alreadyExecuted) {
+                result = "La reparación ya se ejecutó en este arranque del servidor. No se ha modificado nada.";
             } else {
                 RepairSummary summary = repairDirectory(dataDirectory);
                 if (summary.concurrentSkips == 0) {
-                    markDone(dataDirectory.toPath(), summary);
+                    application.setAttribute("repairTrainingAges20260922Executed", Boolean.TRUE);
                     result = "Reparación terminada. Ficheros modificados: " + summary.modifiedFiles
                             + ", jugadores corregidos: " + summary.modifiedPlayers
                             + ", edades de entrenamientos corregidas: " + summary.modifiedSnapshots + ".";
                 } else {
                     result = "Se corrigieron " + summary.modifiedSnapshots + " edades, pero "
                             + summary.concurrentSkips + " fichero(s) cambiaron durante la reparación. "
-                            + "No se ha creado la marca de finalización; vuelve a ejecutar el JSP.";
+                            + "Vuelve a ejecutar el JSP para esos ficheros.";
                 }
             }
         } catch (Throwable e) {
@@ -563,23 +542,20 @@
     <pre><%= escapeHtmlRepair(error) %></pre>
 <% } else if (result != null) { %>
     <h2><%= escapeHtmlRepair(result) %></h2>
-    <% if (Files.exists(marker)) { %>
-        <p>La reparación queda bloqueada por la marca <code><%= escapeHtmlRepair(MARKER_FILE_REPAIR) %></code>.</p>
-        <p>Ya puedes eliminar este JSP del despliegue.</p>
-    <% } %>
+    <p>Ya puedes eliminar este JSP del despliegue.</p>
 <% } else if (alreadyExecuted) { %>
-    <h2>La reparación ya fue ejecutada.</h2>
-    <p>Este JSP no volverá a modificar ningún fichero.</p>
-    <p>Ya puedes eliminarlo del despliegue.</p>
+    <h2>La reparación ya fue ejecutada en este arranque del servidor.</h2>
+    <p>No se crean copias, marcas ni otros ficheros auxiliares.</p>
+    <p>Ya puedes eliminar este JSP del despliegue.</p>
 <% } else { %>
     <h2>Reparar edades de los últimos entrenamientos</h2>
     <p>Corrige únicamente jugadores de clubes cuyo snapshot actual pertenece a la temporada 1210-1222.</p>
     <p>En la temporada anterior (1197-1209), cualquier entrenamiento que heredó por error la edad actual se cambia a edad actual - 1.</p>
     <p>No toca selecciones, históricos archivados, otras temporadas ni campos distintos de la edad.</p>
-    <p>Antes de modificar cada fichero se guarda una copia en <code><%= escapeHtmlRepair(BACKUP_DIR_REPAIR) %></code>.</p>
+    <p>No crea copias de seguridad ni ficheros auxiliares.</p>
     <form method="post">
         <input type="hidden" name="csrf" value="<%= escapeHtmlRepair(csrf) %>">
-        <button type="submit">Ejecutar reparación una sola vez</button>
+        <button type="submit">Ejecutar reparación</button>
     </form>
 <% } %>
 </body>
