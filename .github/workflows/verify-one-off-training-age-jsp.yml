@@ -53,3 +53,4 @@ jobs:
           PY
           javac -source 8 -target 8 -encoding UTF-8 -d /tmp /tmp/RepairJspVerifier.java
           java -cp /tmp RepairJspVerifier
+          echo 'GREEN: JSP declarations compile and self-test passes'
