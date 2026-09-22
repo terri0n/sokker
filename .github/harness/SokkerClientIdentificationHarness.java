@@ -10,22 +10,50 @@ public final class SokkerClientIdentificationHarness {
     }
 
     public static void main(String[] args) throws Exception {
-        String sharedJs = read(Paths.get("sokker/WebContent/js/desplegable.js"));
-        require(sharedJs, "X-Sokker-Client", "shared assistant JavaScript must set X-Sokker-Client");
-        require(sharedJs, CLIENT_KEY, "shared assistant JavaScript must use the assigned Sokker client key");
-        require(sharedJs, "$.post = function", "shared assistant JavaScript must identify direct Sokker POSTs");
-        require(sharedJs, "originalPost", "shared assistant JavaScript must preserve the original POST implementation");
+        Path util = Paths.get("sokker/WebContent/js/util.js");
+        if (!Files.isRegularFile(util)) {
+            throw new AssertionError("Missing shared browser utility JavaScript: " + util);
+        }
+
+        String sharedJs = read(util);
+        require(sharedJs, "function sokkerPost", "shared utility JavaScript must expose sokkerPost");
+        require(sharedJs, "X-Sokker-Client", "sokkerPost must set X-Sokker-Client");
+        require(sharedJs, CLIENT_KEY, "sokkerPost must use the assigned Sokker client key");
         require(sharedJs, "xhr.status === 0", "browser identification must preserve the legacy fallback while Sokker preflight is unavailable");
+        forbid(sharedJs, "$.post =", "shared utility JavaScript must not monkey-patch $.post");
 
-        String login = read(Paths.get("sokker/WebContent/jsp/asistente/login.jsp"));
-        require(login, "/js/desplegable.js", "assistant login page must load the shared identified-request JavaScript");
-        require(login, "https://sokker.org/start.php?session=xml", "assistant login precheck must still run directly from the browser");
+        requireUtilAndSokkerPost("sokker/WebContent/jsp/asistente/login.jsp", "assistant login");
+        requireUtilAndSokkerPost("sokker/WebContent/jsp/asistente/asistente.jsp", "assistant main page");
+        requireUtilOnly("sokker/WebContent/jsp/asistente/seleccion.jsp", "assistant selection page");
+        requireUtilOnly("sokker/WebContent/jsp/asistente/ntdb_menu.jsp", "assistant NTDB menu");
+        requireUtilAndSokkerPost("sokker/WebContent/jsp/sete/sete.jsp", "SETE");
+        requireUtilOnly("sokker/WebContent/jsp/sete/oldsete.jsp", "legacy SETE");
 
-        String assistant = read(Paths.get("sokker/WebContent/jsp/asistente/asistente.jsp"));
-        require(assistant, "/js/desplegable.js", "assistant main page must load the shared identified-request JavaScript");
-        require(assistant, "https://sokker.org/start.php?session=xml", "assistant update/password prechecks must still run directly from the browser");
+        String seteJs = read(Paths.get("sokker/WebContent/js/sete.js.jsp"));
+        require(seteJs, "sokkerPost(", "legacy SETE browser login must use sokkerPost");
+        forbid(seteJs, "$.post('https://sokker.org", "legacy SETE must not call $.post directly for Sokker");
+
+        if (Files.exists(Paths.get("sokker/WebContent/test.jsp"))) {
+            throw new AssertionError("obsolete test.jsp must be removed");
+        }
+        if (Files.exists(Paths.get("sokker/WebContent/js/desplegable.js"))) {
+            throw new AssertionError("desplegable.js must be renamed to util.js");
+        }
 
         System.out.println("Sokker client identification harness OK");
+    }
+
+    private static void requireUtilAndSokkerPost(String path, String label) throws Exception {
+        String text = read(Paths.get(path));
+        require(text, "/js/util.js", label + " must load util.js");
+        require(text, "sokkerPost(", label + " must use sokkerPost for direct Sokker POSTs");
+        forbid(text, "$.post('https://sokker.org", label + " must not call $.post directly for Sokker");
+    }
+
+    private static void requireUtilOnly(String path, String label) throws Exception {
+        String text = read(Paths.get(path));
+        require(text, "/js/util.js", label + " must load util.js");
+        forbid(text, "/js/desplegable.js", label + " must not load desplegable.js");
     }
 
     private static String read(Path path) throws Exception {
@@ -35,6 +63,12 @@ public final class SokkerClientIdentificationHarness {
     private static void require(String text, String expected, String message) {
         if (!text.contains(expected)) {
             throw new AssertionError(message + ": missing " + expected);
+        }
+    }
+
+    private static void forbid(String text, String forbidden, String message) {
+        if (text.contains(forbidden)) {
+            throw new AssertionError(message + ": found " + forbidden);
         }
     }
 }
