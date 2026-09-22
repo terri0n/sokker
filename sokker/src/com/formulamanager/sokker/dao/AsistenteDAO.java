@@ -72,9 +72,6 @@ public class AsistenteDAO {
 		Integer defensa = JSONUtil.getInteger(jugador, "info.skills.defending");
 		Integer creacion = JSONUtil.getInteger(jugador, "info.skills.playmaking");
 		Integer anotacion = JSONUtil.getInteger(jugador, "info.skills.striker");
-
-		// En JSON los campos ausentes no lanzan excepción: JSONUtil devuelve null. Solo una
-		// instantánea con las ocho habilidades puede reemplazar habilidades privadas ya conocidas.
 		if (condicion != null && rapidez != null && tecnica != null && pases != null
 				&& porteria != null && defensa != null && creacion != null && anotacion != null) {
 			j.setCondicion(condicion);
