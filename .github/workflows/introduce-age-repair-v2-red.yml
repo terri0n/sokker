@@ -1,0 +1,53 @@
+name: Introduce age repair v2 regression
+
+on:
+  push:
+    branches:
+      - fix/one-off-repair-training-ages-v2
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/one-off-repair-training-ages-v2
+      - name: Add birthday-week regression only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('sokker/WebContent/jsp/asistente/repararEdadesUltimosEntrenamientos.jsp')
+          s = p.read_text(encoding='utf-8')
+          old = '''        String elio = player(1,\n                snapshot(1210, 19) + \",\" + snapshot(1209, 19) + \",\" + snapshot(1208, 19));\n        String alreadyCorrect = player(2,'''
+          new = '''        String elioBirthdayWeek = player(10,\n                snapshot(1209, 19) + \",\" + snapshot(1208, 19) + \",\" + snapshot(1207, 19));\n        String elio = player(1,\n                snapshot(1210, 19) + \",\" + snapshot(1209, 19) + \",\" + snapshot(1208, 19));\n        String alreadyCorrect = player(2,'''
+          if old not in s:
+              raise SystemExit('No se encontró el bloque de autotest esperado')
+          s = s.replace(old, new, 1)
+          old2 = '''                + elio\n                + alreadyCorrect'''
+          new2 = '''                + elioBirthdayWeek\n                + elio\n                + alreadyCorrect'''
+          if old2 not in s:
+              raise SystemExit('No se encontró la composición del autotest')
+          s = s.replace(old2, new2, 1)
+          s = s.replace('requireRepair(fixed.modifiedPlayers == 2, "Debe reparar exactamente los dos jugadores contaminados");',
+                        'requireRepair(fixed.modifiedPlayers == 3, "Debe reparar también el caso actualizado durante la semana del cumpleaños");', 1)
+          s = s.replace('requireRepair(fixed.modifiedSnapshots == 3, "Debe reparar las tres edades contaminadas");',
+                        'requireRepair(fixed.modifiedSnapshots == 5, "Debe reparar las cinco edades contaminadas");', 1)
+          marker = '''        requireRepair(fixed.content.contains(snapshot(1210, 19) + \",\" + snapshot(1209, 18) + \",\" + snapshot(1208, 18)),\n                "Debe reparar los dos primeros y únicos entrenamientos de Elio");'''
+          insertion = '''        requireRepair(fixed.content.contains(snapshot(1209, 19) + \",\" + snapshot(1208, 18) + \",\" + snapshot(1207, 18)),\n                "Debe reparar los entrenamientos previos cuando la edad ya cambió en la jornada 1209");\n''' + marker
+          if marker not in s:
+              raise SystemExit('No se encontró la aserción de Elio')
+          s = s.replace(marker, insertion, 1)
+          p.write_text(s, encoding='utf-8', newline='')
+          PY
+          rm .github/workflows/introduce-age-repair-v2-red.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sokker/WebContent/jsp/asistente/repararEdadesUltimosEntrenamientos.jsp .github/workflows/introduce-age-repair-v2-red.yml
+          git commit -m 'Add regression for birthday-week training ages'
+          git push origin HEAD:fix/one-off-repair-training-ages-v2
