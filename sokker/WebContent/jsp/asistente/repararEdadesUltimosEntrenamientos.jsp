@@ -23,12 +23,13 @@
      * Reparación puntual para los datos creados alrededor del cambio de temporada de septiembre de 2026.
      * No forma parte de la lógica normal de actualización y debe eliminarse después de ejecutarla.
      *
-     * Temporada anterior: 1197..1209
-     * Temporada actual:   1210..1222
+     * Entrenamientos anteriores al cumpleaños: 1197..1208
+     * Semana del cumpleaños:                1209
+     * Temporada nueva:                      1210..1222
      */
-    private static final int PREVIOUS_SEASON_START_REPAIR = 1197;
-    private static final int PREVIOUS_SEASON_END_REPAIR = 1209;
-    private static final int CURRENT_SEASON_START_REPAIR = 1210;
+    private static final int PRE_BIRTHDAY_TRAINING_START_REPAIR = 1197;
+    private static final int LAST_PRE_BIRTHDAY_TRAINING_REPAIR = 1208;
+    private static final int BIRTHDAY_WEEK_REPAIR = 1209;
     private static final int CURRENT_SEASON_END_REPAIR = 1222;
     private static final int MIN_CLUB_TID_REPAIR = 801;
     private static final int JORNADA_NUEVO_ENTRENO_REPAIR = 993;
@@ -178,9 +179,10 @@
 
         Snapshot latest = parsed.snapshots.get(0);
 
-        // Este JSP es deliberadamente temporal: solo repara el cambio 1209 -> 1210.
-        // Si se deja por error en el servidor durante otra temporada, no tocará nada.
-        if (latest.jornada < CURRENT_SEASON_START_REPAIR || latest.jornada > CURRENT_SEASON_END_REPAIR) {
+        // En la jornada 1209 Sokker ya muestra la edad nueva, pero el último entrenamiento
+        // completado fue el 1208 y pertenece a la edad anterior. Aceptamos también jornadas
+        // posteriores de esta misma transición por si la reparación se ejecuta unos días más tarde.
+        if (latest.jornada < BIRTHDAY_WEEK_REPAIR || latest.jornada > CURRENT_SEASON_END_REPAIR) {
             return result;
         }
 
@@ -195,22 +197,21 @@
             }
             previousJornada = snapshot.jornada;
 
-            if (snapshot == latest || snapshot.jornada >= CURRENT_SEASON_START_REPAIR) {
+            if (snapshot == latest || snapshot.jornada > LAST_PRE_BIRTHDAY_TRAINING_REPAIR) {
+                // 1209 ya pertenece a la edad actual; no es un entrenamiento pre-cumpleaños.
                 continue;
             }
 
-            if (snapshot.jornada < PREVIOUS_SEASON_START_REPAIR) {
+            if (snapshot.jornada < PRE_BIRTHDAY_TRAINING_START_REPAIR) {
                 break;
             }
 
-            if (snapshot.jornada <= PREVIOUS_SEASON_END_REPAIR) {
-                if (snapshot.edad == currentAge) {
-                    // Contaminación de la versión anterior: heredó la edad actual.
-                    result.add(snapshot.edadIndex);
-                } else if (snapshot.edad != expectedPreviousAge) {
-                    // Un valor distinto de edad actual / edad anterior es ambiguo. No arriesgamos datos.
-                    return new ArrayList<Integer>();
-                }
+            if (snapshot.edad == currentAge) {
+                // Contaminación de la versión anterior: el entrenamiento heredó la edad actual.
+                result.add(snapshot.edadIndex);
+            } else if (snapshot.edad != expectedPreviousAge) {
+                // Un valor distinto de edad actual / edad anterior es ambiguo. No arriesgamos datos.
+                return new ArrayList<Integer>();
             }
         }
 
@@ -369,7 +370,7 @@
         String alreadyCorrect = player(2,
                 snapshot(1210, 20) + "," + snapshot(1209, 19) + "," + snapshot(1208, 19));
         String mixed = player(3,
-                snapshot(1211, 24) + "," + snapshot(1210, 24) + "," + snapshot(1209, 24) + "," + snapshot(1208, 23));
+                snapshot(1211, 24) + "," + snapshot(1210, 24) + "," + snapshot(1209, 24) + "," + snapshot(1208, 24) + "," + snapshot(1207, 23));
         String outsideRepairSeason = player(4,
                 snapshot(1223, 21) + "," + snapshot(1222, 21));
 
@@ -383,13 +384,13 @@
 
         RepairResult fixed = repairContent(content);
         requireRepair(fixed.modifiedPlayers == 3, "Debe reparar también el caso actualizado durante la semana del cumpleaños");
-        requireRepair(fixed.modifiedSnapshots == 5, "Debe reparar las cinco edades contaminadas");
+        requireRepair(fixed.modifiedSnapshots == 4, "Debe reparar las cuatro edades contaminadas");
         requireRepair(fixed.content.contains(snapshot(1209, 19) + "," + snapshot(1208, 18) + "," + snapshot(1207, 18)),
                 "Debe reparar los entrenamientos previos cuando la edad ya cambió en la jornada 1209");
-        requireRepair(fixed.content.contains(snapshot(1210, 19) + "," + snapshot(1209, 18) + "," + snapshot(1208, 18)),
-                "Debe reparar los dos primeros y únicos entrenamientos de Elio");
-        requireRepair(fixed.content.contains(snapshot(1211, 24) + "," + snapshot(1210, 24) + "," + snapshot(1209, 23) + "," + snapshot(1208, 23)),
-                "Debe reparar solo el snapshot contaminado dentro de la temporada anterior");
+        requireRepair(fixed.content.contains(snapshot(1210, 19) + "," + snapshot(1209, 19) + "," + snapshot(1208, 18)),
+                "Debe mantener 1209 con la edad actual y reparar el último entrenamiento completado");
+        requireRepair(fixed.content.contains(snapshot(1211, 24) + "," + snapshot(1210, 24) + "," + snapshot(1209, 24) + "," + snapshot(1208, 23) + "," + snapshot(1207, 23)),
+                "Debe conservar 1209 y reparar solo entrenamientos anteriores al cumpleaños");
         requireRepair(fixed.content.contains("future_key=keep\\:exactly"), "Debe conservar claves desconocidas");
         requireRepair(fixed.content.contains(outsideRepairSeason), "No debe tocar temporadas posteriores");
 
@@ -495,7 +496,7 @@
     String result = null;
     String error = null;
     String csrf = (String) session.getAttribute("repairTrainingAgesCsrf");
-    boolean alreadyExecuted = Boolean.TRUE.equals(application.getAttribute("repairTrainingAges20260922Executed"));
+    boolean alreadyExecuted = Boolean.TRUE.equals(application.getAttribute("repairTrainingAges20260922V2Executed"));
 
     try {
         selfTestRepair();
@@ -516,11 +517,14 @@
                 result = "La reparación ya se ejecutó en este arranque del servidor. No se ha modificado nada.";
             } else {
                 RepairSummary summary = repairDirectory(dataDirectory);
-                if (summary.concurrentSkips == 0) {
-                    application.setAttribute("repairTrainingAges20260922Executed", Boolean.TRUE);
+                if (summary.concurrentSkips == 0 && summary.modifiedSnapshots > 0) {
+                    application.setAttribute("repairTrainingAges20260922V2Executed", Boolean.TRUE);
+                    alreadyExecuted = true;
                     result = "Reparación terminada. Ficheros modificados: " + summary.modifiedFiles
                             + ", jugadores corregidos: " + summary.modifiedPlayers
                             + ", edades de entrenamientos corregidas: " + summary.modifiedSnapshots + ".";
+                } else if (summary.concurrentSkips == 0) {
+                    result = "No se encontró ningún entrenamiento que corregir. Esta versión no se marca como ejecutada.";
                 } else {
                     result = "Se corrigieron " + summary.modifiedSnapshots + " edades, pero "
                             + summary.concurrentSkips + " fichero(s) cambiaron durante la reparación. "
@@ -547,15 +551,19 @@
     <pre><%= escapeHtmlRepair(error) %></pre>
 <% } else if (result != null) { %>
     <h2><%= escapeHtmlRepair(result) %></h2>
-    <p>Ya puedes eliminar este JSP del despliegue.</p>
+    <% if (alreadyExecuted) { %>
+        <p>Ya puedes eliminar este JSP del despliegue.</p>
+    <% } else { %>
+        <p>No elimines todavía este JSP: no se modificó ningún entrenamiento.</p>
+    <% } %>
 <% } else if (alreadyExecuted) { %>
     <h2>La reparación ya fue ejecutada en este arranque del servidor.</h2>
     <p>No se crean copias, marcas ni otros ficheros auxiliares.</p>
     <p>Ya puedes eliminar este JSP del despliegue.</p>
 <% } else { %>
     <h2>Reparar edades de los últimos entrenamientos</h2>
-    <p>Corrige únicamente jugadores de clubes cuyo snapshot actual pertenece a la temporada 1210-1222.</p>
-    <p>En la temporada anterior (1197-1209), cualquier entrenamiento que heredó por error la edad actual se cambia a edad actual - 1.</p>
+    <p>Corrige jugadores de clubes actualizados desde la jornada 1209 durante este cambio de temporada.</p>
+    <p>La jornada 1209 conserva la edad actual. Solo los entrenamientos 1197-1208 que heredaron por error esa edad se cambian a edad actual - 1.</p>
     <p>No toca selecciones, históricos archivados, otras temporadas ni campos distintos de la edad.</p>
     <p>No crea copias de seguridad ni ficheros auxiliares.</p>
     <form method="post">
