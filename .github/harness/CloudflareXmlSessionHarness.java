@@ -17,6 +17,9 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 public final class CloudflareXmlSessionHarness {
+    private static final String EXPECTED_USER_AGENT = "Sokker Asistente (+https://raqueto.com/sokker/asistente)";
+    private static final String EXPECTED_CLIENT_KEY = "skc_bae02f2686bf9038d248";
+
     private CloudflareXmlSessionHarness() {
     }
 
@@ -40,8 +43,12 @@ public final class CloudflareXmlSessionHarness {
                     throw new AssertionError("XML session query must be session=xml");
                 }
                 String userAgent = exchange.getRequestHeaders().getFirst("User-Agent");
-                if (!Navegador.USER_AGENT.equals(userAgent)) {
+                if (!EXPECTED_USER_AGENT.equals(userAgent)) {
                     throw new AssertionError("Unexpected User-Agent: " + userAgent);
+                }
+                String clientKey = exchange.getRequestHeaders().getFirst("X-Sokker-Client");
+                if (!EXPECTED_CLIENT_KEY.equals(clientKey)) {
+                    throw new AssertionError("Unexpected X-Sokker-Client: " + clientKey);
                 }
                 Map<String, String> form = parseForm(readAll(exchange.getRequestBody()));
                 if (!login.equals(form.get("ilogin"))) {
@@ -59,12 +66,10 @@ public final class CloudflareXmlSessionHarness {
         });
         server.start();
 
-        WebClient navegador = new WebClient(Navegador.createBrowserVersion());
-        navegador.getOptions().setJavaScriptEnabled(false);
-        navegador.getOptions().setCssEnabled(false);
+        WebClient navegador = Navegador.createSokkerWebClient();
         try {
-            if (!Navegador.USER_AGENT.equals(navegador.getBrowserVersion().getUserAgent())) {
-                throw new AssertionError("BrowserVersion must expose the Sokker Assistant User-Agent");
+            if (!EXPECTED_USER_AGENT.equals(navegador.getBrowserVersion().getUserAgent())) {
+                throw new AssertionError("BrowserVersion must expose the Sokker Asistente User-Agent");
             }
             String baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
             Navegador.startXmlSession(navegador, baseUrl, login, password);
@@ -90,7 +95,7 @@ public final class CloudflareXmlSessionHarness {
         });
         server.start();
 
-        WebClient navegador = new WebClient(Navegador.createBrowserVersion());
+        WebClient navegador = Navegador.createSokkerWebClient();
         try {
             String baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
             try {
