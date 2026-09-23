@@ -458,3 +458,10 @@ tfoot, .peque {
 .help {
 	margin: 5px;
 }
+
+/* La actualización automática está retirada; se conserva el markup histórico inerte. */
+label[for='actualizacion_automatica'],
+label[for='actualizacion_automatica'] + .help,
+label[for='actualizacion_automatica'] + .help + br {
+	display: none;
+}
