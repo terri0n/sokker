@@ -1,0 +1,66 @@
+name: Restore NT call-up mapping
+
+on:
+  push:
+    branches:
+      - fix/nt-national-callup
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore deployed nationalCallUp mapping
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('sokker/src/com/formulamanager/sokker/dao/AsistenteDAO.java')
+          data = path.read_bytes()
+          nl = b'\r\n' if b'\r\n' in data else b'\n'
+
+          old_player = b'\t\tj.setNt(JSONUtil.getInteger(jugador, "info.team.nationalType"));' + nl
+          new_player = b'\t\tj.setNt(Boolean.TRUE.equals(JSONUtil.getBoolean(jugador, "info.nationalCallUp")) ? 1 : 0);' + nl
+          if old_player in data:
+              if data.count(old_player) != 1:
+                  raise SystemExit('Expected player nationalType mapping exactly once')
+              data = data.replace(old_player, new_player, 1)
+          elif new_player not in data:
+              raise SystemExit('Player NT mapping not found')
+
+          old_training = (
+              b'\t\t// No est\xc3\xa1 disponible, le ponemos false' + nl +
+              b'\t\t//j.setNt(JSONUtil.getInteger(jugador, "info.team.nationalType"));' + nl +
+              b'\t\tj.setNt(0);' + nl
+          )
+          new_training = b'\t\tj.setNt(Boolean.TRUE.equals(JSONUtil.getBoolean(jugador, "info.nationalCallUp")) ? 1 : 0);' + nl
+          if old_training in data:
+              if data.count(old_training) != 1:
+                  raise SystemExit('Expected training NT fallback block exactly once')
+              data = data.replace(old_training, new_training, 1)
+          elif data.count(new_training) < 2:
+              raise SystemExit('Training NT mapping not found')
+
+          path.write_bytes(data)
+          PY
+
+      - name: Commit patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- sokker/src/com/formulamanager/sokker/dao/AsistenteDAO.java; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sokker/src/com/formulamanager/sokker/dao/AsistenteDAO.java
+          git commit -m 'fix: restore NT call-up mapping'
+          git push origin HEAD:fix/nt-national-callup
