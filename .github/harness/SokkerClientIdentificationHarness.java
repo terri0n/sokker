@@ -30,6 +30,7 @@ public final class SokkerClientIdentificationHarness {
         requireUtilAndSokkerPost("sokker/WebContent/jsp/sete/sete.jsp", "SETE");
         requireUtilOnly("sokker/WebContent/jsp/sete/oldsete.jsp", "legacy SETE");
 
+        // Automatic update is retired; its UI markup must not reappear.
         String assistantMain = read(Paths.get("sokker/WebContent/jsp/asistente/asistente.jsp"));
         forbid(assistantMain, "actualizacion_automatica", "assistant main page must not render the retired automatic update option");
         forbid(assistantMain, "menu.automatic_update", "assistant main page must not render the retired automatic update label");
