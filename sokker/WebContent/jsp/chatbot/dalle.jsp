@@ -17,34 +17,30 @@
   <img id="imagen-generada" src="" alt="Imagen generada por DALL·E">
 
   <script>
-    const token = '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';
-
-    // Función que se ejecuta al enviar el formulario
+    // La clave de OpenAI nunca se envía al navegador. Si se vuelve a usar esta
+    // integración, el servidor debe recibirla mediante OPENAI_API_KEY.
 	$(document).ready(function() {
 	  $('#formulario').submit(function(event) {
 	    event.preventDefault();
 	    var texto = $('#texto').val();
 	    var imagen = $('#archivo').prop('files')[0];
-	    
-	    var formData = new FormData();
-	    formData.append('prompt', texto);
-	    formData.append('image', imagen);
-	    
+
+	    if (!imagen) {
+	      return;
+	    }
+
 	    $.ajax({
-	      url: 'https://api.openai.com/v1/images/edits',
+	      url: '${pageContext.request.contextPath}/dalle?texto=' + encodeURIComponent(texto),
 	      method: 'POST',
-	      headers: {
-	        'Authorization': 'Bearer ' + token,
-	      },
 	      processData: false,
-	      contentType: false,
-	      data: formData,
+	      contentType: 'application/octet-stream',
+	      data: imagen,
 	      success: function(data) {
-	        $('#imagen-generada').attr('src', 'data:image/jpeg;base64,' + data.data.edits[0].generated_image);
+	        $('#imagen-generada').attr('src', data);
 	      },
 	      error: function(error) {
 	        console.log(error);
-	        alert(error.responseJSON.error.message);
+	        alert(error.responseText || error.statusText);
 	      }
 	    });
 	  });
