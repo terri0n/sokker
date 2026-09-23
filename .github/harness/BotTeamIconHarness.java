@@ -13,7 +13,7 @@ public final class BotTeamIconHarness {
             throw new AssertionError("Missing players tag: " + tag);
         }
 
-        String text = new String(Files.readAllBytes(tag), StandardCharsets.UTF_8);
+        String text = new String(Files.readAllBytes(tag), StandardCharsets.UTF_8).replace("\r\n", "\n");
         String block = "<c:if test=\"${j.bot}\">\n"
                 + "\t\t\t\t\t\t<span class=\"borde\" title=\"Bot\">&#x1F4BB;</span>\n"
                 + "\t\t\t\t\t</c:if>";
