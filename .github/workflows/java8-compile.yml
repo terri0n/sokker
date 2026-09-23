@@ -84,7 +84,8 @@ jobs:
             .github/harness/XmlPageAssociationHarness.java \
             .github/harness/NtBotIsolationHarness.java \
             .github/harness/NtSkillMergeHarness.java \
-            .github/harness/SokkerClientIdentificationHarness.java
+            .github/harness/SokkerClientIdentificationHarness.java \
+            .github/harness/BulkColorHarness.java
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" PersistenceRoundTrip
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainerMappingHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainingMatchMappingHarness
@@ -99,6 +100,7 @@ jobs:
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" NtBotIsolationHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" NtSkillMergeHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" SokkerClientIdentificationHarness
+          java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" BulkColorHarness
 
       - name: Verify team ID classification uses shared threshold
         shell: bash
