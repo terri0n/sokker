@@ -193,6 +193,11 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 		//j.setNt(JSONUtil.getInteger(jugador, "info.team.nationalType"));
 		j.setNt(0);
 		j.setLesion(JSONUtil.getInteger(jugador, "info.injury.daysRemaining"));
+		if (Integer.valueOf(7).equals(j.getLesion())
+				&& Boolean.TRUE.equals(JSONUtil.getBoolean(jugador, "info.injury.severe"))) {
+			// Como para mí 7 significa que la lesión ya no es severa, le sumo 1
+			j.setLesion(8);
+		}
 //		j.setEn_venta(JSONUtil.getJSON(jugador, "transfer.deadline.date") == null ? null : 1);	// Sin info de anuncio
 		
 		// NTDB
