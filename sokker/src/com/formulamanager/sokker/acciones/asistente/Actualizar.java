@@ -69,11 +69,7 @@ public class Actualizar extends SERVLET_ASISTENTE {
 							if (tid_actualizacion > NtdbBO.MAX_ID_SELECCION) {
 								usuario.setLogin_sokker(ilogin);
 								usuario.setPassword(Util.getMD5(ipassword));
-								if (request.getParameter("actualizacion_automatica") != null) {
-									usuario.setActualizacion_automatica(ipassword);
-								} else {
-									usuario.setActualizacion_automatica(null);
-								}
+								usuario.setActualizacion_automatica(null);
 							}
 
 							// Si otra petición ha cambiado la selección mientras cargábamos Sokker, no actualizamos un destino distinto.
