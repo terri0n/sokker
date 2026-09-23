@@ -137,7 +137,7 @@
 				<td nowrap style="text-align: left">${j.edad_proyectada}</td>
 				<td class="${j.clase_nivel}" title="${j.title_nivel}"><span class="span_grafica"
 					<c:if test="${j.num_jornadas > 1}">
-						onclick="grafica_ajax($(this), 'talento', ${j.pid});"
+						onclick="grafica_ajax($(this), 'talento', ${j.pid}, ${sessionScope.historico});"
 					</c:if>
 				>${j.nivel}</span></td>
 				<td><fmt:message key="${j.jugador_campo ? 'players.outfield' : 'players.gk'}" /></td>

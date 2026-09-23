@@ -118,12 +118,20 @@ public class Servlet extends SERVLET_ASISTENTE {
 		return jugadores.size() + "";
 	}
 	
+	static boolean resolverHistoricoGrafica(HttpServletRequest request) {
+		String historico = request.getParameter("historico");
+		if (Util.nnvl(historico) != null) {
+			return Util.stringToBoolean(historico);
+		}
+		return Util.getInt(request.getSession(), "historico") > 0;
+	}
+
 	public String datos_grafica(HttpServletRequest request, HttpServletResponse response, Usuario usuario) {
 		response.setContentType("application/json;charset=UTF-8");
 
 		int pid = Integer.valueOf(request.getParameter("pid"));
 		String tipo = request.getParameter("tipo");
-		boolean historico = Util.getInt(request.getSession(), "historico") > 0;
+		boolean historico = resolverHistoricoGrafica(request);
 		boolean juveniles = "talento".equals(tipo);
 		Jugador j = AsistenteBO.buscar_jugador(request, pid, historico, juveniles);
 
