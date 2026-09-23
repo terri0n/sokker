@@ -1085,14 +1085,6 @@ request.setAttribute("j", new Jugador());
 							<fmt:message key="login.sokker_login" />: <input type="text" id="ilogin" name="ilogin" value="${sessionScope.usuario.login_sokker}" size="10" <c:if test='${sessionScope.usuario.def_tid > MAX_ID_SELECCION}'>required="required"</c:if> /><br/>
 							<fmt:message key="login.sokker_password" />: <input type="password" id="ipassword" name="ipassword" size="10" <c:if test='${sessionScope.usuario.def_tid > MAX_ID_SELECCION}'>required="required"</c:if> value="${cookie.apassword.value}" /><br/>
 
-							<c:if test="${sessionScope.usuario.def_tid > MAX_ID_SELECCION}">
-								<label class="peque" for="actualizacion_automatica">
-									<input type="checkbox" name="actualizacion_automatica" id="actualizacion_automatica" ${empty sessionScope.usuario.actualizacion_automatica ? '' : 'checked'} />
-									<fmt:message key="menu.automatic_update" />
-								</label>
-								<div class="material-icons rojo borde-blanco help vertical" title="<fmt:message key="config.info_automatic_update" />">help</div>
-								<br />
-							</c:if>
 							
 							<input type="submit" id='boton_actualizar' value="<fmt:message key="common.update" />" onclick="return actualizar_submit();" />
 							<c:if test="${actualizado}">
