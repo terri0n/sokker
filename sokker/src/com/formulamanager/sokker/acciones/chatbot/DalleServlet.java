@@ -34,7 +34,7 @@ import com.jayway.jsonpath.JsonPath;
 public class DalleServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     
-    private static String OPENAI_KEY = "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";
+    private static final String OPENAI_KEY = System.getenv("OPENAI_API_KEY");
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String question = request.getParameter("texto");
@@ -68,6 +68,10 @@ public class DalleServlet extends HttpServlet {
 
     private String sendQuestion(String question, byte[] imagenBytes) {
         String url = "https://api.openai.com/v1/images/edits";
+
+        if (OPENAI_KEY == null || OPENAI_KEY.trim().isEmpty()) {
+            throw new IllegalStateException("OPENAI_API_KEY is not configured");
+        }
 
         try (final WebClient webClient = new WebClient()) {
             // Set OpenAI API credentials

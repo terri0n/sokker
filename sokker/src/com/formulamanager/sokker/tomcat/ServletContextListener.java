@@ -81,7 +81,7 @@ public class ServletContextListener implements javax.servlet.ServletContextListe
 	    				actualizar_seleccionadores();
 	    				actualizar_factor_x();
 //		    			buscar_jugadores();
-	    				tareas_miercoles();	// Act. automáticas, backups
+	    				tareas_miercoles();	// Backups
 	    			} catch (InterruptedException e) {
 	    				seguir = false;
 	    			}
@@ -154,9 +154,9 @@ System.out.print("Borrando backups...");
     					try (FileInputStream bis = new FileInputStream(SystemUtil.getVar("path") + "logs/" + archivo)) {
     						BufferedReader br = new BufferedReader(new InputStreamReader(bis));
     				        String linea;
-    						while ((linea = br.readLine()) != null) {
-    							if (linea.length() > 0) {
-    								try {
+						while ((linea = br.readLine()) != null) {
+							if (linea.length() > 0) {
+								try {
 										if (linea.split(" ")[0].length() > 0) {
 	    									Date d = sdf.parse(linea.split(" ")[0]);
 											// Si la línea es del último mes, la mantenemos
@@ -326,7 +326,6 @@ System.out.println("OK");
 	private void tareas_miercoles() {
 		Calendar c = Calendar.getInstance();
 		if (c.get(Calendar.DAY_OF_WEEK) == Calendar.WEDNESDAY) {
-			AsistenteBO.actualizacion_automatica();
 			AsistenteBO.crear_backups();
 			AsistenteBO.enviar_backups();
 		}
