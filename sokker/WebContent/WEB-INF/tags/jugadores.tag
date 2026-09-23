@@ -107,6 +107,9 @@
 					<c:if test="${j.nt > 0}">
 						<span class='estrella'>&#x2605;</span>
 					</c:if>
+					<c:if test="${j.bot}">
+						<span class="borde" title="Bot">&#x1F4BB;</span>
+					</c:if>
 					<a style="color: ${j.color};" target="_blank" href="https://sokker.org/player/PID/${j.pid}">${j.destacar ? '<b>' : ''}${j.nombre}${j.destacar ? '</b>' : ''}</a>
 
 					<%-- 3 tarjetas = roja. Si hay más (amarillas) se limpian tras el partido de sanción --%>
