@@ -1,0 +1,69 @@
+name: Restore severe injury mapping
+
+on:
+  push:
+    branches:
+      - fix/severe-injury-training
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore deployed severe injury boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('sokker/src/com/formulamanager/sokker/dao/AsistenteDAO.java')
+          data = path.read_bytes()
+          nl = b'\r\n' if b'\r\n' in data else b'\n'
+
+          method = b'public static Jugador leer_jugador_entrenamiento'
+          next_method = b'public static List<Jugador> obtener_entrenamiento'
+          start = data.index(method)
+          end = data.index(next_method, start)
+          before = data[:start]
+          body = data[start:end]
+          after = data[end:]
+
+          anchor = b'\t\tj.setLesion(JSONUtil.getInteger(jugador, "info.injury.daysRemaining"));' + nl
+          block = (
+              anchor +
+              b'\t\tif (Integer.valueOf(7).equals(j.getLesion())' + nl +
+              b'\t\t\t\t&& Boolean.TRUE.equals(JSONUtil.getBoolean(jugador, "info.injury.severe"))) {' + nl +
+              b'\t\t\t// Como para m\xc3\xad 7 significa que la lesi\xc3\xb3n ya no es severa, le sumo 1' + nl +
+              b'\t\t\tj.setLesion(8);' + nl +
+              b'\t\t}' + nl
+          )
+
+          if b'Boolean.TRUE.equals(JSONUtil.getBoolean(jugador, "info.injury.severe"))' not in body:
+              if body.count(anchor) != 1:
+                  raise SystemExit('Expected training injury assignment exactly once')
+              body = body.replace(anchor, block, 1)
+          elif block not in body:
+              raise SystemExit('Unexpected severe injury block')
+
+          path.write_bytes(before + body + after)
+          PY
+
+      - name: Commit patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- sokker/src/com/formulamanager/sokker/dao/AsistenteDAO.java; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sokker/src/com/formulamanager/sokker/dao/AsistenteDAO.java
+          git commit -m 'fix: restore severe injury mapping'
+          git push origin HEAD:fix/severe-injury-training
