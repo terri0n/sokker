@@ -22,6 +22,7 @@ public final class PersistenceRoundTrip {
     public static void main(String[] args) throws Exception {
         playerKnownFormatRoundTrip();
         playerUnmanagedEntryRoundTrip();
+        playerColorChangeRoundTrip();
         userUnknownFieldsRoundTrip();
     }
 
@@ -65,6 +66,37 @@ public final class PersistenceRoundTrip {
         List<Jugador> loadedAgain = AsistenteBO.leer_jugadores(123, "Team", false, usuario);
         require(loadedAgain.size() == 1 && Integer.valueOf(42).equals(loadedAgain.get(0).getPid()),
                 "Player database could not be re-read after preserving unmanaged entry");
+    }
+
+    private static void playerColorChangeRoundTrip() throws Exception {
+        Path data = configureTempDataPath("sokker-player-color-");
+        File playerFile = data.resolve("123.properties").toFile();
+        String orphan = "future.player.key";
+
+        Properties initial = new Properties();
+        initial.setProperty("42", PLAYER_RECORD);
+        initial.setProperty(orphan, "future-value");
+        try (FileOutputStream output = new FileOutputStream(playerFile)) {
+            initial.store(output, null);
+        }
+
+        Usuario usuario = new Usuario(123, "Team");
+        List<Jugador> loaded = AsistenteBO.leer_jugadores(123, "Team", false, usuario);
+        require(loaded.size() == 1, "Player color fixture could not be read");
+        loaded.get(0).setColor("#112233");
+        AsistenteBO.grabar_jugadores(loaded, 123, 1200, false);
+
+        Properties saved = new Properties();
+        try (FileInputStream input = new FileInputStream(playerFile)) {
+            saved.load(input);
+        }
+        require("future-value".equals(saved.getProperty(orphan)),
+                "Changing player color lost an unmanaged player property");
+
+        List<Jugador> loadedAgain = AsistenteBO.leer_jugadores(123, "Team", false, usuario);
+        require(loadedAgain.size() == 1, "Player color database could not be re-read");
+        require("#112233".equals(loadedAgain.get(0).getColor()),
+                "Player color was not preserved by load-save-reload");
     }
 
     private static void userUnknownFieldsRoundTrip() throws Exception {
