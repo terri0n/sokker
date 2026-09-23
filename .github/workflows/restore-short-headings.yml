@@ -1,0 +1,66 @@
+name: Restore deployed short headings
+
+on:
+  push:
+    branches:
+      - fix/player-short-skill-headings
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore deployed short heading keys
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('sokker/WebContent/WEB-INF/tags/jugadores.tag')
+          text = path.read_text(encoding='utf-8')
+          basic = [
+              'stamina', 'pace', 'technique', 'passing',
+              'keeper', 'defender', 'playmaker', 'striker'
+          ]
+          changed = 0
+          lines = text.splitlines(True)
+          out = []
+          for line in lines:
+              original = line
+              for key in basic:
+                  token = 'key="skills.' + key + '"'
+                  if token in line and 'ordenar_click' in line and '<tags:string' in line:
+                      line = line.replace(token, 'key="skills.' + key + '_short"')
+                      line = line.replace('class="uppercase ordenar"', 'class="ordenar"')
+              for key in ['tactical_discipline', 'team_work']:
+                  token = 'key="skills.' + key + '"'
+                  if token in line and 'ordenar_click' in line and '<tags:string' in line:
+                      line = line.replace(token, 'key="skills.' + key + '_short"')
+              if line != original:
+                  changed += 1
+              out.append(line)
+
+          if changed not in (0, 10):
+              raise SystemExit('Expected 10 deployed heading replacements, got %d' % changed)
+          new_text = ''.join(out)
+          for key in basic + ['tactical_discipline', 'team_work']:
+              if 'key="skills.' + key + '_short"' not in new_text:
+                  raise SystemExit('Missing restored short key: ' + key)
+          path.write_text(new_text, encoding='utf-8', newline='')
+          PY
+      - name: Commit patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- sokker/WebContent/WEB-INF/tags/jugadores.tag; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sokker/WebContent/WEB-INF/tags/jugadores.tag
+          git commit -m 'fix: restore translated short skill headings'
+          git push origin HEAD:fix/player-short-skill-headings
