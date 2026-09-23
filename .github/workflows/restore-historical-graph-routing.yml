@@ -1,0 +1,84 @@
+name: Restore historical graph routing
+
+on:
+  push:
+    branches:
+      - fix/historical-graph-routing
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore deployed historical routing with session fallback
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          servlet = Path('sokker/src/com/formulamanager/sokker/servlets/Servlet.java')
+          data = servlet.read_bytes()
+          nl = b'\r\n' if b'\r\n' in data else b'\n'
+
+          marker = (b'\tpublic String datos_grafica(HttpServletRequest request, HttpServletResponse response, Usuario usuario) {' + nl)
+          resolver = (
+              b'\tstatic boolean resolverHistoricoGrafica(HttpServletRequest request) {' + nl +
+              b'\t\tString historico = request.getParameter("historico");' + nl +
+              b'\t\tif (Util.nnvl(historico) != null) {' + nl +
+              b'\t\t\treturn Util.stringToBoolean(historico);' + nl +
+              b'\t\t}' + nl +
+              b'\t\treturn Util.getInt(request.getSession(), "historico") > 0;' + nl +
+              b'\t}' + nl + nl
+          )
+          if b'resolverHistoricoGrafica' not in data:
+              if data.count(marker) != 1:
+                  raise SystemExit('Expected datos_grafica marker exactly once')
+              data = data.replace(marker, resolver + marker, 1)
+
+          old = b'\t\tboolean historico = Util.getInt(request.getSession(), "historico") > 0;' + nl
+          new = b'\t\tboolean historico = resolverHistoricoGrafica(request);' + nl
+          if old in data:
+              if data.count(old) != 3:
+                  # There are other legitimate session-based uses in this servlet; replace only inside datos_grafica below.
+                  pass
+              start = data.index(marker)
+              pos = data.find(old, start)
+              if pos < 0:
+                  raise SystemExit('Missing datos_grafica historical-session line')
+              data = data[:pos] + new + data[pos + len(old):]
+          elif new not in data:
+              raise SystemExit('Historical graph routing line not found')
+          servlet.write_bytes(data)
+
+          tag = Path('sokker/WebContent/WEB-INF/tags/jugadores.tag')
+          t = tag.read_bytes()
+          old_tag = b'onclick="grafica_ajax($(this), \'talento\', ${j.pid});"'
+          new_tag = b'onclick="grafica_ajax($(this), \'talento\', ${j.pid}, ${sessionScope.historico});"'
+          if old_tag in t:
+              if t.count(old_tag) != 1:
+                  raise SystemExit('Expected juvenile talent graph call exactly once')
+              t = t.replace(old_tag, new_tag, 1)
+          elif new_tag not in t:
+              raise SystemExit('Juvenile talent graph call not found')
+          tag.write_bytes(t)
+          PY
+
+      - name: Commit patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- sokker/src/com/formulamanager/sokker/servlets/Servlet.java sokker/WebContent/WEB-INF/tags/jugadores.tag; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sokker/src/com/formulamanager/sokker/servlets/Servlet.java sokker/WebContent/WEB-INF/tags/jugadores.tag
+          git commit -m 'fix: restore historical graph routing'
+          git push origin HEAD:fix/historical-graph-routing
