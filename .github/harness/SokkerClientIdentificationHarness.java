@@ -30,6 +30,11 @@ public final class SokkerClientIdentificationHarness {
         requireUtilAndSokkerPost("sokker/WebContent/jsp/sete/sete.jsp", "SETE");
         requireUtilOnly("sokker/WebContent/jsp/sete/oldsete.jsp", "legacy SETE");
 
+        String assistantMain = read(Paths.get("sokker/WebContent/jsp/asistente/asistente.jsp"));
+        forbid(assistantMain, "actualizacion_automatica", "assistant main page must not render the retired automatic update option");
+        forbid(assistantMain, "menu.automatic_update", "assistant main page must not render the retired automatic update label");
+        forbid(assistantMain, "config.info_automatic_update", "assistant main page must not render the retired automatic update help");
+
         String seteJs = read(Paths.get("sokker/WebContent/js/sete.js.jsp"));
         require(seteJs, "sokkerPost(", "legacy SETE browser login must use sokkerPost");
         forbid(seteJs, "$.post('https://sokker.org", "legacy SETE must not call $.post directly for Sokker");
