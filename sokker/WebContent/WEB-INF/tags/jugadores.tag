@@ -52,14 +52,14 @@
 				<c:if test="${not empty sessionScope.usuario}">
 					<td class="noentr ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><fmt:message key="skills.value" /><span class="span_ordenar" style="display: inline;">▾</span></td>
 					<td class="noentr ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><fmt:message key="skills.form" /><span class="span_ordenar"></span></td>
-					<td class="uppercase ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.stamina" /></tags:string><span class="span_ordenar"></span></td>
-					<td class="uppercase ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.pace" /></tags:string><span class="span_ordenar"></span></td>
-					<td class="uppercase ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.technique" /></tags:string><span class="span_ordenar"></span></td>
-					<td class="uppercase ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.passing" /></tags:string><span class="span_ordenar"></span></td>
-					<td class="uppercase ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.keeper" /></tags:string><span class="span_ordenar"></span></td>
-					<td class="uppercase ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.defender" /></tags:string><span class="span_ordenar"></span></td>
-					<td class="uppercase ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.playmaker" /></tags:string><span class="span_ordenar"></span></td>
-					<td class="uppercase ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.striker" /></tags:string><span class="span_ordenar"></span></td>
+					<td class="ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.stamina_short" /></tags:string><span class="span_ordenar"></span></td>
+					<td class="ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.pace_short" /></tags:string><span class="span_ordenar"></span></td>
+					<td class="ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.technique_short" /></tags:string><span class="span_ordenar"></span></td>
+					<td class="ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.passing_short" /></tags:string><span class="span_ordenar"></span></td>
+					<td class="ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.keeper_short" /></tags:string><span class="span_ordenar"></span></td>
+					<td class="ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.defender_short" /></tags:string><span class="span_ordenar"></span></td>
+					<td class="ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.playmaker_short" /></tags:string><span class="span_ordenar"></span></td>
+					<td class="ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.striker_short" /></tags:string><span class="span_ordenar"></span></td>
 					<td class="uppercase ordenar noentr nont" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.talent" /></tags:string><span class="span_ordenar"></span></td>
 					<c:if test="${sessionScope.usuario.mostrar_salario}">
 						<td class="noentr ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><fmt:message key="skills.wage" /><span class="span_ordenar"></span></td>
@@ -68,10 +68,10 @@
 						<td class="noentr ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.experience" /></tags:string><span class="span_ordenar"></span></td>
 					</c:if>
 					<c:if test="${sessionScope.usuario.mostrar_disciplina_tactica}">
-						<td class="noentr ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.tactical_discipline" /></tags:string><span class="span_ordenar"></span></td>
+						<td class="noentr ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.tactical_discipline_short" /></tags:string><span class="span_ordenar"></span></td>
 					</c:if>
 					<c:if test="${sessionScope.usuario.mostrar_trabajo_en_equipo}">
-						<td class="noentr ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.team_work" /></tags:string><span class="span_ordenar"></span></td>
+						<td class="noentr ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><tags:string begin_index="0" end_index="3"><fmt:message key="skills.team_work_short" /></tags:string><span class="span_ordenar"></span></td>
 					</c:if>
 					<c:if test="${sessionScope.usuario.mostrar_altura}">
 						<td class="noentr ordenar" onclick="ordenar_click($(this), '${demarcacion}')"><fmt:message key="skills.height" /><span class="span_ordenar"></span></td>
