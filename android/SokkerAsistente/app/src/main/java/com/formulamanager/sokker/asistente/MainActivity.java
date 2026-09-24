@@ -17,6 +17,7 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import java.io.ByteArrayInputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -128,6 +129,18 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 final String method = request.getMethod();
+                final Map<String, String> requestHeaders = request.getRequestHeaders();
+                if (SokkerProxy.isCorsPreflight(method, url, requestHeaders)) {
+                    return new WebResourceResponse(
+                            "text/plain",
+                            "UTF-8",
+                            204,
+                            "No Content",
+                            SokkerProxy.buildCorsPreflightResponseHeaders(requestHeaders),
+                            new ByteArrayInputStream(new byte[0])
+                    );
+                }
+
                 String ext = MimeTypeMap.getFileExtensionFromUrl(url);
                 String mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
 
@@ -135,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
                     HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
                     conn.setRequestMethod(method);
                     for (Map.Entry<String, String> header :
-                            SokkerProxy.buildForwardHeaders(request.getRequestHeaders()).entrySet()) {
+                            SokkerProxy.buildForwardHeaders(requestHeaders).entrySet()) {
                         conn.setRequestProperty(header.getKey(), header.getValue());
                     }
                     conn.setDoInput(true);
