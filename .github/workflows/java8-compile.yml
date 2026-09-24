@@ -89,7 +89,8 @@ jobs:
             .github/harness/NtBotIsolationHarness.java \
             .github/harness/NtSkillMergeHarness.java \
             .github/harness/SokkerClientIdentificationHarness.java \
-            .github/harness/NtdbSendingDisabledHarness.java
+            .github/harness/NtdbSendingDisabledHarness.java \
+            .github/harness/TotalSalaryHarness.java
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" PersistenceRoundTrip
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" com.formulamanager.sokker.bo.AccountDeletionHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" com.formulamanager.sokker.acciones.asistente.CredentialHygieneHarness
@@ -112,6 +113,7 @@ jobs:
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" NtSkillMergeHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" SokkerClientIdentificationHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" NtdbSendingDisabledHarness
+          java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TotalSalaryHarness
 
       - name: Verify team ID classification uses shared threshold
         shell: bash
