@@ -18,6 +18,7 @@ import com.formulamanager.sokker.entity.Usuario;
 public class LoginComo extends SERVLET_ASISTENTE {
     private static final long serialVersionUID = 1L;
     public static final String ADMIN_IMPERSONATED_LOGIN = "admin_impersonated_login";
+    private static final String DELETE_REVIEW_DESTINATION = "eliminar_cuenta_admin";
 
     public LoginComo() {
         super();
@@ -25,6 +26,7 @@ public class LoginComo extends SERVLET_ASISTENTE {
 
     protected void execute(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String error = "";
+        String redirect = request.getContextPath() + "/asistente";
 
         if (admin(request)) {
             boolean reset_intentos = Util.getBoolean(request, "reset_intentos");
@@ -39,13 +41,18 @@ public class LoginComo extends SERVLET_ASISTENTE {
                     usuario.setIntentos_fallidos(0);
                     UsuarioBO.grabar_usuario(usuario);
                 }
+
+                if (DELETE_REVIEW_DESTINATION.equals(request.getParameter("destino"))) {
+                    redirect = request.getContextPath() + "/asistente/eliminar_cuenta_admin?usuario="
+                            + URLEncoder.encode(usuario.getLogin(), "UTF-8");
+                }
             } else {
                 request.getSession().removeAttribute(ADMIN_IMPERSONATED_LOGIN);
                 error = "?mensaje=" + URLEncoder.encode("Usuario incorrecto", "UTF-8");
             }
         }
 
-        response.sendRedirect(request.getContextPath() + "/asistente" + error);
+        response.sendRedirect(redirect + error);
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
