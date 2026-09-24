@@ -20,31 +20,56 @@
 
 <%!
     /*
-     * Reparación puntual para los datos creados alrededor del cambio de temporada de septiembre de 2026.
-     * No forma parte de la lógica normal de actualización y debe eliminarse después de ejecutarla.
+     * Reparación puntual, manual y de una sola ejecución para el cambio de
+     * temporada de septiembre de 2026. Toda la implementación vive en este
+     * JSP para poder retirarla del servidor después de ejecutarla.
      *
-     * Entrenamientos anteriores al cumpleaños: 1197..1208
-     * Semana del cumpleaños:                1209
-     * Temporada nueva:                      1210..1222
+     * Referencia de edad actual:
+     *   1210 si el equipo ya se actualizó esta semana.
+     *   1209 si todavía no se ha actualizado. En este caso se captura primero
+     *   su edad como referencia y después 1209 también se corrige como jornada
+     *   13 de la temporada anterior.
+     *
+     * Único cambio permitido:
+     *   snapshots 1197..1209 -> edad actual - 1.
      */
-    private static final int PRE_BIRTHDAY_TRAINING_START_REPAIR = 1197;
-    private static final int LAST_PRE_BIRTHDAY_TRAINING_REPAIR = 1208;
-    private static final int BIRTHDAY_WEEK_REPAIR = 1209;
-    private static final int CURRENT_SEASON_END_REPAIR = 1222;
     private static final int MIN_CLUB_TID_REPAIR = 801;
-    private static final int JORNADA_NUEVO_ENTRENO_REPAIR = 993;
-
+    private static final int NEW_TRAINING_FORMAT_WEEK_REPAIR = 993;
     private static final Pattern TEAM_FILE_REPAIR = Pattern.compile("[0-9]+\\.properties");
     private static final Pattern PLAYER_LINE_REPAIR = Pattern.compile("(?m)^([0-9]+)([=:])(.*?)(\\r?)$");
 
-    private RepairSummary repairDirectory(File directory) throws IOException {
-        if (!directory.isDirectory()) {
-            throw new IOException("No existe el directorio de datos: " + directory.getAbsolutePath());
+    private Integer expectedHistoricalAge(int latestWeek, int latestAge, int snapshotWeek) {
+        if (latestWeek != 1209 && latestWeek != 1210) {
+            return null;
         }
 
-        File[] files = directory.listFiles(file -> file.isFile()
-                && TEAM_FILE_REPAIR.matcher(file.getName()).matches()
-                && clubTid(file.getName()) >= MIN_CLUB_TID_REPAIR);
+        // Si 1209 es el último snapshot, su edad se usa como referencia pero
+        // el propio snapshot sigue siendo la jornada 13 de la temporada anterior.
+        if (snapshotWeek > latestWeek) {
+            return null;
+        }
+
+        if (snapshotWeek < 1197 || snapshotWeek > 1209) {
+            return null;
+        }
+
+        return Integer.valueOf(latestAge - 1);
+    }
+
+    private RepairSummary repairDirectory(File directory) throws IOException {
+        if (directory == null || !directory.isDirectory()) {
+            throw new IOException("No existe el directorio de datos: "
+                    + (directory == null ? "null" : directory.getAbsolutePath()));
+        }
+
+        File[] files = directory.listFiles(new java.io.FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                return file.isFile()
+                        && TEAM_FILE_REPAIR.matcher(file.getName()).matches()
+                        && clubTid(file.getName()) >= MIN_CLUB_TID_REPAIR;
+            }
+        });
         if (files == null) {
             throw new IOException("No se puede listar el directorio de datos: " + directory.getAbsolutePath());
         }
@@ -58,6 +83,7 @@
 
         RepairSummary summary = new RepairSummary();
         for (File file : files) {
+            summary.scannedFiles++;
             FileRepairResult result = repairFile(file.toPath());
             summary.modifiedFiles += result.modified ? 1 : 0;
             summary.modifiedPlayers += result.modifiedPlayers;
@@ -81,7 +107,6 @@
         }
         validateProperties(repaired.content, path);
 
-        // No pisamos una actualización del usuario que haya llegado mientras analizábamos el fichero.
         if (!Arrays.equals(originalBytes, Files.readAllBytes(path))) {
             return new FileRepairResult(false, true, 0, 0);
         }
@@ -99,7 +124,6 @@
                 throw new IOException("Error verificando el fichero temporal de " + path.getFileName());
             }
 
-            // Segunda comprobación justo antes del replace atómico.
             if (!Arrays.equals(originalBytes, Files.readAllBytes(path))) {
                 return new FileRepairResult(false, true, 0, 0);
             }
@@ -129,18 +153,17 @@
             }
 
             ParsedPlayer parsed = parsePlayer(unescapePropertyValue(rawValue));
-            if (parsed == null) {
+            if (parsed == null || parsed.snapshots.size() < 2) {
                 continue;
             }
 
-            List<Integer> ageIndices = findAgeIndicesToRepair(parsed);
-            if (!ageIndices.isEmpty()) {
+            List<AgeReplacement> replacements = findAgeReplacements(parsed);
+            if (!replacements.isEmpty()) {
                 repairs.add(new PlayerRepair(
                         matcher.start(3),
                         matcher.end(3),
                         rawValue,
-                        ageIndices,
-                        parsed.snapshots.get(0).edad - 1));
+                        replacements));
             }
         }
 
@@ -156,11 +179,11 @@
             PlayerRepair repair = repairs.get(i);
             String[] rawTokens = repair.rawValue.split(",", -1);
 
-            for (Integer ageIndex : repair.ageIndices) {
-                if (ageIndex < 0 || ageIndex >= rawTokens.length) {
+            for (AgeReplacement replacement : repair.replacements) {
+                if (replacement.ageIndex < 0 || replacement.ageIndex >= rawTokens.length) {
                     throw new IOException("Formato de jugador inconsistente durante la reparación");
                 }
-                rawTokens[ageIndex] = Integer.toString(repair.targetAge);
+                rawTokens[replacement.ageIndex] = Integer.toString(replacement.age);
                 modifiedSnapshots++;
             }
 
@@ -171,47 +194,20 @@
         return new RepairResult(fixed.toString(), modifiedPlayers, modifiedSnapshots);
     }
 
-    private List<Integer> findAgeIndicesToRepair(ParsedPlayer parsed) {
-        List<Integer> result = new ArrayList<Integer>();
-        if (parsed.snapshots.size() < 2) {
-            return result;
-        }
-
+    private List<AgeReplacement> findAgeReplacements(ParsedPlayer parsed) {
+        List<AgeReplacement> result = new ArrayList<AgeReplacement>();
         Snapshot latest = parsed.snapshots.get(0);
-
-        // En la jornada 1209 Sokker ya muestra la edad nueva, pero el último entrenamiento
-        // completado fue el 1208 y pertenece a la edad anterior. Aceptamos también jornadas
-        // posteriores de esta misma transición por si la reparación se ejecuta unos días más tarde.
-        if (latest.jornada < BIRTHDAY_WEEK_REPAIR || latest.jornada > CURRENT_SEASON_END_REPAIR) {
-            return result;
-        }
-
-        int currentAge = latest.edad;
-        int expectedPreviousAge = currentAge - 1;
-        int previousJornada = Integer.MAX_VALUE;
+        int previousWeek = Integer.MAX_VALUE;
 
         for (Snapshot snapshot : parsed.snapshots) {
-            if (snapshot.jornada >= previousJornada) {
-                // Cadena dañada o en un formato inesperado: no tocamos este jugador.
-                return new ArrayList<Integer>();
+            if (snapshot.week >= previousWeek) {
+                return new ArrayList<AgeReplacement>();
             }
-            previousJornada = snapshot.jornada;
+            previousWeek = snapshot.week;
 
-            if (snapshot == latest || snapshot.jornada > LAST_PRE_BIRTHDAY_TRAINING_REPAIR) {
-                // 1209 ya pertenece a la edad actual; no es un entrenamiento pre-cumpleaños.
-                continue;
-            }
-
-            if (snapshot.jornada < PRE_BIRTHDAY_TRAINING_START_REPAIR) {
-                break;
-            }
-
-            if (snapshot.edad == currentAge) {
-                // Contaminación de la versión anterior: el entrenamiento heredó la edad actual.
-                result.add(snapshot.edadIndex);
-            } else if (snapshot.edad != expectedPreviousAge) {
-                // Un valor distinto de edad actual / edad anterior es ambiguo. No arriesgamos datos.
-                return new ArrayList<Integer>();
+            Integer expectedAge = expectedHistoricalAge(latest.week, latest.age, snapshot.week);
+            if (expectedAge != null && snapshot.age != expectedAge.intValue()) {
+                result.add(new AgeReplacement(snapshot.ageIndex, expectedAge.intValue()));
             }
         }
 
@@ -221,31 +217,31 @@
     private ParsedPlayer parsePlayer(String value) {
         try {
             String[] tokens = value.split(",", -1);
-            int index = 11; // nombre, tid, demarcación, país, fecha, actualizado, tarjetas, nt, lesión, venta, notas
+            int index = 11;
             if (index >= tokens.length) {
                 return null;
             }
 
             if (startsWithMinus(tokens, index)) {
-                index += 4; // salario, altura, peso, IMC
+                index += 4;
                 if (index >= tokens.length) {
                     return null;
                 }
 
                 if (startsWithMinus(tokens, index)) {
-                    index += 2; // talento, destacar
+                    index += 2;
                     if (index >= tokens.length) {
                         return null;
                     }
                 }
 
                 if (tokens[index].startsWith("#")) {
-                    index++; // color
+                    index++;
                     if (startsWithMinus(tokens, index)) {
-                        index++; // usuario2
+                        index++;
                     }
                     if (startsWithMinus(tokens, index)) {
-                        index++; // bot
+                        index++;
                     }
                 }
             }
@@ -256,11 +252,11 @@
                     return null;
                 }
 
-                int jornada = Integer.parseInt(tokens[index]);
-                int edad = Integer.parseInt(tokens[index + 1]);
-                snapshots.add(new Snapshot(jornada, edad, index + 1));
+                int week = Integer.parseInt(tokens[index]);
+                int age = Integer.parseInt(tokens[index + 1]);
+                snapshots.add(new Snapshot(week, age, index + 1));
 
-                int next = afterSnapshot(tokens, index, jornada);
+                int next = afterSnapshot(tokens, index, week);
                 if (next <= index) {
                     return null;
                 }
@@ -273,20 +269,18 @@
         }
     }
 
-    private int afterSnapshot(String[] tokens, int jornadaIndex, int jornada) {
-        int index = jornadaIndex + 2;
+    private int afterSnapshot(String[] tokens, int weekIndex, int week) {
+        int index = weekIndex + 2;
 
-        // valor + 8 habilidades
         if (index + 9 > tokens.length) {
             return -1;
         }
         index += 9;
 
         if (startsWithMinus(tokens, index)) {
-            index++; // lesión
+            index++;
         }
 
-        // forma, demarcación de entrenamiento, minutos
         if (index + 3 > tokens.length) {
             return -1;
         }
@@ -296,25 +290,17 @@
             if (index + 3 > tokens.length) {
                 return -1;
             }
-            index += 3; // experiencia, disciplina táctica, trabajo en equipo
+            index += 3;
         }
 
-        if (jornada >= JORNADA_NUEVO_ENTRENO_REPAIR) {
+        if (week >= NEW_TRAINING_FORMAT_WEEK_REPAIR) {
             if (index >= tokens.length) {
                 return -1;
             }
-            index++; // entrenamiento avanzado
+            index++;
         }
 
         return index;
-    }
-
-    private int clubTid(String fileName) {
-        try {
-            return Integer.parseInt(fileName.substring(0, fileName.length() - ".properties".length()));
-        } catch (RuntimeException e) {
-            return -1;
-        }
     }
 
     private boolean startsWithMinus(String[] tokens, int index) {
@@ -343,6 +329,14 @@
         }
     }
 
+    private int clubTid(String fileName) {
+        try {
+            return Integer.parseInt(fileName.substring(0, fileName.length() - ".properties".length()));
+        } catch (RuntimeException e) {
+            return -1;
+        }
+    }
+
     private String join(String[] tokens) {
         StringBuilder result = new StringBuilder();
         for (int i = 0; i < tokens.length; i++) {
@@ -354,49 +348,61 @@
         return result.toString();
     }
 
-    private String snapshot(int jornada, int edad) {
-        return jornada + "," + edad + ",100000,5,5,5,5,5,5,5,5,-0,10,DEF,100.0,-1,1,1,true";
+    private String snapshot(int week, int age) {
+        return week + "," + age + ",100000,5,5,5,5,5,5,5,5,-0,10,DEF,100.0,-1,1,1,true";
     }
 
     private String player(int pid, String snapshots) {
-        return pid + "=Jugador " + pid + ",1000,DEF,1,20/09/2026 10\\:00,true,0,0,0,,,-1000,180,750,2400,-,false,\\#,-,-false," + snapshots + ",*\n";
+        return pid + "=Jugador " + pid
+                + ",1000,DEF,1,20/09/2026 10\\:00,true,0,0,0,,,-1000,180,750,2400,-,false,\\#,-,-false,"
+                + snapshots + ",*\n";
     }
 
     private void selfTestRepair() throws Exception {
-        String elioBirthdayWeek = player(10,
-                snapshot(1209, 19) + "," + snapshot(1208, 19) + "," + snapshot(1207, 19));
-        String elio = player(1,
-                snapshot(1210, 19) + "," + snapshot(1209, 19) + "," + snapshot(1208, 19));
-        String alreadyCorrect = player(2,
-                snapshot(1210, 20) + "," + snapshot(1209, 19) + "," + snapshot(1208, 19));
-        String mixed = player(3,
-                snapshot(1211, 24) + "," + snapshot(1210, 24) + "," + snapshot(1209, 24) + "," + snapshot(1208, 24) + "," + snapshot(1207, 23));
-        String outsideRepairSeason = player(4,
-                snapshot(1223, 21) + "," + snapshot(1222, 21));
+        String damaged = player(77,
+                snapshot(1210, 25) + ","
+                + snapshot(1209, 23) + ","
+                + snapshot(1208, 25) + ","
+                + snapshot(1197, 24) + ","
+                + snapshot(1196, 23));
+        String notUpdated = player(88,
+                snapshot(1209, 25) + ","
+                + snapshot(1208, 23) + ","
+                + snapshot(1197, 25));
+        String unsupportedReference = player(99,
+                snapshot(1211, 30) + ","
+                + snapshot(1209, 28));
 
-        String content = "# cabecera\n"
-                + "future_key=keep\\:exactly\n"
-                + elioBirthdayWeek
-                + elio
-                + alreadyCorrect
-                + mixed
-                + outsideRepairSeason;
+        String content = "future_key=keep\\:exactly\n"
+                + damaged
+                + notUpdated
+                + unsupportedReference;
 
         RepairResult fixed = repairContent(content);
-        requireRepair(fixed.modifiedPlayers == 3, "Debe reparar también el caso actualizado durante la semana del cumpleaños");
-        requireRepair(fixed.modifiedSnapshots == 4, "Debe reparar las cuatro edades contaminadas");
-        requireRepair(fixed.content.contains(snapshot(1209, 19) + "," + snapshot(1208, 18) + "," + snapshot(1207, 18)),
-                "Debe reparar los entrenamientos previos cuando la edad ya cambió en la jornada 1209");
-        requireRepair(fixed.content.contains(snapshot(1210, 19) + "," + snapshot(1209, 19) + "," + snapshot(1208, 18)),
-                "Debe mantener 1209 con la edad actual y reparar el último entrenamiento completado");
-        requireRepair(fixed.content.contains(snapshot(1211, 24) + "," + snapshot(1210, 24) + "," + snapshot(1209, 24) + "," + snapshot(1208, 23) + "," + snapshot(1207, 23)),
-                "Debe conservar 1209 y reparar solo entrenamientos anteriores al cumpleaños");
-        requireRepair(fixed.content.contains("future_key=keep\\:exactly"), "Debe conservar claves desconocidas");
-        requireRepair(fixed.content.contains(outsideRepairSeason), "No debe tocar temporadas posteriores");
+        requireRepair(fixed.content.contains(snapshot(1210, 25)),
+                "La edad actual de 1210 debe conservarse");
+        requireRepair(fixed.content.contains(snapshot(1209, 24)),
+                "La jornada 13 debe quedar en edad actual - 1 cuando 1210 es la referencia");
+        requireRepair(fixed.content.contains(snapshot(1208, 24)),
+                "Las jornadas anteriores deben quedar en edad actual - 1");
+        requireRepair(fixed.content.contains(snapshot(1197, 24)),
+                "La jornada 1 de la temporada anterior debe quedar en edad actual - 1");
+        requireRepair(fixed.content.contains(snapshot(1196, 23)),
+                "No se debe tocar una temporada más antigua");
+        requireRepair(!fixed.content.contains(snapshot(1209, 25)),
+                "Si el equipo aún no se actualizó, 1209 solo aporta la edad actual antes de ser corregida");
+        requireRepair(fixed.content.contains(snapshot(1209, 24) + "," + snapshot(1208, 24) + "," + snapshot(1197, 24)),
+                "Un equipo sin actualizar debe quedar corregido desde la jornada 13 hasta la 1 en una sola ejecución");
+        requireRepair(fixed.content.contains(unsupportedReference),
+                "No se debe reparar un jugador cuya referencia no sea 1209 o 1210");
+        requireRepair(fixed.content.contains("future_key=keep\\:exactly"),
+                "Las claves desconocidas deben conservarse exactamente");
 
         RepairResult second = repairContent(fixed.content);
-        requireRepair(second.modifiedSnapshots == 0, "La reparación debe ser idempotente");
-        requireRepair(second.content.equals(fixed.content), "Una segunda pasada no debe modificar datos");
+        requireRepair(second.modifiedSnapshots == 0,
+                "Una segunda pasada interna no debe encontrar cambios");
+        requireRepair(second.content.equals(fixed.content),
+                "Una segunda pasada interna debe ser idéntica");
     }
 
     private void requireRepair(boolean condition, String message) {
@@ -416,16 +422,12 @@
                 .replace("'", "&#39;");
     }
 
-    private static final class RepairResult {
-        final String content;
-        final int modifiedPlayers;
-        final int modifiedSnapshots;
-
-        RepairResult(String content, int modifiedPlayers, int modifiedSnapshots) {
-            this.content = content;
-            this.modifiedPlayers = modifiedPlayers;
-            this.modifiedSnapshots = modifiedSnapshots;
-        }
+    private static final class RepairSummary {
+        int scannedFiles;
+        int modifiedFiles;
+        int modifiedPlayers;
+        int modifiedSnapshots;
+        int concurrentSkips;
     }
 
     private static final class FileRepairResult {
@@ -442,26 +444,39 @@
         }
     }
 
-    private static final class RepairSummary {
-        int modifiedFiles;
-        int modifiedPlayers;
-        int modifiedSnapshots;
-        int concurrentSkips;
+    private static final class RepairResult {
+        final String content;
+        final int modifiedPlayers;
+        final int modifiedSnapshots;
+
+        RepairResult(String content, int modifiedPlayers, int modifiedSnapshots) {
+            this.content = content;
+            this.modifiedPlayers = modifiedPlayers;
+            this.modifiedSnapshots = modifiedSnapshots;
+        }
     }
 
     private static final class PlayerRepair {
         final int valueStart;
         final int valueEnd;
         final String rawValue;
-        final List<Integer> ageIndices;
-        final int targetAge;
+        final List<AgeReplacement> replacements;
 
-        PlayerRepair(int valueStart, int valueEnd, String rawValue, List<Integer> ageIndices, int targetAge) {
+        PlayerRepair(int valueStart, int valueEnd, String rawValue, List<AgeReplacement> replacements) {
             this.valueStart = valueStart;
             this.valueEnd = valueEnd;
             this.rawValue = rawValue;
-            this.ageIndices = ageIndices;
-            this.targetAge = targetAge;
+            this.replacements = replacements;
+        }
+    }
+
+    private static final class AgeReplacement {
+        final int ageIndex;
+        final int age;
+
+        AgeReplacement(int ageIndex, int age) {
+            this.ageIndex = ageIndex;
+            this.age = age;
         }
     }
 
@@ -474,14 +489,14 @@
     }
 
     private static final class Snapshot {
-        final int jornada;
-        final int edad;
-        final int edadIndex;
+        final int week;
+        final int age;
+        final int ageIndex;
 
-        Snapshot(int jornada, int edad, int edadIndex) {
-            this.jornada = jornada;
-            this.edad = edad;
-            this.edadIndex = edadIndex;
+        Snapshot(int week, int age, int ageIndex) {
+            this.week = week;
+            this.age = age;
+            this.ageIndex = ageIndex;
         }
     }
 %>
@@ -491,12 +506,17 @@
         response.sendRedirect(request.getContextPath() + "/asistente");
         return;
     }
+    if (session.getAttribute("admin") == null) {
+        response.sendError(HttpServletResponse.SC_FORBIDDEN);
+        return;
+    }
 
+    final String executionMarker = "repairTrainingAges20260924Executed";
+    boolean alreadyExecuted = Boolean.TRUE.equals(application.getAttribute(executionMarker));
     File dataDirectory = new File(SystemUtil.getVar(SystemUtil.PATH));
     String result = null;
     String error = null;
-    String csrf = (String) session.getAttribute("repairTrainingAgesCsrf");
-    boolean alreadyExecuted = Boolean.TRUE.equals(application.getAttribute("repairTrainingAges20260922V2Executed"));
+    String csrf = (String) session.getAttribute("repairTrainingAgesCsrf20260924");
 
     try {
         selfTestRepair();
@@ -510,33 +530,40 @@
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
-        session.removeAttribute("repairTrainingAgesCsrf");
+        session.removeAttribute("repairTrainingAgesCsrf20260924");
 
-        try {
+        synchronized (application) {
+            alreadyExecuted = Boolean.TRUE.equals(application.getAttribute(executionMarker));
             if (alreadyExecuted) {
-                result = "La reparación ya se ejecutó en este arranque del servidor. No se ha modificado nada.";
+                result = "Esta reparación ya se ejecutó en este arranque del servidor. No se ha modificado nada.";
             } else {
-                RepairSummary summary = repairDirectory(dataDirectory);
-                if (summary.concurrentSkips == 0 && summary.modifiedSnapshots > 0) {
-                    application.setAttribute("repairTrainingAges20260922V2Executed", Boolean.TRUE);
-                    alreadyExecuted = true;
-                    result = "Reparación terminada. Ficheros modificados: " + summary.modifiedFiles
-                            + ", jugadores corregidos: " + summary.modifiedPlayers
-                            + ", edades de entrenamientos corregidas: " + summary.modifiedSnapshots + ".";
-                } else if (summary.concurrentSkips == 0) {
-                    result = "No se encontró ningún entrenamiento que corregir. Esta versión no se marca como ejecutada.";
-                } else {
-                    result = "Se corrigieron " + summary.modifiedSnapshots + " edades, pero "
-                            + summary.concurrentSkips + " fichero(s) cambiaron durante la reparación. "
-                            + "Vuelve a ejecutar el JSP para esos ficheros.";
+                try {
+                    RepairSummary summary = repairDirectory(dataDirectory);
+                    if (summary.concurrentSkips == 0) {
+                        application.setAttribute("repairTrainingAges20260924Executed", Boolean.TRUE);
+                        alreadyExecuted = true;
+                        result = "Reparación terminada. Ficheros revisados: " + summary.scannedFiles
+                                + ", ficheros modificados: " + summary.modifiedFiles
+                                + ", jugadores corregidos: " + summary.modifiedPlayers
+                                + ", edades corregidas: " + summary.modifiedSnapshots + ".";
+                    } else {
+                        error = "La reparación no se marca como ejecutada porque " + summary.concurrentSkips
+                                + " fichero(s) cambiaron mientras se procesaban. Los ficheros concurrentes se dejaron intactos."
+                                + " Repite la ejecución cuando no haya actualizaciones en curso.";
+                    }
+                } catch (Throwable e) {
+                    error = e.getClass().getName() + ": " + e.getMessage();
                 }
             }
-        } catch (Throwable e) {
-            error = e.getClass().getName() + ": " + e.getMessage();
         }
-    } else if (error == null && !alreadyExecuted) {
+    }
+
+    if (error == null && !alreadyExecuted && !"POST".equalsIgnoreCase(request.getMethod())) {
         csrf = UUID.randomUUID().toString();
-        session.setAttribute("repairTrainingAgesCsrf", csrf);
+        session.setAttribute("repairTrainingAgesCsrf20260924", csrf);
+    } else if (error != null && !alreadyExecuted) {
+        csrf = UUID.randomUUID().toString();
+        session.setAttribute("repairTrainingAgesCsrf20260924", csrf);
     }
 %>
 <!DOCTYPE html>
@@ -551,24 +578,19 @@
     <pre><%= escapeHtmlRepair(error) %></pre>
 <% } else if (result != null) { %>
     <h2><%= escapeHtmlRepair(result) %></h2>
-    <% if (alreadyExecuted) { %>
-        <p>Ya puedes eliminar este JSP del despliegue.</p>
-    <% } else { %>
-        <p>No elimines todavía este JSP: no se modificó ningún entrenamiento.</p>
-    <% } %>
-<% } else if (alreadyExecuted) { %>
-    <h2>La reparación ya fue ejecutada en este arranque del servidor.</h2>
-    <p>No se crean copias, marcas ni otros ficheros auxiliares.</p>
-    <p>Ya puedes eliminar este JSP del despliegue.</p>
+<% } %>
+
+<% if (alreadyExecuted) { %>
+    <p>La reparación ya ha sido ejecutada. Elimina este JSP del despliegue.</p>
 <% } else { %>
-    <h2>Reparar edades de los últimos entrenamientos</h2>
-    <p>Corrige jugadores de clubes actualizados desde la jornada 1209 durante este cambio de temporada.</p>
-    <p>La jornada 1209 conserva la edad actual. Solo los entrenamientos 1197-1208 que heredaron por error esa edad se cambian a edad actual - 1.</p>
-    <p>No toca selecciones, históricos archivados, otras temporadas ni campos distintos de la edad.</p>
-    <p>No crea copias de seguridad ni ficheros auxiliares.</p>
+    <h2>Reparar edades de la temporada anterior</h2>
+    <p>Herramienta puntual de administración. Debe ejecutarse manualmente una sola vez y retirarse después.</p>
+    <p>Toma como edad actual la del último snapshot: jornada 1210 si el equipo ya se actualizó, o jornada 1209 si todavía no lo ha hecho. En este último caso captura primero esa edad y después corrige también 1209.</p>
+    <p>Solo corrige la temporada anterior, jornadas 13 a 1 (1209-1197), para que tengan exactamente edad actual - 1. No toca otras temporadas ni otros campos.</p>
+    <p>No utiliza backups como referencia ni crea copias auxiliares.</p>
     <form method="post">
         <input type="hidden" name="csrf" value="<%= escapeHtmlRepair(csrf) %>">
-        <button type="submit">Ejecutar reparación</button>
+        <button type="submit">Ejecutar reparación una vez</button>
     </form>
 <% } %>
 </body>
