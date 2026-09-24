@@ -42,6 +42,10 @@ public final class TrainingAgeSeasonRepairHarness {
 
         require(jsp.contains("latestWeek != 1209 && latestWeek != 1210"),
                 "only week 1210 or, for not-yet-updated teams, week 1209 may provide current age");
+        require(jsp.contains("if (snapshotWeek > latestWeek)"),
+                "when 1209 is the latest stored row, its age must be captured as reference and week 13 itself must still be repaired");
+        require(!jsp.contains("if (snapshotWeek >= latestWeek)"),
+                "week 13 must not be excluded merely because it supplied the current-age reference");
         require(jsp.contains("snapshotWeek < 1197 || snapshotWeek > 1209"),
                 "the correction must be limited to the immediately previous 13-week season");
         require(jsp.contains("return Integer.valueOf(latestAge - 1)"),
