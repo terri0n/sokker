@@ -25,11 +25,14 @@ public class TeamIdThresholdHarness {
     }
 
     private static void assertDemoAccountDoesNotSwitchTeams() throws Exception {
-        String jsp = read("sokker/WebContent/jsp/asistente/asistente.jsp");
+        String config = read("sokker/WebContent/jsp/asistente/config.jsp");
         String servlet = read("sokker/src/com/formulamanager/sokker/acciones/asistente/CambiarEquipo.java");
 
-        if (!jsp.contains("sessionScope.usuario.login ne 'demo'")) {
-            throw new AssertionError("Demo account must not expose the team-switch link");
+        if (!config.contains("sessionScope.usuario.login eq 'demo'")) {
+            throw new AssertionError("Demo account must hide team-switch controls");
+        }
+        if (!config.contains("a[href$=\"/asistente/cambiar_equipo\"]")) {
+            throw new AssertionError("Demo account must hide the direct team-switch link");
         }
         if (!servlet.contains("\"demo\".equalsIgnoreCase(usuario.getLogin())")) {
             throw new AssertionError("Demo account must be protected server-side from team switching");
