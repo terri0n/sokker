@@ -26,7 +26,16 @@ import com.formulamanager.sokker.entity.Usuario;
 @WebServlet("/asistente/login")
 public class Login extends SERVLET_ASISTENTE {
 	private static final long serialVersionUID = 1L;
-       
+
+	static Cookie expiredLegacyPasswordCookie(String contextPath) {
+		Cookie cookie = new Cookie("apassword", "");
+		cookie.setMaxAge(0);
+		cookie.setHttpOnly(true);
+		cookie.setSecure(true);
+		cookie.setPath((contextPath == null ? "" : contextPath) + "/asistente");
+		return cookie;
+	}
+
     /**
      * @see HttpServlet#HttpServlet()
      */
@@ -35,13 +44,17 @@ public class Login extends SERVLET_ASISTENTE {
     }
 
 	/**
-	 * @throws LoginExceptionExt 
+	 * @throws LoginExceptionExt
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void execute(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, LoginExceptionExt {
 		String alogin = request.getParameter("alogin");
 		String apassword = request.getParameter("apassword");
 		String error = "";
+
+		// El navegador pudo conservar esta cookie de versiones antiguas. Se elimina
+		// en cada intento de login, acertado o no, y nunca se vuelve a escribir.
+		response.addCookie(expiredLegacyPasswordCookie(request.getContextPath()));
 
 		//--------------
 		// COMPROBAR IP
@@ -58,21 +71,19 @@ public class Login extends SERVLET_ASISTENTE {
 			// COMPROBAR LOGIN
 			//-----------------
 			Usuario usuario = UsuarioBO.leer_usuario(alogin, true);
-	
+
 			if (usuario != null && (usuario.getPassword().equals(Util.getMD5(apassword)))) {
-				// Recordar
-				boolean recordar = Util.nnvl(request.getParameter("recordar")) != null;
+				// Se conserva únicamente el login como comodidad. La contraseña nunca se persiste en cookies.
 				response.addCookie(new Cookie("alogin", URLEncoder.encode(alogin, "UTF-8")));
-				response.addCookie(new Cookie("apassword", recordar ? apassword : null));
-				
+
 				// Admin?
 				request.getSession().setAttribute("usuario", usuario);
 				if (alogin.equalsIgnoreCase(SystemUtil.getVar(SystemUtil.LOGIN))) {
 					setAdmin(true, request);
 				}
-					
+
 _log(request, "");
-	
+
 				// Idioma
 				if (usuario.getLocale() != null) {
 					Config.set(request.getSession(), Config.FMT_LOCALE, new Locale(usuario.getLocale()));
@@ -80,7 +91,7 @@ _log(request, "");
 			} else {
 				if (usuario != null) {
 _log(request, "Contraseña errónea");
-					throw new LoginExceptionExt(Util.getTexto(request.getLocale().getLanguage(), "messages.login_error"), alogin, apassword);
+					throw new LoginExceptionExt(Util.getTexto(request.getLocale().getLanguage(), "messages.login_error"), alogin);
 				}
 				error = "?mensaje=login_error&error=1";
 			}
@@ -95,5 +106,4 @@ _log(request, "Contraseña errónea");
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		//doPost(request, response);
 	}
-
 }
