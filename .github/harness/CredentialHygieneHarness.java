@@ -12,6 +12,7 @@ public final class CredentialHygieneHarness {
     public static void main(String[] args) throws Exception {
         legacyPasswordCookieIsExpiredSafely();
         sourceContainsNoCleartextPasswordRetention();
+        rememberPasswordIsExplicitAndBrowserLocal();
     }
 
     private static void legacyPasswordCookieIsExpiredSafely() {
@@ -46,6 +47,22 @@ public final class CredentialHygieneHarness {
                 "Navegador still passes the bad Sokker password into LoginExceptionExt");
         forbid(browser, "new LoginExceptionExt(\"Error when logging in to Sokker: user has no team\", login, password)",
                 "Navegador still passes the Sokker password into LoginExceptionExt for no-team errors");
+    }
+
+    private static void rememberPasswordIsExplicitAndBrowserLocal() throws Exception {
+        String loginJsp = read("sokker/WebContent/jsp/asistente/login.jsp");
+        String util = read("sokker/WebContent/js/util.js");
+
+        require(loginJsp.contains("name=\"recordar\""), "Remember-password opt-in checkbox is missing");
+        require(loginJsp.contains("login.remember_password"), "Remember-password label is not localized");
+        require(loginJsp.contains("autocomplete=\"username\""), "Login field does not expose username autocomplete semantics");
+        require(loginJsp.contains("autocomplete=\"current-password\""), "Password field does not expose current-password autocomplete semantics");
+
+        require(util.contains("initAssistantRememberPassword"), "Browser-local remember-password initialization is missing");
+        require(util.contains("localStorage.setItem"), "Remembered password is not stored in browser-local storage");
+        require(util.contains("localStorage.removeItem"), "Unchecking remember-password does not clear browser-local storage");
+        require(util.contains("document.cookie"), "Legacy password-cookie migration is missing");
+        require(util.contains("apassword"), "Legacy apassword cookie is not handled during migration");
     }
 
     private static String read(String path) throws Exception {
