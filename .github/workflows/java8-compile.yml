@@ -75,6 +75,7 @@ jobs:
             .github/harness/PersistenceRoundTrip.java \
             .github/harness/AccountDeletionHarness.java \
             .github/harness/CredentialHygieneHarness.java \
+            .github/harness/AccountDeletionUiHarness.java \
             .github/harness/TrainerMappingHarness.java \
             .github/harness/TrainingMatchMappingHarness.java \
             .github/harness/TrainingAgeBoundaryHarness.java \
@@ -93,6 +94,7 @@ jobs:
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" PersistenceRoundTrip
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" com.formulamanager.sokker.bo.AccountDeletionHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" com.formulamanager.sokker.acciones.asistente.CredentialHygieneHarness
+          java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" AccountDeletionUiHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainerMappingHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainingMatchMappingHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainingAgeBoundaryHarness
