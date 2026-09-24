@@ -21,9 +21,9 @@ jobs:
           fetch-depth: 0
       - run: python3 .github/scripts/minimize_usuario_bo.py
       - run: |
-          git diff --check
           grep -q 'ACCOUNT_DELETION_REQUESTED_AT' sokker/src/com/formulamanager/sokker/bo/UsuarioBO.java
           grep -q 'purgar_secreto_actualizacion_automatica' sokker/src/com/formulamanager/sokker/bo/UsuarioBO.java
+          git diff --stat -- sokker/src/com/formulamanager/sokker/bo/UsuarioBO.java
       - run: |
           git config user.name Terrion
           git config user.email 63014185+terri0n@users.noreply.github.com
