@@ -1,9 +1,12 @@
 import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import com.formulamanager.sokker.bo.AsistenteBO;
+import com.formulamanager.sokker.bo.EquipoBO.TIPO_ENTRENAMIENTO;
 import com.formulamanager.sokker.dao.AsistenteDAO;
 import com.formulamanager.sokker.entity.Jugador;
+import com.formulamanager.sokker.entity.Jugador.Entrenamiento;
 import com.formulamanager.sokker.entity.Usuario;
 
 public final class NtSkillMergeHarness {
@@ -12,6 +15,7 @@ public final class NtSkillMergeHarness {
     public static void main(String[] args) throws Exception {
         partialNtApiSkillsMustNotOverwriteKnownPrivateSkills();
         completeManualSkillsMustStillReplaceKnownSkills();
+        nullSkillSnapshotMustNotDiscardPreviousTrainingBlock();
     }
 
     private static void partialNtApiSkillsMustNotOverwriteKnownPrivateSkills() throws IOException {
@@ -59,6 +63,27 @@ public final class NtSkillMergeHarness {
                 "A complete manual skill snapshot was incorrectly ignored");
         require(Integer.valueOf(10).equals(combinado.getAnotacion()),
                 "A complete manual skill snapshot did not replace the old skills");
+    }
+
+    private static void nullSkillSnapshotMustNotDiscardPreviousTrainingBlock() {
+        Jugador actual = trainingSnapshot(40029074, 1200, 19, Integer.valueOf(10));
+        Jugador anterior = trainingSnapshot(40029074, 1199, 18, Integer.valueOf(10));
+        Jugador marcadorSinHabilidades = trainingSnapshot(40029074, 1198, 18, null);
+
+        actual.setOriginal(anterior);
+        anterior.setOriginal(marcadorSinHabilidades);
+
+        Entrenamiento bloque = actual.new Entrenamiento(actual.getRapidez().intValue());
+        List<Entrenamiento> entrenamientos = actual.getEntrenamientosTemporada2(TIPO_ENTRENAMIENTO.Rapidez, bloque);
+
+        require(entrenamientos.size() == 1,
+                "A null-skill historical snapshot discarded the accumulated training block");
+        require(entrenamientos.get(0).jornadas.size() == 2,
+                "The preserved training block must contain both valid snapshots before the null marker");
+        require(entrenamientos.get(0).jornadas.get(0).getJornada().intValue() == 1200,
+                "The newest valid snapshot is missing from the preserved training block");
+        require(entrenamientos.get(0).jornadas.get(1).getJornada().intValue() == 1199,
+                "The oldest valid snapshot before the null marker is missing from the training block");
     }
 
     private static LinkedHashMap<String, Object> playerJson(int pid, int age, int value, int tid) {
@@ -124,6 +149,15 @@ public final class NtSkillMergeHarness {
         j.setNt(1);
         j.setLesion(0);
         j.setMinutos(0f);
+        return j;
+    }
+
+    private static Jugador trainingSnapshot(int pid, int jornada, int edad, Integer rapidez) {
+        Jugador j = new Jugador(pid, "Test player", edad, 100000, 30019, null);
+        j.setJornada(jornada);
+        j.setRapidez(rapidez);
+        // Fuerza 0 puntos sin depender de Usuario/entrenadores: la prueba solo valida la cadena histórica.
+        j.setLesion(8);
         return j;
     }
 
