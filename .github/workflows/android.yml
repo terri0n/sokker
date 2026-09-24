@@ -67,6 +67,8 @@ jobs:
           grep -q 'SokkerProxy.isSokkerUrl' "$MAIN"
           grep -q 'SokkerProxy.buildForwardHeaders' "$MAIN"
           grep -q 'SokkerProxy.isLegacyXmlSessionLogin' "$MAIN"
+          grep -q 'SokkerProxy.isCorsPreflight' "$MAIN"
+          grep -q 'SokkerProxy.buildCorsPreflightResponseHeaders' "$MAIN"
           ! grep -R -nE 'Log\.[a-zA-Z]+\([^\n]*(ilogin|ipassword|buildLegacyLoginBody|body)' \
             android/SokkerAsistente/app/src/main/java
           ANDROID_KEY="$(sed -n 's/.*SOKKER_CLIENT_KEY = "\([^"]*\)".*/\1/p' "$PROXY")"
