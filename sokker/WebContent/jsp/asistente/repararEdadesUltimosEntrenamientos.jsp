@@ -526,25 +526,28 @@
         }
         session.removeAttribute("repairTrainingAgesCsrf20260924");
 
-        if (alreadyExecuted) {
-            result = "Esta reparación ya se ejecutó en este arranque del servidor. No se ha modificado nada.";
-        } else {
-            try {
-                RepairSummary summary = repairDirectory(dataDirectory);
-                if (summary.concurrentSkips == 0) {
-                    application.setAttribute("repairTrainingAges20260924Executed", Boolean.TRUE);
-                    alreadyExecuted = true;
-                    result = "Reparación terminada. Ficheros revisados: " + summary.scannedFiles
-                            + ", ficheros modificados: " + summary.modifiedFiles
-                            + ", jugadores corregidos: " + summary.modifiedPlayers
-                            + ", edades corregidas: " + summary.modifiedSnapshots + ".";
-                } else {
-                    error = "La reparación no se marca como ejecutada porque " + summary.concurrentSkips
-                            + " fichero(s) cambiaron mientras se procesaban. Los ficheros concurrentes se dejaron intactos."
-                            + " Repite la ejecución cuando no haya actualizaciones en curso.";
+        synchronized (application) {
+            alreadyExecuted = Boolean.TRUE.equals(application.getAttribute(executionMarker));
+            if (alreadyExecuted) {
+                result = "Esta reparación ya se ejecutó en este arranque del servidor. No se ha modificado nada.";
+            } else {
+                try {
+                    RepairSummary summary = repairDirectory(dataDirectory);
+                    if (summary.concurrentSkips == 0) {
+                        application.setAttribute("repairTrainingAges20260924Executed", Boolean.TRUE);
+                        alreadyExecuted = true;
+                        result = "Reparación terminada. Ficheros revisados: " + summary.scannedFiles
+                                + ", ficheros modificados: " + summary.modifiedFiles
+                                + ", jugadores corregidos: " + summary.modifiedPlayers
+                                + ", edades corregidas: " + summary.modifiedSnapshots + ".";
+                    } else {
+                        error = "La reparación no se marca como ejecutada porque " + summary.concurrentSkips
+                                + " fichero(s) cambiaron mientras se procesaban. Los ficheros concurrentes se dejaron intactos."
+                                + " Repite la ejecución cuando no haya actualizaciones en curso.";
+                    }
+                } catch (Throwable e) {
+                    error = e.getClass().getName() + ": " + e.getMessage();
                 }
-            } catch (Throwable e) {
-                error = e.getClass().getName() + ": " + e.getMessage();
             }
         }
     }
