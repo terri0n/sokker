@@ -187,8 +187,27 @@ function initAssistantRememberPassword() {
 		});
 }
 
+function initAssistantSokkerPassword() {
+	var $form = $("form[action$='/asistente/actualizar']").first();
+	if (!$form.length || !$form.find("#ipassword").length) {
+		return;
+	}
+
+	var rememberedLogin = assistantStorageGet(ASSISTANT_REMEMBER_LOGIN_KEY);
+	var password = assistantStorageGet(ASSISTANT_REMEMBER_PASSWORD_KEY);
+	var assistantLogin = getAssistantLegacyCookie("alogin");
+
+	if (rememberedLogin === null || password === null || password === "" ||
+			assistantLogin === null || rememberedLogin !== assistantLogin) {
+		return;
+	}
+
+	$form.find("#ipassword").val(password);
+}
+
 $(function() {
 	initAssistantRememberPassword();
+	initAssistantSokkerPassword();
 
 	$(document).mouseup(function(e) {
 	    var container = $(".dropdown-menu");
