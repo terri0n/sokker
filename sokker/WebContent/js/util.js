@@ -1,5 +1,8 @@
 var SOKKER_CLIENT_KEY = "skc_bae02f2686bf9038d248";
 
+var ASSISTANT_REMEMBER_LOGIN_KEY = "sokkerAsistente.rememberedLogin";
+var ASSISTANT_REMEMBER_PASSWORD_KEY = "sokkerAsistente.rememberedPassword";
+
 function sokkerPost(url, data, success, dataType) {
 	var deferred = $.Deferred();
 
@@ -40,7 +43,118 @@ function sokkerPost(url, data, success, dataType) {
 	return request;
 }
 
+function assistantStorageGet(key) {
+	try {
+		return localStorage.getItem(key);
+	} catch (e) {
+		return null;
+	}
+}
+
+function assistantStorageSet(key, value) {
+	try {
+		localStorage.setItem(key, value);
+	} catch (e) {
+		// El almacenamiento local puede estar deshabilitado. El login debe seguir funcionando.
+	}
+}
+
+function assistantStorageRemove(key) {
+	try {
+		localStorage.removeItem(key);
+	} catch (e) {
+		// El almacenamiento local puede estar deshabilitado. El login debe seguir funcionando.
+	}
+}
+
+function getAssistantLegacyCookie(name) {
+	var prefix = name + "=";
+	var cookies = document.cookie ? document.cookie.split(";") : [];
+	for (var i = 0; i < cookies.length; i++) {
+		var cookie = cookies[i].replace(/^\s+/, "");
+		if (cookie.indexOf(prefix) === 0) {
+			var value = cookie.substring(prefix.length);
+			try {
+				return decodeURIComponent(value);
+			} catch (e) {
+				return value;
+			}
+		}
+	}
+	return null;
+}
+
+function clearAssistantLegacyPasswordCookie(form) {
+	var path = "/";
+	try {
+		var actionPath = new URL(form.action, window.location.href).pathname;
+		path = actionPath.replace(/\/login$/, "") || "/";
+	} catch (e) {
+		// Mantener '/' como respaldo para navegadores antiguos.
+	}
+
+	document.cookie = "apassword=; Max-Age=0; path=" + path + "; SameSite=Lax";
+	if (path !== "/") {
+		document.cookie = "apassword=; Max-Age=0; path=/; SameSite=Lax";
+	}
+}
+
+function clearAssistantRememberPassword() {
+	assistantStorageRemove(ASSISTANT_REMEMBER_LOGIN_KEY);
+	assistantStorageRemove(ASSISTANT_REMEMBER_PASSWORD_KEY);
+}
+
+function rememberAssistantPassword(form) {
+	var $form = $(form);
+	var remember = $form.find("input[name='recordar']").prop("checked");
+	if (!remember) {
+		clearAssistantRememberPassword();
+		return;
+	}
+
+	assistantStorageSet(ASSISTANT_REMEMBER_LOGIN_KEY, $form.find("input[name='alogin']").val() || "");
+	assistantStorageSet(ASSISTANT_REMEMBER_PASSWORD_KEY, $form.find("input[name='apassword']").val() || "");
+}
+
+function initAssistantRememberPassword() {
+	var $form = $("#assistant-login-form");
+	if (!$form.length) {
+		return;
+	}
+
+	var login = assistantStorageGet(ASSISTANT_REMEMBER_LOGIN_KEY);
+	var password = assistantStorageGet(ASSISTANT_REMEMBER_PASSWORD_KEY);
+	var legacyPassword = getAssistantLegacyCookie("apassword");
+
+	if (password === null && legacyPassword !== null && legacyPassword !== "") {
+		password = legacyPassword;
+		login = $form.find("input[name='alogin']").val() || login || "";
+		assistantStorageSet(ASSISTANT_REMEMBER_LOGIN_KEY, login);
+		assistantStorageSet(ASSISTANT_REMEMBER_PASSWORD_KEY, password);
+	}
+
+	if (legacyPassword !== null) {
+		clearAssistantLegacyPasswordCookie($form[0]);
+	}
+
+	if (password !== null && password !== "") {
+		if (login !== null && login !== "") {
+			$form.find("input[name='alogin']").val(login);
+		}
+		$form.find("input[name='apassword']").val(password);
+		$form.find("input[name='recordar']").prop("checked", true);
+	}
+
+	$form.find("input[name='recordar']").on("change", function() {
+		if (!this.checked) {
+			clearAssistantRememberPassword();
+		}
+	});
+}
+
 $(function() {
+	initAssistantRememberPassword();
+
 	$(document).mouseup(function(e) {
 	    var container = $(".dropdown-menu");
 
