@@ -1360,11 +1360,12 @@ public class Jugador implements Comparable<Jugador> {
 	
 	public List<Entrenamiento> getEntrenamientosTemporada2(TIPO_ENTRENAMIENTO habilidad, Entrenamiento entrenamiento_act) {
 		List<Entrenamiento> entrenamientos = new ArrayList<Entrenamiento>();
-		float puntos_entrenamiento = lesion != null && lesion > 7 ? 0 : getMinutos_entrenamiento(habilidad);
 
-		// Mstyslav Pidchenko tenía las habilidades antiguas a null y fallaba aquí
+		// Mstyslav Pidchenko tenía las habilidades antiguas a null. Esos snapshots
+		// no aportan un nivel, pero tampoco deben cortar el histórico anterior.
 		Integer valor = getValor_habilidad(habilidad);
 		if (valor != null) {
+			float puntos_entrenamiento = lesion != null && lesion > 7 ? 0 : getMinutos_entrenamiento(habilidad);
 			if (entrenamiento_act.valor_habilidad == valor) {
 				entrenamiento_act.jornadas.add(this);
 				entrenamiento_act.puntos_entrenamiento.add(puntos_entrenamiento);
@@ -1379,12 +1380,12 @@ public class Jugador implements Comparable<Jugador> {
 				entrenamiento_act.jornadas.add(this);
 				entrenamiento_act.puntos_entrenamiento.add(puntos_entrenamiento);
 			}
-			
-			if (original != null) {
-				entrenamientos.addAll(original.getEntrenamientosTemporada2(habilidad, entrenamiento_act));
-			} else if (entrenamiento_act.jornadas.size() > 0) {
-				entrenamientos.add(entrenamiento_act);				
-			}
+		}
+
+		if (original != null) {
+			entrenamientos.addAll(original.getEntrenamientosTemporada2(habilidad, entrenamiento_act));
+		} else if (entrenamiento_act.jornadas.size() > 0) {
+			entrenamientos.add(entrenamiento_act);				
 		}
 		return entrenamientos;
 	}
