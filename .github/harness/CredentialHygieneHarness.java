@@ -83,15 +83,14 @@ public final class CredentialHygieneHarness {
     }
 
     private static void rememberedAssistantPasswordPrefillsSokkerUpdateForSameUser() throws Exception {
-        String assistantJsp = read("sokker/WebContent/jsp/asistente/asistente.jsp");
         String util = read("sokker/WebContent/js/util.js");
 
-        require(assistantJsp.contains("data-assistant-login=\"${sessionScope.usuario.login}\""),
-                "Sokker update form does not expose the current Assistant login");
         require(util.contains("initAssistantSokkerPassword"),
                 "Sokker update password initialization is missing");
         require(util.contains("form[action$='/asistente/actualizar']"),
                 "Sokker update form is not located safely");
+        require(util.contains("getAssistantLegacyCookie(\"alogin\")"),
+                "Current Assistant login is not checked before reusing the remembered password");
         require(util.contains("rememberedLogin !== assistantLogin"),
                 "Remembered password is not restricted to the same Assistant user");
         require(util.contains("$form.find(\"#ipassword\").val(password)"),
