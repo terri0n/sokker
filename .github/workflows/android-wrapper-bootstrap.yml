@@ -7,10 +7,11 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   wrapper:
+    if: "!contains(github.event.head_commit.message, 'generated Gradle wrapper')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,13 +29,13 @@ jobs:
         working-directory: android/SokkerAsistente
         run: gradle wrapper --gradle-version 8.14.2
 
-      - name: Upload wrapper files
-        uses: actions/upload-artifact@v4
-        with:
-          name: gradle-wrapper-8.14.2
-          path: |
-            android/SokkerAsistente/gradlew
-            android/SokkerAsistente/gradlew.bat
-            android/SokkerAsistente/gradle/wrapper/gradle-wrapper.jar
-            android/SokkerAsistente/gradle/wrapper/gradle-wrapper.properties
-          if-no-files-found: error
+      - name: Commit generated Gradle wrapper
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add android/SokkerAsistente/gradlew \
+                  android/SokkerAsistente/gradlew.bat \
+                  android/SokkerAsistente/gradle/wrapper/gradle-wrapper.jar \
+                  android/SokkerAsistente/gradle/wrapper/gradle-wrapper.properties
+          git commit -m 'build: generated Gradle wrapper'
+          git push origin HEAD:tmp/android-wrapper-bootstrap
