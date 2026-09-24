@@ -46,6 +46,10 @@ public class CambiarEquipo extends SERVLET_ASISTENTE {
 			request.getSession().setAttribute("historico", null);
 			
 			final Usuario usuario = getUsuario(request);
+			if ("demo".equalsIgnoreCase(usuario.getLogin())) {
+				response.sendRedirect(request.getContextPath() + "/asistente");
+				return;
+			}
 			String coach = Util.getString(request, "coach");
 			if (coach == null) {
 				// Cambiar entre equipo y NT propia
