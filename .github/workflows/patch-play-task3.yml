@@ -1,0 +1,51 @@
+name: Patch Play Task 3
+
+on:
+  push:
+    branches:
+      - feature/play-console-compliance
+    paths:
+      - '.github/workflows/patch-play-task3.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/play-console-compliance
+      - name: Remove legacy password-cookie UI usage
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          login = Path('sokker/WebContent/jsp/asistente/login.jsp')
+          text = login.read_text(encoding='utf-8')
+          old = '''\t\t\t\t\t\t<fmt:message key="common.password" /> <input type="password" name="apassword" required="required" value="<%= Util.nvl(Util.getCookie(request, "apassword")) %>"><br/>\n\t\t\t\t\t\t<label class="peque" for="recordar"><input type="checkbox" name="recordar" id="recordar" <c:out value="${empty cookie.apassword.value ? '' : 'checked'}" /> /><fmt:message key="login.remember_password" /></label>\n\t\t\t\t\t\t<br />'''
+          new = '''\t\t\t\t\t\t<fmt:message key="common.password" /> <input type="password" name="apassword" required="required"><br/>'''
+          if old not in text:
+              raise SystemExit('expected login.jsp legacy password block not found')
+          login.write_text(text.replace(old, new), encoding='utf-8', newline='')
+
+          assistant = Path('sokker/WebContent/jsp/asistente/asistente.jsp')
+          text = assistant.read_text(encoding='utf-8')
+          if 'cookie.apassword' not in text:
+              raise SystemExit('expected asistente.jsp cookie.apassword references not found')
+          text = text.replace(' value="${cookie.apassword.value}"', '')
+          if 'cookie.apassword' in text:
+              raise SystemExit('asistente.jsp still contains cookie.apassword')
+          assistant.write_text(text, encoding='utf-8', newline='')
+          PY
+          ! grep -R -n 'cookie\.apassword\|getCookie(request, "apassword")' sokker/WebContent/jsp/asistente/login.jsp sokker/WebContent/jsp/asistente/asistente.jsp
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name 'Terrion'
+          git config user.email '63014185+terri0n@users.noreply.github.com'
+          git add sokker/WebContent/jsp/asistente/login.jsp sokker/WebContent/jsp/asistente/asistente.jsp
+          git commit -m 'fix: remove legacy password cookie from JSPs'
+          git push origin HEAD:feature/play-console-compliance
