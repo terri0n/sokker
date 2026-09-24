@@ -139,9 +139,9 @@ public abstract class SERVLET_ASISTENTE extends HttpServlet {
 					Util.guardar_hashmap(ips, "IPs");
 
 					LoginExceptionExt ex = (LoginExceptionExt)e;
-					// Registramos el error si se ha escrito un usuario
+					// Registramos el error si se ha escrito un usuario, sin conservar la contraseña enviada.
 					if (ex.getUsuario() != null) {
-						_log_linea(ex.getUsuario(), ex.getMessage() + ": " + ex.getContrasenya());
+						_log_linea(ex.getUsuario(), ex.getMessage());
 					}
 
 					if (Integer.valueOf(ips.get(ip)) >= 8) {
