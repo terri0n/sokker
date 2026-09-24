@@ -28,8 +28,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.14.2'
-      - name: Install Android 35 platform
-        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
-      - name: Verify recovered baseline
+      - name: Install Android 36 platform
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Verify Android build
         working-directory: android/SokkerAsistente
-        run: gradle testDebugUnitTest assembleDebug --stacktrace
+        run: gradle testDebugUnitTest assembleDebug bundleRelease --stacktrace
