@@ -20,6 +20,10 @@ public final class TrainingAgeSeasonRepairHarness {
                 "the JSP must contain the repair implementation it executes manually");
         require(jsp.contains("private Integer expectedAge(int latestWeek, int latestAge, int snapshotWeek)"),
                 "the JSP must derive historical age from the latest valid snapshot");
+        require(jsp.contains("private int seasonIndex(int week)"),
+                "the JSP must calculate historical seasons instead of hardcoding each boundary");
+        require(jsp.contains("Math.floorDiv(week - 1209, 13)"),
+                "season boundaries must follow 13-week cycles anchored at week 1209");
         require(jsp.contains("private void selfTestRepair()"),
                 "the JSP must self-test the destructive transformation before execution");
 
@@ -36,18 +40,10 @@ public final class TrainingAgeSeasonRepairHarness {
 
         require(jsp.contains("latest.week != 1210 && latest.week != 1209 && latest.week != 1208"),
                 "only weeks 1210, 1209 or 1208 may be used as the valid age base");
-        require(jsp.contains("snapshotWeek < 1195 || snapshotWeek > latestWeek"),
-                "the repair must be restricted to week 1195 through the latest valid snapshot");
-        require(jsp.contains("if (latestWeek >= 1209)"),
-                "the age calculation must distinguish the current season from a 1208 reference");
-        require(jsp.contains("if (snapshotWeek >= 1209)"),
-                "weeks 1209 and 1210 must keep the current-season age");
-        require(jsp.contains("if (snapshotWeek >= 1196)"),
-                "weeks 1196 through 1208 must share the previous-season age");
-        require(jsp.contains("return Integer.valueOf(latestAge - 2)"),
-                "week 1195 must be two years below a 1209/1210 current-season reference");
-        require(jsp.contains("return Integer.valueOf(latestAge - 1)"),
-                "crossing one season boundary must subtract exactly one year");
+        require(jsp.contains("snapshotWeek < 1170 || snapshotWeek > latestWeek"),
+                "the repair must be restricted to week 1170 through the latest valid snapshot");
+        require(jsp.contains("latestAge + seasonIndex(snapshotWeek) - seasonIndex(latestWeek)"),
+                "historical ages must be derived from the number of crossed season boundaries");
         require(jsp.contains("future_key=keep\\\\:exactly"),
                 "the JSP self-test must protect unknown properties during round-trip");
         require(jsp.contains("requireRepair(second.modifiedSnapshots == 0"),
@@ -55,10 +51,12 @@ public final class TrainingAgeSeasonRepairHarness {
 
         require(jsp.contains("snapshot(1210, 25) + \",\" + snapshot(1209, 25) + \",\" + snapshot(1208, 24)"),
                 "a 1210 reference must keep 1209 at the same age and put 1208 in the previous season");
-        require(jsp.contains("snapshot(1196, 24) + \",\" + snapshot(1195, 23)"),
-                "a 1210/1209 reference must repair the complete previous season and the preceding week 13 boundary");
-        require(jsp.contains("snapshot(1208, 24) + \",\" + snapshot(1196, 24) + \",\" + snapshot(1195, 23)"),
-                "a 1208 reference must keep that season age and subtract one year at 1195");
+        require(jsp.contains("snapshot(1195, 23) + \",\" + snapshot(1183, 23) + \",\" + snapshot(1182, 22)"),
+                "the full season 1183..1195 must have one age and cross correctly into 1182");
+        require(jsp.contains("snapshot(1170, 22) + \",\" + snapshot(1169, 19)"),
+                "week 1170 must be repaired while 1169 and older stay untouched");
+        require(jsp.contains("snapshot(1208, 24) + \",\" + snapshot(1195, 23) + \",\" + snapshot(1183, 23)"),
+                "a 1208 reference must also reconstruct the two older complete seasons");
         require(jsp.contains("unsupportedLatest"),
                 "the self-test must verify that players whose latest week is outside 1208..1210 are skipped");
     }
