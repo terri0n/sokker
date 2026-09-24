@@ -36,6 +36,11 @@
 			background-color: rgba(0,0,0,0.1);
 			z-index: 5;	/* fontawesome tiene 4 */
 		}
+		<c:if test="${sessionScope.usuario.login eq 'demo'}">
+			a[href$="/asistente/cambiar_equipo"] {
+				display: none;
+			}
+		</c:if>
 	</style>
 	
 	<script>
