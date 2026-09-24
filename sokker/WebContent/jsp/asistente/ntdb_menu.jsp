@@ -181,13 +181,6 @@
 
 		<div class="cabecera"><fmt:message key="ntdb.links" /></div>
 		<div class="fin_bloque doble">
-			<div class="boton grande" onclick="javascript:location.href='${pageContext.request.contextPath}/asistente/ntdb'">
-				<span class="material-icons" style="color: brown">directions_run</span>
-				<div class="peque">
-					<fmt:message key="common.append" /> <fmt:message key="common.players" />
-				</div>
-			</div>
-
 			<div class="boton grande" onclick="javascript:location.href='${pageContext.request.contextPath}/asistente/horario?tid=400'">
 				<span class="material-icons azul">outlined_flag</span>
 				<div class="peque">
