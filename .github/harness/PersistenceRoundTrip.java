@@ -23,6 +23,8 @@ public final class PersistenceRoundTrip {
         playerKnownFormatRoundTrip();
         playerUnmanagedEntryRoundTrip();
         userUnknownFieldsRoundTrip();
+        userDeletionRequestRoundTrip();
+        retiredAutomaticUpdateSecretIsPurged();
     }
 
     private static void playerKnownFormatRoundTrip() {
@@ -98,6 +100,63 @@ public final class PersistenceRoundTrip {
         assertUserFutureData(userFile);
     }
 
+    private static void userDeletionRequestRoundTrip() throws Exception {
+        Path data = configureTempDataPath("sokker-user-deletion-marker-");
+        Usuario seed = new Usuario(Arrays.asList("alice,pw,sokkerAlice,123,,123,Team,,1200,,0,*".split(",", -1)));
+        File userFile = data.resolve("_alice.properties").toFile();
+
+        Properties initial = new Properties();
+        initial.setProperty("usuario", seed.serializar());
+        initial.setProperty("notas", "marker-round-trip");
+        initial.setProperty("future.key", "future-value");
+        initial.setProperty("account_deletion_requested_at", "1727186400000");
+        try (FileOutputStream output = new FileOutputStream(userFile)) {
+            initial.store(output, null);
+        }
+
+        for (int pass = 0; pass < 2; pass++) {
+            Usuario loaded = UsuarioBO.leer_usuario("alice", false);
+            require(loaded != null, "Usuario with deletion marker could not be read");
+            UsuarioBO.grabar_usuario(loaded);
+            Properties saved = load(userFile);
+            require("future-value".equals(saved.getProperty("future.key")), "Unknown key was lost with deletion marker");
+            require("1727186400000".equals(saved.getProperty("account_deletion_requested_at")),
+                    "Deletion request marker was lost on save");
+            require(Long.valueOf(1727186400000L).equals(UsuarioBO.obtener_fecha_solicitud_borrado("alice")),
+                    "Deletion request timestamp helper returned a different value");
+        }
+    }
+
+    private static void retiredAutomaticUpdateSecretIsPurged() throws Exception {
+        Path data = configureTempDataPath("sokker-user-retired-secret-");
+        Usuario seed = new Usuario(Arrays.asList("alice,pw,sokkerAlice,123,,123,Team,,1200,,0,*".split(",", -1)));
+        String known = seed.serializar();
+        int marker = known.lastIndexOf(",*");
+        require(marker >= 0, "Usuario serialization has no sentinel");
+        String withSecretAndFutureFields = known.substring(0, marker)
+                + "bGVnYWN5LXNlY3JldA==,future-one,future-two,*";
+
+        File userFile = data.resolve("_alice.properties").toFile();
+        Properties initial = new Properties();
+        initial.setProperty("usuario", withSecretAndFutureFields);
+        initial.setProperty("notas", "retired-secret");
+        initial.setProperty("future.key", "future-value");
+        try (FileOutputStream output = new FileOutputStream(userFile)) {
+            initial.store(output, null);
+        }
+
+        Usuario loaded = UsuarioBO.leer_usuario("alice", false);
+        require(loaded != null, "Usuario with retired secret could not be read");
+        UsuarioBO.grabar_usuario(loaded);
+
+        Properties saved = load(userFile);
+        String savedUsuario = saved.getProperty("usuario");
+        require(savedUsuario != null, "Usuario record disappeared while purging retired secret");
+        require(!savedUsuario.contains("bGVnYWN5LXNlY3JldA=="), "Retired automatic-update secret survived save");
+        require(savedUsuario.endsWith(",future-one,future-two,*"), "Future usuario fields were lost while purging secret");
+        require("future-value".equals(saved.getProperty("future.key")), "Unknown property was lost while purging retired secret");
+    }
+
     private static Path configureTempDataPath(String prefix) throws Exception {
         Path tomcat = Files.createTempDirectory(prefix);
         Path webapp = tomcat.resolve("webapps/sokker");
@@ -116,16 +175,21 @@ public final class PersistenceRoundTrip {
     }
 
     private static void assertUserFutureData(File userFile) throws Exception {
-        Properties saved = new Properties();
-        try (FileInputStream input = new FileInputStream(userFile)) {
-            saved.load(input);
-        }
+        Properties saved = load(userFile);
         require("future-value".equals(saved.getProperty("future.key")), "Unknown Usuario.properties key was lost");
         String usuario = saved.getProperty("usuario");
         require(usuario != null && usuario.endsWith(",future-one,future-two,*"), "Future usuario= fields were lost");
         String entrenamiento = saved.getProperty("entrenamiento1200");
         require(entrenamiento != null && entrenamiento.endsWith(",future-training,*"),
                 "Future entrenamiento fields were lost");
+    }
+
+    private static Properties load(File file) throws Exception {
+        Properties properties = new Properties();
+        try (FileInputStream input = new FileInputStream(file)) {
+            properties.load(input);
+        }
+        return properties;
     }
 
     private static String xml(String value) {
