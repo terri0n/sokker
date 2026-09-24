@@ -21,12 +21,6 @@ public class NtdbSendingDisabledHarness {
         }
     }
 
-    private static void assertMissing(String path, String message) {
-        if (Files.exists(Paths.get(path))) {
-            throw new AssertionError(message + ": file still exists [" + path + "]");
-        }
-    }
-
     private static String methodBlock(String source, String signature, String nextMarker) {
         int start = source.indexOf(signature);
         if (start < 0) {
@@ -42,6 +36,7 @@ public class NtdbSendingDisabledHarness {
     public static void main(String[] args) throws Exception {
         String ntdbBO = read("sokker/src/com/formulamanager/sokker/bo/NtdbBO.java");
         String ntdbJsp = read("sokker/WebContent/jsp/asistente/ntdb.jsp");
+        String ntdbSend = read("sokker/src/com/formulamanager/sokker/acciones/asistente/NTDB_send.java");
         String configJsp = read("sokker/WebContent/jsp/asistente/config.jsp");
         String actualizarConfiguracion = read("sokker/src/com/formulamanager/sokker/acciones/asistente/ActualizarConfiguracion.java");
         String servlet = read("sokker/src/com/formulamanager/sokker/servlets/Servlet.java");
@@ -54,7 +49,10 @@ public class NtdbSendingDisabledHarness {
         assertNotContains(legacyAutomaticSender, "new URL", "Legacy automatic NTDB sender must not open destinations");
 
         assertNotContains(ntdbJsp, "/asistente/ntdb/send", "Manual NTDB receive/send form must be removed");
-        assertMissing("sokker/src/com/formulamanager/sokker/acciones/asistente/NTDB_send.java", "Legacy NTDB receive endpoint must be removed");
+        assertContains(ntdbSend, "HttpServletResponse.SC_GONE", "Legacy NTDB receive endpoint must explicitly reject requests");
+        assertNotContains(ntdbSend, "actualizar_jugador_local", "Legacy NTDB receive endpoint must not write player data");
+        assertNotContains(ntdbSend, "isRecibir_ntdb", "Legacy NTDB receive endpoint must not depend on the retired receive flag");
+        assertNotContains(ntdbSend, "new Navegador", "Legacy NTDB receive endpoint must not connect to Sokker");
         assertNotContains(configJsp, "name=\"ntdb\"", "NTDB send option must be removed from configuration");
         assertNotContains(configJsp, "name=\"recibir_ntdb\"", "NTDB receive option must be removed from configuration");
         assertNotContains(actualizarConfiguracion, "getBoolean(request, \"ntdb\")", "NTDB send option must not be processed");
