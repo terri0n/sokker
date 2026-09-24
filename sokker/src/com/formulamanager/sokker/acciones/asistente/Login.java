@@ -20,90 +20,72 @@ import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.bo.UsuarioBO;
 import com.formulamanager.sokker.entity.Usuario;
 
-/**
- * Servlet implementation class ServletSokker
- */
 @WebServlet("/asistente/login")
 public class Login extends SERVLET_ASISTENTE {
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
+    public static final String ADMIN_ORIGINAL_USER = "admin_original_user";
 
-	static Cookie expiredLegacyPasswordCookie(String contextPath) {
-		Cookie cookie = new Cookie("apassword", "");
-		cookie.setMaxAge(0);
-		cookie.setHttpOnly(true);
-		cookie.setSecure(true);
-		cookie.setPath((contextPath == null ? "" : contextPath) + "/asistente");
-		return cookie;
-	}
+    static Cookie expiredLegacyPasswordCookie(String contextPath) {
+        Cookie cookie = new Cookie("apassword", "");
+        cookie.setMaxAge(0);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath((contextPath == null ? "" : contextPath) + "/asistente");
+        return cookie;
+    }
 
-    /**
-     * @see HttpServlet#HttpServlet()
-     */
     public Login() {
         super();
     }
 
-	/**
-	 * @throws LoginExceptionExt
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
-	protected void execute(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, LoginExceptionExt {
-		String alogin = request.getParameter("alogin");
-		String apassword = request.getParameter("apassword");
-		String error = "";
+    protected void execute(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, LoginExceptionExt {
+        String alogin = request.getParameter("alogin");
+        String apassword = request.getParameter("apassword");
+        String error = "";
 
-		// El navegador pudo conservar esta cookie de versiones antiguas. Se elimina
-		// en cada intento de login, acertado o no, y nunca se vuelve a escribir.
-		response.addCookie(expiredLegacyPasswordCookie(request.getContextPath()));
+        response.addCookie(expiredLegacyPasswordCookie(request.getContextPath()));
 
-		//--------------
-		// COMPROBAR IP
-		//--------------
-		String ip = getIP(request);
-		HashMap<String, String> ips = Util.leer_hashmap("IPs");
-		if (ips.containsKey(ip) && Integer.valueOf(ips.get(ip)) >= 8) {
-			// IP baneada
-			_log(request, "Acceso denegado: " + ip);
-			_log_linea("_BLOQUEO", "Acceso denegado: " + ip + " " + alogin);
-			error = "?mensaje=user_disabled";
-		} else {
-			//-----------------
-			// COMPROBAR LOGIN
-			//-----------------
-			Usuario usuario = UsuarioBO.leer_usuario(alogin, true);
+        String ip = getIP(request);
+        HashMap<String, String> ips = Util.leer_hashmap("IPs");
+        if (ips.containsKey(ip) && Integer.valueOf(ips.get(ip)) >= 8) {
+            _log(request, "Acceso denegado: " + ip);
+            _log_linea("_BLOQUEO", "Acceso denegado: " + ip + " " + alogin);
+            error = "?mensaje=user_disabled";
+        } else {
+            Usuario usuario = UsuarioBO.leer_usuario(alogin, true);
 
-			if (usuario != null && (usuario.getPassword().equals(Util.getMD5(apassword)))) {
-				// Se conserva únicamente el login como comodidad. La contraseña nunca se persiste en cookies.
-				response.addCookie(new Cookie("alogin", URLEncoder.encode(alogin, "UTF-8")));
+            if (usuario != null && usuario.getPassword().equals(Util.getMD5(apassword))) {
+                response.addCookie(new Cookie("alogin", URLEncoder.encode(alogin, "UTF-8")));
+                request.getSession().setAttribute("usuario", usuario);
 
-				// Admin?
-				request.getSession().setAttribute("usuario", usuario);
-				if (alogin.equalsIgnoreCase(SystemUtil.getVar(SystemUtil.LOGIN))) {
-					setAdmin(true, request);
-				}
+                if (alogin.equalsIgnoreCase(SystemUtil.getVar(SystemUtil.LOGIN))) {
+                    setAdmin(true, request);
+                    request.getSession().setAttribute(ADMIN_ORIGINAL_USER, usuario);
+                    request.getSession().removeAttribute(LoginComo.ADMIN_IMPERSONATED_LOGIN);
+                } else {
+                    request.getSession().removeAttribute("admin");
+                    request.getSession().removeAttribute(ADMIN_ORIGINAL_USER);
+                    request.getSession().removeAttribute(LoginComo.ADMIN_IMPERSONATED_LOGIN);
+                }
 
-_log(request, "");
+                _log(request, "");
 
-				// Idioma
-				if (usuario.getLocale() != null) {
-					Config.set(request.getSession(), Config.FMT_LOCALE, new Locale(usuario.getLocale()));
-				}
-			} else {
-				if (usuario != null) {
-_log(request, "Contraseña errónea");
-					throw new LoginExceptionExt(Util.getTexto(request.getLocale().getLanguage(), "messages.login_error"), alogin);
-				}
-				error = "?mensaje=login_error&error=1";
-			}
-		}
+                if (usuario.getLocale() != null) {
+                    Config.set(request.getSession(), Config.FMT_LOCALE, new Locale(usuario.getLocale()));
+                }
+            } else {
+                if (usuario != null) {
+                    _log(request, "Contraseña errónea");
+                    throw new LoginExceptionExt(Util.getTexto(request.getLocale().getLanguage(), "messages.login_error"), alogin);
+                }
+                error = "?mensaje=login_error&error=1";
+            }
+        }
 
-		response.sendRedirect(request.getContextPath() + "/asistente" + error);
-	}
+        response.sendRedirect(request.getContextPath() + "/asistente" + error);
+    }
 
-	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
-	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		//doPost(request, response);
-	}
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // Login is POST-only; keep historical no-op GET behavior.
+    }
 }
