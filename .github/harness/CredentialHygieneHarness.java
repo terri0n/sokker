@@ -42,7 +42,10 @@ public final class CredentialHygieneHarness {
         forbid(login, "new Cookie(\"apassword\", URLEncoder.encode(apassword", "Login still writes the submitted password cookie encoded");
         forbid(login, "new LoginExceptionExt(Util.getTexto(request.getLocale().getLanguage(), \"messages.login_error\"), alogin, apassword)",
                 "Login still passes the submitted password into LoginExceptionExt");
-        forbid(browser, ", login, password)", "Navegador still passes Sokker password into LoginExceptionExt");
+        forbid(browser, "new LoginExceptionExt(\"Error when logging in to Sokker: bad password\", login, password)",
+                "Navegador still passes the bad Sokker password into LoginExceptionExt");
+        forbid(browser, "new LoginExceptionExt(\"Error when logging in to Sokker: user has no team\", login, password)",
+                "Navegador still passes the Sokker password into LoginExceptionExt for no-team errors");
     }
 
     private static String read(String path) throws Exception {
