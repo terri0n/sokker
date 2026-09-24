@@ -94,7 +94,8 @@ public class SokkerProxyTest {
         headers.put("User-Agent", "Mozilla/5.0 Chrome/WebView");
         headers.put("Accept", "*/*");
 
-        Map<String, String> result = SokkerProxy.buildForwardHeaders(headers);
+        Map<String, String> result = SokkerRequestHeaders.forSokker(
+                SokkerProxy.buildForwardHeaders(headers));
 
         assertEquals("Sokker Asistente (+https://raqueto.com/sokker/asistente)",
                 valueIgnoreCase(result, "User-Agent"));
