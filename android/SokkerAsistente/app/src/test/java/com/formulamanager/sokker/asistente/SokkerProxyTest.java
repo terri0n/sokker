@@ -107,6 +107,39 @@ public class SokkerProxyTest {
     }
 
     @Test
+    public void corsPreflightRequiresSokkerOptionsAndRequestedMethod() {
+        Map<String, String> headers = new LinkedHashMap<>();
+        headers.put("Origin", "https://raqueto.com");
+        headers.put("Access-Control-Request-Method", "POST");
+        headers.put("Access-Control-Request-Headers", "x-sokker-client");
+
+        assertTrue(SokkerProxy.isCorsPreflight(
+                "OPTIONS", "https://sokker.org/start.php?session=xml", headers));
+        assertFalse(SokkerProxy.isCorsPreflight(
+                "GET", "https://sokker.org/start.php?session=xml", headers));
+        assertFalse(SokkerProxy.isCorsPreflight(
+                "OPTIONS", "https://sokker.org.evil.example/start.php", headers));
+
+        headers.remove("Access-Control-Request-Method");
+        assertFalse(SokkerProxy.isCorsPreflight(
+                "OPTIONS", "https://sokker.org/start.php?session=xml", headers));
+    }
+
+    @Test
+    public void corsPreflightResponseAllowsRequestedMethodAndHeadersCaseInsensitively() {
+        Map<String, String> headers = new LinkedHashMap<>();
+        headers.put("origin", "https://raqueto.com");
+        headers.put("access-control-request-method", "POST");
+        headers.put("access-control-request-headers", "x-sokker-client, content-type");
+
+        Map<String, String> result = SokkerProxy.buildCorsPreflightResponseHeaders(headers);
+
+        assertEquals("https://raqueto.com", result.get("Access-Control-Allow-Origin"));
+        assertEquals("POST, OPTIONS", result.get("Access-Control-Allow-Methods"));
+        assertEquals("x-sokker-client, content-type", result.get("Access-Control-Allow-Headers"));
+    }
+
+    @Test
     public void httpErrorsUseErrorStreamInsteadOfThrowingInputStream() throws Exception {
         FakeHttpURLConnection connection = new FakeHttpURLConnection(401, "bad credentials");
 
