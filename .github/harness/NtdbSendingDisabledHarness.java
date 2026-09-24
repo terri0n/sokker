@@ -27,15 +27,32 @@ public class NtdbSendingDisabledHarness {
         }
     }
 
+    private static String methodBlock(String source, String signature, String nextMarker) {
+        int start = source.indexOf(signature);
+        if (start < 0) {
+            throw new AssertionError("Method not found: " + signature);
+        }
+        int end = source.indexOf(nextMarker, start + signature.length());
+        if (end < 0) {
+            throw new AssertionError("End marker not found after: " + signature);
+        }
+        return source.substring(start, end);
+    }
+
     public static void main(String[] args) throws Exception {
-        String asistenteBO = read("sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java");
+        String ntdbBO = read("sokker/src/com/formulamanager/sokker/bo/NtdbBO.java");
         String ntdbJsp = read("sokker/WebContent/jsp/asistente/ntdb.jsp");
         String configJsp = read("sokker/WebContent/jsp/asistente/config.jsp");
         String actualizarConfiguracion = read("sokker/src/com/formulamanager/sokker/acciones/asistente/ActualizarConfiguracion.java");
         String servlet = read("sokker/src/com/formulamanager/sokker/servlets/Servlet.java");
         String usuario = read("sokker/src/com/formulamanager/sokker/entity/Usuario.java");
 
-        assertNotContains(asistenteBO, "NtdbBO.enviar_jugadores(", "Automatic NTDB sending must be disabled");
+        String legacyAutomaticSender = methodBlock(ntdbBO, "public static void enviar_jugadores(", "/**");
+        assertNotContains(legacyAutomaticSender, "leer_hashmap", "Legacy automatic NTDB sender must not load destinations");
+        assertNotContains(legacyAutomaticSender, "actualizar_jugador_remoto", "Legacy automatic NTDB sender must not perform remote exports");
+        assertNotContains(legacyAutomaticSender, "actualizar_jugador_local", "Legacy automatic NTDB sender must not update NT databases");
+        assertNotContains(legacyAutomaticSender, "new URL", "Legacy automatic NTDB sender must not open destinations");
+
         assertNotContains(ntdbJsp, "/asistente/ntdb/send", "Manual NTDB receive/send form must be removed");
         assertMissing("sokker/src/com/formulamanager/sokker/acciones/asistente/NTDB_send.java", "Legacy NTDB receive endpoint must be removed");
         assertNotContains(configJsp, "name=\"ntdb\"", "NTDB send option must be removed from configuration");
@@ -47,6 +64,8 @@ public class NtdbSendingDisabledHarness {
 
         assertContains(usuario, "private boolean ntdb;", "Legacy NTDB send value must remain readable/writable for compatibility");
         assertContains(usuario, "private boolean recibir_ntdb;", "Legacy NTDB receive value must remain readable/writable for compatibility");
+        assertContains(usuario, "valores.add(ntdb + \"\");", "Legacy NTDB send value must remain serialized");
+        assertContains(usuario, "valores.add(new Boolean(recibir_ntdb).toString());", "Legacy NTDB receive value must remain serialized");
 
         assertContains(servlet, "public String exportar_url(", "Generic export-to-URL must remain available");
         assertContains(servlet, "NtdbBO.actualizar_jugador_remoto(", "Generic export-to-URL must keep its current implementation");
