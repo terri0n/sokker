@@ -113,8 +113,8 @@ jobs:
           test -s app/build/outputs/bundle/release/app-release.aab
           grep -Eq 'compileSdk(Version)?[[:space:]]+36' app/build.gradle
           grep -Eq 'targetSdk(Version)?[[:space:]]+36' app/build.gradle
-          grep -Eq 'versionCode[[:space:]]+11' app/build.gradle
-          grep -Eq 'versionName[[:space:]]+"1\.11"' app/build.gradle
+          grep -Eq 'versionCode[[:space:]]+12' app/build.gradle
+          grep -Eq 'versionName[[:space:]]+"1\.12"' app/build.gradle
           grep -Eq 'namespace[[:space:]]+"com\.raqueto\.sokkerasistente"' app/build.gradle
           grep -Eq 'applicationId[[:space:]]+"com\.raqueto\.sokkerasistente"' app/build.gradle
           grep -q 'package="com.raqueto.sokkerasistente"' app/src/main/AndroidManifest.xml
@@ -128,9 +128,12 @@ jobs:
         run: |
           MAIN=android/SokkerAsistente/app/src/main/java/com/raqueto/sokkerasistente/MainActivity.java
           PROXY=android/SokkerAsistente/app/src/main/java/com/raqueto/sokkerasistente/SokkerProxy.java
+          REQUEST_HEADERS=android/SokkerAsistente/app/src/main/java/com/raqueto/sokkerasistente/SokkerRequestHeaders.java
           WEB_UTIL=sokker/WebContent/js/util.js
           grep -q 'SokkerProxy.isSokkerUrl' "$MAIN"
           grep -q 'SokkerProxy.buildForwardHeaders' "$MAIN"
+          grep -q 'SokkerRequestHeaders.forSokker' "$MAIN"
+          grep -q 'Sokker Asistente (+https://raqueto.com/sokker/asistente)' "$REQUEST_HEADERS"
           grep -q 'SokkerProxy.isLegacyXmlSessionLogin' "$MAIN"
           grep -q 'SokkerProxy.isCorsPreflight' "$MAIN"
           grep -q 'SokkerProxy.buildCorsPreflightResponseHeaders' "$MAIN"
@@ -167,7 +170,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: SokkerAsistente-1.11-apk
+          name: SokkerAsistente-1.12-apk
           path: android/SokkerAsistente/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
@@ -175,7 +178,7 @@ jobs:
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: SokkerAsistente-1.11-aab
+          name: SokkerAsistente-1.12-aab
           path: android/SokkerAsistente/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 30
