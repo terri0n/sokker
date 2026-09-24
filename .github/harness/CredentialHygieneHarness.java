@@ -51,18 +51,34 @@ public final class CredentialHygieneHarness {
 
     private static void rememberPasswordIsExplicitAndBrowserLocal() throws Exception {
         String loginJsp = read("sokker/WebContent/jsp/asistente/login.jsp");
+        String bootstrap = read("sokker/WebContent/js/ip.js.jsp");
         String util = read("sokker/WebContent/js/util.js");
 
-        require(loginJsp.contains("name=\"recordar\""), "Remember-password opt-in checkbox is missing");
-        require(loginJsp.contains("login.remember_password"), "Remember-password label is not localized");
-        require(loginJsp.contains("autocomplete=\"username\""), "Login field does not expose username autocomplete semantics");
-        require(loginJsp.contains("autocomplete=\"current-password\""), "Password field does not expose current-password autocomplete semantics");
+        int bootstrapScript = loginJsp.indexOf("/js/ip.js.jsp");
+        int utilScript = loginJsp.indexOf("/js/util.js");
+        require(bootstrapScript >= 0 && utilScript > bootstrapScript,
+                "Localized login bootstrap must load before util.js");
+        require(bootstrap.contains("SOKKER_ASSISTANT_REMEMBER_PASSWORD_LABEL"),
+                "Localized remember-password label is not exposed to browser code");
+        require(bootstrap.contains("login.remember_password"),
+                "Remember-password label is not sourced from the i18n bundle");
 
-        require(util.contains("initAssistantRememberPassword"), "Browser-local remember-password initialization is missing");
-        require(util.contains("localStorage.setItem"), "Remembered password is not stored in browser-local storage");
-        require(util.contains("localStorage.removeItem"), "Unchecking remember-password does not clear browser-local storage");
+        require(util.contains("initAssistantRememberPassword"),
+                "Browser-local remember-password initialization is missing");
+        require(util.contains("SOKKER_ASSISTANT_REMEMBER_PASSWORD_LABEL"),
+                "Remember-password UI does not use the localized label");
+        require(util.contains("name: \"recordar\""), "Remember-password opt-in checkbox is missing");
+        require(util.contains("autocomplete\", \"username\""),
+                "Login field does not expose username autocomplete semantics");
+        require(util.contains("autocomplete\", \"current-password\""),
+                "Password field does not expose current-password autocomplete semantics");
+        require(util.contains("localStorage.setItem"),
+                "Remembered password is not stored in browser-local storage");
+        require(util.contains("localStorage.removeItem"),
+                "Unchecking remember-password does not clear browser-local storage");
         require(util.contains("document.cookie"), "Legacy password-cookie migration is missing");
-        require(util.contains("apassword"), "Legacy apassword cookie is not handled during migration");
+        require(util.contains("getAssistantLegacyCookie(\"apassword\")"),
+                "Legacy apassword cookie is not handled during migration");
     }
 
     private static String read(String path) throws Exception {
