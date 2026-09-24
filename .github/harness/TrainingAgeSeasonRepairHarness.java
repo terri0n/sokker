@@ -31,6 +31,8 @@ public final class TrainingAgeSeasonRepairHarness {
                 "the repair must run only after an explicit manual POST");
         require(jsp.contains("repairTrainingAges20260924Executed"),
                 "the JSP must carry a one-run marker");
+        require(jsp.contains("synchronized (application)"),
+                "the one-run check and repair must be atomic against double submission");
         require(jsp.contains("application.setAttribute(\"repairTrainingAges20260924Executed\", Boolean.TRUE)"),
                 "a successful run must mark the JSP as already executed");
         require(jsp.contains("if (alreadyExecuted)"),
