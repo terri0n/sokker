@@ -58,7 +58,8 @@ public class Login extends SERVLET_ASISTENTE {
                 response.addCookie(new Cookie("alogin", URLEncoder.encode(alogin, "UTF-8")));
                 request.getSession().setAttribute("usuario", usuario);
 
-                if (alogin.equalsIgnoreCase(SystemUtil.getVar(SystemUtil.LOGIN))) {
+                boolean configuredAdmin = alogin.equalsIgnoreCase(SystemUtil.getVar(SystemUtil.LOGIN));
+                if (configuredAdmin) {
                     setAdmin(true, request);
                     request.getSession().setAttribute(ADMIN_ORIGINAL_USER, usuario);
                     request.getSession().removeAttribute(LoginComo.ADMIN_IMPERSONATED_LOGIN);
@@ -66,12 +67,23 @@ public class Login extends SERVLET_ASISTENTE {
                     request.getSession().removeAttribute("admin");
                     request.getSession().removeAttribute(ADMIN_ORIGINAL_USER);
                     request.getSession().removeAttribute(LoginComo.ADMIN_IMPERSONATED_LOGIN);
+                    request.getSession().removeAttribute(EliminarCuentaAdmin.PENDING_ADMIN_DELETE_TARGET);
                 }
 
                 _log(request, "");
 
                 if (usuario.getLocale() != null) {
                     Config.set(request.getSession(), Config.FMT_LOCALE, new Locale(usuario.getLocale()));
+                }
+
+                if (configuredAdmin) {
+                    Object pending = request.getSession().getAttribute(EliminarCuentaAdmin.PENDING_ADMIN_DELETE_TARGET);
+                    if (pending instanceof String) {
+                        request.getSession().removeAttribute(EliminarCuentaAdmin.PENDING_ADMIN_DELETE_TARGET);
+                        response.sendRedirect(request.getContextPath() + "/asistente/login_como?usuario="
+                                + URLEncoder.encode((String) pending, "UTF-8") + "&destino=eliminar_cuenta_admin");
+                        return;
+                    }
                 }
             } else {
                 if (usuario != null) {
