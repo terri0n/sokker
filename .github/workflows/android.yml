@@ -58,6 +58,13 @@ jobs:
           grep -Eq 'targetSdk(Version)?[[:space:]]+36' app/build.gradle
           grep -Eq 'versionCode[[:space:]]+11' app/build.gradle
           grep -Eq 'versionName[[:space:]]+"1\.11"' app/build.gradle
+          grep -Eq 'namespace[[:space:]]+"com\.raqueto\.sokkerasistente"' app/build.gradle
+          grep -Eq 'applicationId[[:space:]]+"com\.raqueto\.sokkerasistente"' app/build.gradle
+          grep -q 'package="com.raqueto.sokkerasistente"' app/src/main/AndroidManifest.xml
+          if grep -R -n 'com\.formulamanager\.sokker\.asistente' app/src; then
+            echo 'Legacy Android package is still present under app/src' >&2
+            exit 1
+          fi
 
       - name: Verify proxy integration contract
         run: |
