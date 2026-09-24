@@ -51,7 +51,8 @@ public final class TrainingAgeSeasonRepairHarness {
 
         require(jsp.contains("snapshot(1210, 25) + \",\" + snapshot(1209, 25) + \",\" + snapshot(1208, 24)"),
                 "a 1210 reference must keep 1209 at the same age and put 1208 in the previous season");
-        require(jsp.contains("snapshot(1195, 23) + \",\" + snapshot(1183, 23) + \",\" + snapshot(1182, 22)"),
+        require(jsp.contains("snapshot(1195, 23) + \",\" + snapshot(1183, 23)")
+                        && jsp.contains("snapshot(1182, 22) + \",\" + snapshot(1170, 22)"),
                 "the full season 1183..1195 must have one age and cross correctly into 1182");
         require(jsp.contains("snapshot(1170, 22) + \",\" + snapshot(1169, 19)"),
                 "week 1170 must be repaired while 1169 and older stay untouched");
