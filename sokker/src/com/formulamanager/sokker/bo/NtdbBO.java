@@ -248,34 +248,12 @@ public class NtdbBO {
 
 	}
 	
+	/**
+	 * Conservado como shim de compatibilidad para código antiguo. El envío automático
+	 * a bases NT/NTDB está deshabilitado y no debe realizar ninguna operación.
+	 */
 	public static void enviar_jugadores(WebClient navegador, Usuario usuario, List<Jugador> jugadores, int jornada_actual) throws IOException {
-		HashMap<String, String> urls = Util.leer_hashmap("URLs");
-		
-		for (Jugador j : jugadores) {
-			if (j.getPid() > 0) {
-				URL url = null;
-				try {
-					// Si no hay definida una web para los sub21, nos quedamos con la de la NT
-					String s = urls.get("NT_" + j.getPais());
-					if (j.getEdad() <= 21 && urls.get("U21_" + j.getPais()) != null) {
-						s = urls.get("U21_" + j.getPais());
-					}
-					url = new URL(s);
-	
-					if (url.getHost().contains("raqueto")) {
-						// Actualización interna: duplico el jugador para que no afecte al del equipo del usuario
-						Jugador copia = new Jugador(j);
-						copia.copiar_valores_publicos(j);
-						actualizar_jugador_local(copia, jornada_actual);
-					} else {
-						actualizar_jugador_remoto(navegador, j, url, usuario);
-					}
-				} catch (Exception e) {
-					System.out.println("Error en " + j.getPais() + ": " + url);
-					e.printStackTrace();
-				}
-			}
-		}
+		// Envío NTDB deshabilitado.
 	}
 
 	/**
