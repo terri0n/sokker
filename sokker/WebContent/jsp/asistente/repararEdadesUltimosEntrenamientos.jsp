@@ -25,18 +25,14 @@
      * del servidor después de ejecutarla.
      *
      * La última semana disponible (1210, 1209 o 1208) aporta una edad válida.
-     * A partir de esa edad se reconstruye únicamente el tramo 1170..última
-     * semana respetando temporadas de 13 semanas:
-     *
-     *   temporada actual:     1209..1221
-     *   temporada anterior:   1196..1208
-     *   dos temporadas atrás: 1183..1195
-     *   tres temporadas atrás:1170..1182
+     * A partir de esa edad se reconstruyen todos los snapshots existentes desde
+     * la semana 976 hasta la última semana, respetando el ciclo confirmado de
+     * temporadas de entrenamiento de 13 semanas anclado en 1209.
      *
      * La edad de la semana de referencia pertenece siempre a su propia
      * temporada. Así, si la referencia es 1208, todo 1196..1208 conserva
-     * esa misma edad. No se inventan snapshots ausentes ni se toca nada
-     * anterior a 1170. La transformación es idempotente.
+     * esa misma edad. No se inventan snapshots ausentes ni se toca ninguna
+     * semana anterior a 976. La transformación es idempotente.
      */
     private static final int MIN_CLUB_TID_REPAIR = 801;
     private static final int NEW_TRAINING_FORMAT_WEEK_REPAIR = 993;
@@ -51,7 +47,7 @@
         if (latestWeek != 1210 && latestWeek != 1209 && latestWeek != 1208) {
             return null;
         }
-        if (snapshotWeek < 1170 || snapshotWeek > latestWeek) {
+        if (snapshotWeek < 976 || snapshotWeek > latestWeek) {
             return null;
         }
 
@@ -357,7 +353,8 @@
     }
 
     private String snapshot(int week, int age) {
-        return week + "," + age + ",100000,5,5,5,5,5,5,5,5,-0,10,DEF,100.0,-1,1,1,true";
+        String base = week + "," + age + ",100000,5,5,5,5,5,5,5,5,-0,10,DEF,100.0,-1,1,1";
+        return week >= NEW_TRAINING_FORMAT_WEEK_REPAIR ? base + ",true" : base;
     }
 
     private String player(int pid, String snapshots) {
@@ -376,7 +373,15 @@
                 + snapshot(1183, 21) + ","
                 + snapshot(1182, 23) + ","
                 + snapshot(1170, 20) + ","
-                + snapshot(1169, 19));
+                + snapshot(1169, 19) + ","
+                + snapshot(1001, 15) + ","
+                + snapshot(1000, 14) + ","
+                + snapshot(993, 13) + ","
+                + snapshot(992, 12) + ","
+                + snapshot(988, 11) + ","
+                + snapshot(987, 10) + ","
+                + snapshot(976, 9) + ","
+                + snapshot(975, 19));
         String latest1209 = player(88,
                 snapshot(1209, 30) + ","
                 + snapshot(1208, 30) + ","
@@ -393,7 +398,9 @@
                 + snapshot(1183, 22) + ","
                 + snapshot(1182, 23) + ","
                 + snapshot(1170, 20) + ","
-                + snapshot(1169, 19));
+                + snapshot(1169, 19) + ","
+                + snapshot(976, 12) + ","
+                + snapshot(975, 18));
         String unsupportedLatest = player(100,
                 snapshot(1211, 31) + ","
                 + snapshot(1210, 30) + ","
@@ -411,8 +418,11 @@
         requireRepair(fixed.content.contains(
                 snapshot(1210, 25) + "," + snapshot(1209, 25) + "," + snapshot(1208, 24)
                 + "," + snapshot(1196, 24) + "," + snapshot(1195, 23) + "," + snapshot(1183, 23)
-                + "," + snapshot(1182, 22) + "," + snapshot(1170, 22) + "," + snapshot(1169, 19)),
-                "Con referencia 1210 deben reconstruirse las tres temporadas históricas completas");
+                + "," + snapshot(1182, 22) + "," + snapshot(1170, 22) + "," + snapshot(1169, 21)
+                + "," + snapshot(1001, 9) + "," + snapshot(1000, 8) + "," + snapshot(993, 8)
+                + "," + snapshot(992, 8) + "," + snapshot(988, 8) + "," + snapshot(987, 7)
+                + "," + snapshot(976, 7) + "," + snapshot(975, 19)),
+                "Con referencia 1210 deben reconstruirse todos los snapshots desde 976 y conservarse 975");
         requireRepair(fixed.content.contains(
                 snapshot(1209, 30) + "," + snapshot(1208, 29) + "," + snapshot(1196, 29)
                 + "," + snapshot(1195, 28) + "," + snapshot(1183, 28) + "," + snapshot(1182, 27)
@@ -421,8 +431,8 @@
         requireRepair(fixed.content.contains(
                 snapshot(1208, 24) + "," + snapshot(1196, 24) + "," + snapshot(1195, 23)
                 + "," + snapshot(1183, 23) + "," + snapshot(1182, 22) + "," + snapshot(1170, 22)
-                + "," + snapshot(1169, 19)),
-                "Con referencia 1208, 1196..1208 deben conservar la edad base y solo bajar al cambiar de temporada");
+                + "," + snapshot(1169, 21) + "," + snapshot(976, 7) + "," + snapshot(975, 18)),
+                "Con referencia 1208 debe conservarse su temporada y repararse hasta 976 sin tocar 975");
         requireRepair(fixed.content.contains(unsupportedLatest),
                 "No se debe reparar un jugador cuya última semana no sea 1210, 1209 o 1208");
         requireRepair(fixed.content.contains("future_key=keep\\:exactly"),
@@ -597,9 +607,8 @@
 <h2>Reparar edades históricas de entrenamientos</h2>
 <p>Herramienta puntual de administración. Está pensada para ejecutarse manualmente y retirarse después.</p>
 <p>Para cada jugador toma como edad válida la de su última semana guardada, siempre que sea 1210, 1209 o 1208.</p>
-<p>La semana de referencia conserva su edad en toda su temporada. A partir de ahí reconstruye hacia atrás desde la última semana hasta 1170, restando un año únicamente al cruzar cada límite de temporada de 13 semanas.</p>
-<p>El rango cubierto es 1209-1210 para la temporada actual, 1196-1208 para la anterior, 1183-1195 para la siguiente hacia atrás y 1170-1182 para una temporada más.</p>
-<p>No modifica semanas anteriores a 1170, no inventa snapshots ausentes y no toca otros campos.</p>
+<p>La semana de referencia conserva su edad en toda su temporada. A partir de ahí reconstruye hacia atrás todos los snapshots existentes hasta la semana 976, restando un año únicamente al cruzar cada límite de temporada de 13 semanas.</p>
+<p>No modifica la semana 975 ni ninguna anterior, no inventa snapshots ausentes y no toca otros campos.</p>
 <p>La operación es idempotente: si se ejecuta otra vez sobre los mismos datos, no vuelve a modificar las edades.</p>
 <p>No utiliza backups como referencia ni crea copias auxiliares.</p>
 <form method="post">
