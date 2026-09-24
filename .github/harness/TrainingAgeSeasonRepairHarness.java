@@ -29,29 +29,27 @@ public final class TrainingAgeSeasonRepairHarness {
                 "non-admin access must be forbidden rather than merely hidden");
         require(jsp.contains("\"POST\".equalsIgnoreCase(request.getMethod())"),
                 "the repair must run only after an explicit manual POST");
-        require(jsp.contains("repairTrainingAges20260924Executed"),
-                "the JSP must carry a one-run marker");
-        require(jsp.contains("synchronized (application)"),
-                "the one-run check and repair must be atomic against double submission");
-        require(jsp.contains("application.setAttribute(\"repairTrainingAges20260924Executed\", Boolean.TRUE)"),
-                "a successful run must mark the JSP as already executed");
-        require(jsp.contains("if (alreadyExecuted)"),
-                "a second manual execution must be blocked");
-        require(!jsp.contains("puede volver a ejecutarse"),
-                "the UI must not invite running this one-off correction repeatedly");
+        require(!jsp.contains("repairTrainingAges20260924Executed"),
+                "the repair must not rely on a one-run application marker");
+        require(!jsp.contains("alreadyExecuted"),
+                "a second manual execution must be allowed and naturally be a no-op");
 
         require(jsp.contains("latestWeek != 1209 && latestWeek != 1210"),
                 "only week 1210 or, for not-yet-updated teams, week 1209 may provide current age");
-        require(jsp.contains("if (snapshotWeek > latestWeek)"),
-                "when 1209 is the latest stored row, its age must be captured as reference and week 13 itself must still be repaired");
-        require(!jsp.contains("if (snapshotWeek >= latestWeek)"),
-                "week 13 must not be excluded merely because it supplied the current-age reference");
+        require(jsp.contains("if (snapshotWeek >= latestWeek)"),
+                "the snapshot used as current-age reference must never be rewritten");
+        require(!jsp.contains("if (snapshotWeek > latestWeek)"),
+                "the reference snapshot must be excluded, otherwise a second pass changes ages again");
         require(jsp.contains("snapshotWeek < 1197 || snapshotWeek > 1209"),
                 "the correction must be limited to the immediately previous 13-week season");
         require(jsp.contains("return Integer.valueOf(latestAge - 1)"),
                 "previous-season snapshots must be normalized to current age minus one");
         require(jsp.contains("future_key=keep\\\\:exactly"),
                 "the JSP self-test must protect unknown properties during round-trip");
+        require(jsp.contains("requireRepair(second.modifiedSnapshots == 0"),
+                "the destructive transformation must prove that a second pass makes no changes");
+        require(jsp.contains("snapshot(1209, 25) + \",\" + snapshot(1208, 24)"),
+                "for a not-yet-updated team, week 1209 must remain the current-age reference while older rows are repaired");
     }
 
     private static String read(Path path) throws Exception {
