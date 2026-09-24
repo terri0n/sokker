@@ -165,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
                     );
 
                 } catch (Exception e) {
-                    Log.e(this.toString(), "shouldInterceptRequest: " + e);
+                    Log.e(this.toString(), "Sokker proxy failed: " + e.getClass().getSimpleName());
                 }
                 return null;
             }
