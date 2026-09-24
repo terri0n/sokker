@@ -26,10 +26,12 @@
      *
      * Referencia de edad actual:
      *   1210 si el equipo ya se actualizó esta semana.
-     *   1209 si todavía no se ha actualizado.
+     *   1209 si todavía no se ha actualizado. En este caso se captura primero
+     *   su edad como referencia y después 1209 también se corrige como jornada
+     *   13 de la temporada anterior.
      *
      * Único cambio permitido:
-     *   snapshots anteriores de 1197..1209 -> edad actual - 1.
+     *   snapshots 1197..1209 -> edad actual - 1.
      */
     private static final int MIN_CLUB_TID_REPAIR = 801;
     private static final int NEW_TRAINING_FORMAT_WEEK_REPAIR = 993;
@@ -41,7 +43,9 @@
             return null;
         }
 
-        if (snapshotWeek >= latestWeek) {
+        // Si 1209 es el último snapshot, su edad se usa como referencia pero
+        // el propio snapshot sigue siendo la jornada 13 de la temporada anterior.
+        if (snapshotWeek > latestWeek) {
             return null;
         }
 
@@ -385,8 +389,10 @@
                 "La jornada 1 de la temporada anterior debe quedar en edad actual - 1");
         requireRepair(fixed.content.contains(snapshot(1196, 23)),
                 "No se debe tocar una temporada más antigua");
-        requireRepair(fixed.content.contains(snapshot(1209, 25)),
-                "Si el equipo aún no se actualizó, 1209 es referencia y se conserva");
+        requireRepair(!fixed.content.contains(snapshot(1209, 25)),
+                "Si el equipo aún no se actualizó, 1209 solo aporta la edad actual antes de ser corregida");
+        requireRepair(fixed.content.contains(snapshot(1209, 24) + "," + snapshot(1208, 24) + "," + snapshot(1197, 24)),
+                "Un equipo sin actualizar debe quedar corregido desde la jornada 13 hasta la 1 en una sola ejecución");
         requireRepair(fixed.content.contains(unsupportedReference),
                 "No se debe reparar un jugador cuya referencia no sea 1209 o 1210");
         requireRepair(fixed.content.contains("future_key=keep\\:exactly"),
@@ -579,8 +585,8 @@
 <% } else { %>
     <h2>Reparar edades de la temporada anterior</h2>
     <p>Herramienta puntual de administración. Debe ejecutarse manualmente una sola vez y retirarse después.</p>
-    <p>Toma como edad actual la del último snapshot: jornada 1210 si el equipo ya se actualizó, o jornada 1209 si todavía no lo ha hecho.</p>
-    <p>Solo corrige las jornadas anteriores de la temporada 1197-1209 para que tengan exactamente edad actual - 1. No toca otras temporadas ni otros campos.</p>
+    <p>Toma como edad actual la del último snapshot: jornada 1210 si el equipo ya se actualizó, o jornada 1209 si todavía no lo ha hecho. En este último caso captura primero esa edad y después corrige también 1209.</p>
+    <p>Solo corrige la temporada anterior, jornadas 13 a 1 (1209-1197), para que tengan exactamente edad actual - 1. No toca otras temporadas ni otros campos.</p>
     <p>No utiliza backups como referencia ni crea copias auxiliares.</p>
     <form method="post">
         <input type="hidden" name="csrf" value="<%= escapeHtmlRepair(csrf) %>">
