@@ -147,8 +147,8 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
                     conn.setRequestMethod(method);
-                    for (Map.Entry<String, String> header :
-                            SokkerProxy.buildForwardHeaders(requestHeaders).entrySet()) {
+                    for (Map.Entry<String, String> header : SokkerRequestHeaders.forSokker(
+                            SokkerProxy.buildForwardHeaders(requestHeaders)).entrySet()) {
                         conn.setRequestProperty(header.getKey(), header.getValue());
                     }
                     conn.setDoInput(true);
