@@ -60,8 +60,6 @@ public class ActualizarConfiguracion extends SERVLET_ASISTENTE {
 		boolean mostrar_IMC = Util.getBoolean(request, "mostrar_IMC");
 		boolean mostrar_banquillo = Util.getBoolean(request, "mostrar_banquillo");
 		boolean mostrar_suma_habilidades = Util.getBoolean(request, "mostrar_suma_habilidades");
-		boolean ntdb = Util.getBoolean(request, "ntdb");
-		boolean recibir_ntdb = Util.getBoolean(request, "recibir_ntdb");
 		
 		Integer sumskills_gk_rapidez = Util.getInteger(request, "sumskills_gk_rapidez");
 		Integer sumskills_def_rapidez = Util.getInteger(request, "sumskills_def_rapidez");
@@ -99,7 +97,7 @@ public class ActualizarConfiguracion extends SERVLET_ASISTENTE {
 		
 		if (login(request)) {
 
-_log(request, numeros+","+factor_edad+","+factor_edad_rapidez+","+factor_habilidad+","+factor_talento+","+factor_residual+","+factor_formacion+","+factor_rapidez+","+factor_tecnica+","+factor_pases+","+factor_porteria+","+factor_defensa+","+factor_creacion+","+factor_anotacion+","+mostrar_salario+","+mostrar_experiencia+","+mostrar_disciplina_tactica+","+mostrar_trabajo_en_equipo+","+mostrar_altura+","+mostrar_peso+","+mostrar_IMC+","+mostrar_banquillo+","+mostrar_suma_habilidades+","+ntdb+","+recibir_ntdb+",["+scouts+"]");
+_log(request, numeros+","+factor_edad+","+factor_edad_rapidez+","+factor_habilidad+","+factor_talento+","+factor_residual+","+factor_formacion+","+factor_rapidez+","+factor_tecnica+","+factor_pases+","+factor_porteria+","+factor_defensa+","+factor_creacion+","+factor_anotacion+","+mostrar_salario+","+mostrar_experiencia+","+mostrar_disciplina_tactica+","+mostrar_trabajo_en_equipo+","+mostrar_altura+","+mostrar_peso+","+mostrar_IMC+","+mostrar_banquillo+","+mostrar_suma_habilidades+",["+scouts+"]");
 			
 			Usuario usuario = getUsuario(request);
 			usuario.inicializar();
@@ -158,10 +156,7 @@ _log(request, numeros+","+factor_edad+","+factor_edad_rapidez+","+factor_habilid
 			if (sumskills_mid_anotacion != null) usuario.setSumskills_mid_anotacion(sumskills_mid_anotacion);
 			if (sumskills_att_anotacion != null) usuario.setSumskills_att_anotacion(sumskills_att_anotacion);
 			
-			if (usuario.getDef_tid() > NtdbBO.MAX_ID_SELECCION) {
-				usuario.setNtdb(ntdb);
-			} else {
-				usuario.setRecibir_ntdb(recibir_ntdb);
+			if (usuario.getDef_tid() <= NtdbBO.MAX_ID_SELECCION) {
 				usuario.setScouts(scouts);
 			}
 			
