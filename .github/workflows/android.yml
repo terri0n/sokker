@@ -9,6 +9,7 @@ on:
     paths:
       - 'android/SokkerAsistente/**'
       - 'sokker/WebContent/js/util.js'
+      # Public web compliance pages are part of the Android WebView release contract.
       - 'sokker/WebContent/jsp/asistente/asistente.jsp'
       - 'sokker/WebContent/jsp/asistente/privacidad.jsp'
       - 'sokker/WebContent/jsp/asistente/eliminar_cuenta.jsp'
