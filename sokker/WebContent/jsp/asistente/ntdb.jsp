@@ -1,3 +1,10 @@
+<%@page import="com.formulamanager.sokker.bo.NtdbBO"%>
+<%@page import="com.formulamanager.sokker.entity.Jugador"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib tagdir="/WEB-INF/tags" prefix="xtag" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib uri="/WEB-INF/mistags.tld" prefix="tags" %>
 <!DOCTYPE html>
 <html>
 
@@ -58,9 +65,20 @@
 				<div class="cabecera" style="font-size: 1.5em;">
 					NTDB interface
 				</div>
-				
+		
 				<br />
 			
+				<!-- InArticle -->
+				<ins class="adsbygoogle"
+				     style="display:block; text-align:center;"
+				     data-ad-layout="in-article"
+				     data-ad-format="fluid"
+				     data-ad-client="ca-pub-7610610063984650"
+				     data-ad-slot="7009191822"></ins>
+				<script>
+				     (adsbygoogle = window.adsbygoogle || []).push({});
+				</script>
+	
 				<!-- InArticle -->
 				<ins class="adsbygoogle"
 				     style="display:block; text-align:center;"
