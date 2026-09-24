@@ -86,7 +86,7 @@ public abstract class Navegador {
 		} catch (FailingHttpStatusCodeException e) {
 			navegador.close();
 			if (e.getStatusCode() == 401) {
-				throw new LoginExceptionExt("Error when logging in to Sokker: bad password", login, password);
+				throw new LoginExceptionExt("Error when logging in to Sokker: bad password", login);
 			}
 			throw e;
 		} catch (IOException e) {
@@ -204,7 +204,7 @@ public abstract class Navegador {
 		LinkedHashMap<String, Object> actual = (LinkedHashMap<String, Object>) JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/current");
 		Integer tid = JSONUtil.getInteger(actual, "team.id");
 		if (tid == null) {
-			throw new LoginExceptionExt("Error when logging in to Sokker: user has no team", login, password);
+			throw new LoginExceptionExt("Error when logging in to Sokker: user has no team", login);
 		}
 
 		setUsuario(new Usuario(tid, null));
