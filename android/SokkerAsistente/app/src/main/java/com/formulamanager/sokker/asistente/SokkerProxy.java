@@ -103,7 +103,8 @@ final class SokkerProxy {
                 || "Transfer-Encoding".equalsIgnoreCase(name)
                 || "TE".equalsIgnoreCase(name)
                 || "Trailer".equalsIgnoreCase(name)
-                || "Upgrade".equalsIgnoreCase(name);
+                || "Upgrade".equalsIgnoreCase(name)
+                || "Accept-Encoding".equalsIgnoreCase(name);
     }
 
     private static URI parseUri(String url) {
