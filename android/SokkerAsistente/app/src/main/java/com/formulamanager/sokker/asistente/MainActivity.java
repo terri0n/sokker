@@ -5,7 +5,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.nfc.Tag;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -17,13 +16,11 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.ZoomButtonsController;
 
-import java.io.DataOutputStream;
-import java.lang.reflect.InvocationTargetException;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -126,48 +123,51 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 final String url = request.getUrl().toString();
-                if (url.startsWith("https://sokker.org")) {
-                    final String query = "ilogin=" + request.getUrl().getQueryParameter("ilogin") + "&ipassword=" + request.getUrl().getQueryParameter("ipassword");
-                    final String method = request.getMethod();
-                    String ext = MimeTypeMap.getFileExtensionFromUrl(url);
-                    String mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
-
-                    try {
-                        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
-                        conn.setRequestMethod(method);
-                        conn.setRequestProperty("Access-Control-Allow-Origin", "*");
-                        conn.setRequestProperty("Access-Control-Allow-Methods", method);
-                        conn.setDoInput(true);
-                        conn.setUseCaches(false);
-
-                        // Mando los parámetros de GET por POST, ya que aquí no tengo acceso a ellos
-                        conn.setRequestProperty( "Content-Length", query.length() + "");
-                        conn.setUseCaches( false );
-                        try( DataOutputStream wr = new DataOutputStream( conn.getOutputStream())) {
-                            wr.write( query.getBytes() );
-                        }
-
-                        Map<String, String> responseHeaders = convertResponseHeaders(conn.getHeaderFields());
-                        // Habilito CORS
-                        responseHeaders.put("Access-Control-Allow-Origin", "*");
-                        responseHeaders.put("Access-Control-Allow-Methods", method);
-
-                        return new WebResourceResponse(
-                                mime,
-                                conn.getContentEncoding(),
-                                conn.getResponseCode(),
-                                conn.getResponseMessage(),
-                                responseHeaders,
-                                conn.getInputStream()
-                        );
-
-                    } catch (Exception e) {
-                        Log.e(this.toString(), "shouldInterceptRequest: " + e);
-                    }
-                    return null;
-                } else {
+                if (!SokkerProxy.isSokkerUrl(url)) {
                     return super.shouldInterceptRequest(view, request);
                 }
+
+                final String method = request.getMethod();
+                String ext = MimeTypeMap.getFileExtensionFromUrl(url);
+                String mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
+
+                try {
+                    HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+                    conn.setRequestMethod(method);
+                    for (Map.Entry<String, String> header :
+                            SokkerProxy.buildForwardHeaders(request.getRequestHeaders()).entrySet()) {
+                        conn.setRequestProperty(header.getKey(), header.getValue());
+                    }
+                    conn.setDoInput(true);
+                    conn.setUseCaches(false);
+
+                    if (SokkerProxy.isLegacyXmlSessionLogin(method, url)) {
+                        String body = SokkerProxy.buildLegacyLoginBody(url);
+                        conn.setDoOutput(true);
+                        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                        try (OutputStream out = conn.getOutputStream()) {
+                            out.write(body.getBytes(StandardCharsets.UTF_8));
+                        }
+                    }
+
+                    Map<String, String> responseHeaders = convertResponseHeaders(conn.getHeaderFields());
+                    // Habilito CORS
+                    responseHeaders.put("Access-Control-Allow-Origin", "*");
+                    responseHeaders.put("Access-Control-Allow-Methods", method);
+
+                    return new WebResourceResponse(
+                            mime,
+                            conn.getContentEncoding(),
+                            conn.getResponseCode(),
+                            conn.getResponseMessage(),
+                            responseHeaders,
+                            SokkerProxy.responseStream(conn)
+                    );
+
+                } catch (Exception e) {
+                    Log.e(this.toString(), "shouldInterceptRequest: " + e);
+                }
+                return null;
             }
         });
 
