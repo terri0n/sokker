@@ -1,6 +1,7 @@
 package com.formulamanager.sokker.acciones.asistente;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -88,10 +89,19 @@ public class Asistente extends SERVLET_ASISTENTE {
 				}
 				
 				request.setAttribute("jugadores", lista_jugadores);
+				request.setAttribute("salario_jugadores", getSalario(lista_jugadores));
 			}
 			
 			request.getRequestDispatcher("/jsp/asistente/asistente.jsp").forward(request, response);
 		}
+	}
+
+	private static BigDecimal getSalario(List<Jugador> jugadores) {
+		BigDecimal salario = BigDecimal.ZERO;
+		for (Jugador jugador : jugadores) {
+			salario = salario.add(jugador.getSalario_pais());
+		}
+		return salario;
 	}
 	
 	@Override
