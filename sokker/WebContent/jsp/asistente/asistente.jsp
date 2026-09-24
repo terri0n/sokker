@@ -1083,7 +1083,7 @@ request.setAttribute("j", new Jugador());
 							<input type="hidden" id="confirmed" name="confirmed" value="${pageContext.request.serverName == 'localhost' ? '1' : ''}" />
 
 							<fmt:message key="login.sokker_login" />: <input type="text" id="ilogin" name="ilogin" value="${sessionScope.usuario.login_sokker}" size="10" <c:if test='${sessionScope.usuario.def_tid > MAX_ID_SELECCION}'>required="required"</c:if> /><br/>
-							<fmt:message key="login.sokker_password" />: <input type="password" id="ipassword" name="ipassword" size="10" <c:if test='${sessionScope.usuario.def_tid > MAX_ID_SELECCION}'>required="required"</c:if> value="${cookie.apassword.value}" /><br/>
+							<fmt:message key="login.sokker_password" />: <input type="password" id="ipassword" name="ipassword" size="10" <c:if test='${sessionScope.usuario.def_tid > MAX_ID_SELECCION}'>required="required"</c:if> /><br/>
 
 							
 							<input type="submit" id='boton_actualizar' value="<fmt:message key="common.update" />" onclick="return actualizar_submit();" />
@@ -1886,7 +1886,7 @@ request.setAttribute("j", new Jugador());
 				<input type="text" id="ilogin2" name="ilogin2" value="${sessionScope.usuario.login_sokker}" size="10" required="required" />
 				<br />
 				<b><fmt:message key="login.sokker_password" />:</b>
-				<input type="password" id="ipassword2" name="ipassword2" size="10" required="required" value="${cookie.apassword.value}" />
+				<input type="password" id="ipassword2" name="ipassword2" size="10" required="required" />
 				<br /><br />
 				<input type="hidden" id="confirmed2" name="confirmed2" value="${pageContext.request.serverName == 'localhost' ? '1' : ''}" />
 	

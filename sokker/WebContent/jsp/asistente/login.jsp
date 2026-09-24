@@ -248,9 +248,7 @@
 				<div class="inicio_bloque fin_bloque doble" style="text-align: right;" id="acceso">
 					<form method="post" action="${pageContext.request.contextPath}/asistente/login" onsubmit="$('input[type=submit]').prop('disabled', true);">
 						<fmt:message key="common.login" /> <input type="text" name="alogin" required="required" value="<%= Util.nvl(Util.getCookie(request, "alogin")) %>"><br/>
-						<fmt:message key="common.password" /> <input type="password" name="apassword" required="required" value="<%= Util.nvl(Util.getCookie(request, "apassword")) %>"><br/>
-						<label class="peque" for="recordar"><input type="checkbox" name="recordar" id="recordar" <c:out value="${empty cookie.apassword.value ? '' : 'checked'}" /> /><fmt:message key="login.remember_password" /></label>
-						<br />
+						<fmt:message key="common.password" /> <input type="password" name="apassword" required="required"><br/>
 						<input type="submit" /><br/>
 					</form>
 				</div>
