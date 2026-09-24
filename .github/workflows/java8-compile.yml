@@ -95,7 +95,7 @@ jobs:
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" com.formulamanager.sokker.acciones.asistente.CredentialHygieneHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" AccountDeletionUiHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" com.formulamanager.sokker.acciones.asistente.AdminAccountDeletionHarness
-          java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" PublicDeletionRequestHarness
+          java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" com.formulamanager.sokker.acciones.asistente.PublicDeletionRequestHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" PrivacyPagesHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainerMappingHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainingMatchMappingHarness
