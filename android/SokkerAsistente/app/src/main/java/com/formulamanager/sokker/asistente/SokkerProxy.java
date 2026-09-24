@@ -60,6 +60,27 @@ final class SokkerProxy {
         return "ilogin=" + query.get("ilogin") + "&ipassword=" + query.get("ipassword");
     }
 
+    static boolean isCorsPreflight(String method, String url, Map<String, String> requestHeaders) {
+        return "OPTIONS".equalsIgnoreCase(method)
+                && isSokkerUrl(url)
+                && hasText(headerValue(requestHeaders, "Access-Control-Request-Method"));
+    }
+
+    static Map<String, String> buildCorsPreflightResponseHeaders(Map<String, String> requestHeaders) {
+        Map<String, String> result = new LinkedHashMap<>();
+        String origin = headerValue(requestHeaders, "Origin");
+        String requestedMethod = headerValue(requestHeaders, "Access-Control-Request-Method");
+        String requestedHeaders = headerValue(requestHeaders, "Access-Control-Request-Headers");
+
+        result.put("Access-Control-Allow-Origin", hasText(origin) ? origin : "*");
+        result.put("Access-Control-Allow-Methods",
+                hasText(requestedMethod) ? requestedMethod + ", OPTIONS" : "OPTIONS");
+        if (hasText(requestedHeaders)) {
+            result.put("Access-Control-Allow-Headers", requestedHeaders);
+        }
+        return result;
+    }
+
     static Map<String, String> buildForwardHeaders(Map<String, String> requestHeaders) {
         Map<String, String> result = new LinkedHashMap<>();
         boolean hasClientHeader = false;
@@ -92,6 +113,22 @@ final class SokkerProxy {
             return error != null ? error : new ByteArrayInputStream(new byte[0]);
         }
         return connection.getInputStream();
+    }
+
+    private static String headerValue(Map<String, String> headers, String name) {
+        if (headers == null) {
+            return null;
+        }
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            if (entry.getKey() != null && name.equalsIgnoreCase(entry.getKey())) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 
     private static boolean isConnectionManagedHeader(String name) {
