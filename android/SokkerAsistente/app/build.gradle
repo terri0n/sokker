@@ -3,6 +3,13 @@ plugins {
     id 'org.jetbrains.kotlin.android' version '1.8.22' // Si usas Kotlin
 }
 
+def uploadStoreFile = System.getenv("ANDROID_UPLOAD_STORE_FILE")
+def uploadStorePassword = System.getenv("ANDROID_UPLOAD_STORE_PASSWORD")
+def uploadKeyAlias = System.getenv("ANDROID_UPLOAD_KEY_ALIAS")
+def uploadKeyPassword = System.getenv("ANDROID_UPLOAD_KEY_PASSWORD")
+def releaseSigningConfigured = [uploadStoreFile, uploadStorePassword, uploadKeyAlias, uploadKeyPassword]
+        .every { value -> value != null && !value.trim().isEmpty() }
+
 android {
     namespace "com.raqueto.sokkerasistente"
     compileSdk 36
@@ -16,8 +23,22 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (releaseSigningConfigured) {
+            release {
+                storeFile file(uploadStoreFile)
+                storePassword uploadStorePassword
+                keyAlias uploadKeyAlias
+                keyPassword uploadKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (releaseSigningConfigured) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
