@@ -38,7 +38,8 @@ public final class CredentialHygieneHarness {
         forbid(exception, "private String contrasenya", "LoginExceptionExt still stores the submitted password");
         forbid(exception, "getContrasenya()", "LoginExceptionExt still exposes the submitted password");
         forbid(servlet, "getContrasenya()", "SERVLET_ASISTENTE still logs the submitted password");
-        forbid(login, "new Cookie(\"apassword\"", "Login still writes the submitted password cookie");
+        forbid(login, "new Cookie(\"apassword\", apassword)", "Login still writes the submitted password cookie directly");
+        forbid(login, "new Cookie(\"apassword\", URLEncoder.encode(apassword", "Login still writes the submitted password cookie encoded");
         forbid(login, "new LoginExceptionExt(Util.getTexto(request.getLocale().getLanguage(), \"messages.login_error\"), alogin, apassword)",
                 "Login still passes the submitted password into LoginExceptionExt");
         forbid(browser, ", login, password)", "Navegador still passes Sokker password into LoginExceptionExt");
