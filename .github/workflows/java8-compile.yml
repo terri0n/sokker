@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - 'fix/**'
+      - 'feature/**'
   workflow_dispatch:
 
 jobs:
@@ -129,7 +130,7 @@ jobs:
           test "$(find /tmp/sokker-war/WEB-INF/lib -type f -name '*.jar' | wc -l)" -gt 0
 
           jar cf /tmp/sokker.war -C /tmp/sokker-war .
-          jar tf /tmp/sokker.war > /tmp/sokker-war-entries.txt
+          jar tf /tmp/sokker-war > /tmp/sokker-war-entries.txt
           grep -Fxq 'WEB-INF/web.xml' /tmp/sokker-war-entries.txt
           grep -Fxq 'WEB-INF/classes/com/formulamanager/sokker/bo/AsistenteBO.class' /tmp/sokker-war-entries.txt
           test -s /tmp/sokker.war
