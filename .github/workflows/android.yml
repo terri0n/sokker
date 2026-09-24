@@ -8,10 +8,12 @@ on:
       - 'fix/android-*'
     paths:
       - 'android/SokkerAsistente/**'
+      - 'sokker/WebContent/js/util.js'
       - '.github/workflows/android.yml'
   pull_request:
     paths:
       - 'android/SokkerAsistente/**'
+      - 'sokker/WebContent/js/util.js'
       - '.github/workflows/android.yml'
   workflow_dispatch:
 
@@ -56,11 +58,18 @@ jobs:
       - name: Verify proxy integration contract
         run: |
           MAIN=android/SokkerAsistente/app/src/main/java/com/formulamanager/sokker/asistente/MainActivity.java
+          PROXY=android/SokkerAsistente/app/src/main/java/com/formulamanager/sokker/asistente/SokkerProxy.java
+          WEB_UTIL=sokker/WebContent/js/util.js
           grep -q 'SokkerProxy.isSokkerUrl' "$MAIN"
           grep -q 'SokkerProxy.buildForwardHeaders' "$MAIN"
           grep -q 'SokkerProxy.isLegacyXmlSessionLogin' "$MAIN"
           ! grep -R -nE 'Log\.[a-zA-Z]+\([^\n]*(ilogin|ipassword|buildLegacyLoginBody|body)' \
             android/SokkerAsistente/app/src/main/java
+          ANDROID_KEY="$(sed -n 's/.*SOKKER_CLIENT_KEY = "\([^"]*\)".*/\1/p' "$PROXY")"
+          WEB_KEY="$(sed -n 's/.*SOKKER_CLIENT_KEY = "\([^"]*\)".*/\1/p' "$WEB_UTIL")"
+          test -n "$ANDROID_KEY"
+          test -n "$WEB_KEY"
+          test "$ANDROID_KEY" = "$WEB_KEY"
 
       - name: Verify repository safety
         run: |
