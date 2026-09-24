@@ -18,8 +18,8 @@ public final class TrainingAgeSeasonRepairHarness {
                 "the one-off correction must live in the JSP, not in permanent Java application code");
         require(jsp.contains("private RepairSummary repairDirectory(File directory)"),
                 "the JSP must contain the repair implementation it executes manually");
-        require(jsp.contains("private Integer expectedHistoricalAge(int referenceAge, int snapshotWeek)"),
-                "the JSP must use week 1209 age as the fixed reference for the previous season");
+        require(jsp.contains("private Integer expectedAge(int latestWeek, int latestAge, int snapshotWeek)"),
+                "the JSP must derive historical age from the latest valid snapshot");
         require(jsp.contains("private void selfTestRepair()"),
                 "the JSP must self-test the destructive transformation before execution");
 
@@ -34,26 +34,33 @@ public final class TrainingAgeSeasonRepairHarness {
         require(!jsp.contains("alreadyExecuted"),
                 "a second manual execution must be allowed and naturally be a no-op");
 
-        require(jsp.contains("snapshot.week == 1209"),
-                "week 1209 must be located explicitly and used as the age reference");
-        require(jsp.contains("snapshotWeek < 1197 || snapshotWeek > 1208"),
-                "only weeks 1 to 12 of the previous season may be rewritten");
-        require(jsp.contains("return Integer.valueOf(referenceAge)"),
-                "weeks 1197..1208 must be restored to exactly the age stored at week 1209");
-        require(!jsp.contains("latestAge - 1"),
-                "the repair must not derive previous-season age from week 1210");
-        require(!jsp.contains("snapshotWeek > 1209"),
-                "week 1209 itself must not be part of the rewrite range");
+        require(jsp.contains("latest.week != 1210 && latest.week != 1209 && latest.week != 1208"),
+                "only weeks 1210, 1209 or 1208 may be used as the valid age base");
+        require(jsp.contains("snapshotWeek < 1195 || snapshotWeek > latestWeek"),
+                "the repair must be restricted to week 1195 through the latest valid snapshot");
+        require(jsp.contains("if (latestWeek >= 1209)"),
+                "the age calculation must distinguish the current season from a 1208 reference");
+        require(jsp.contains("if (snapshotWeek >= 1209)"),
+                "weeks 1209 and 1210 must keep the current-season age");
+        require(jsp.contains("if (snapshotWeek >= 1196)"),
+                "weeks 1196 through 1208 must share the previous-season age");
+        require(jsp.contains("return Integer.valueOf(latestAge - 2)"),
+                "week 1195 must be two years below a 1209/1210 current-season reference");
+        require(jsp.contains("return Integer.valueOf(latestAge - 1)"),
+                "crossing one season boundary must subtract exactly one year");
         require(jsp.contains("future_key=keep\\\\:exactly"),
                 "the JSP self-test must protect unknown properties during round-trip");
         require(jsp.contains("requireRepair(second.modifiedSnapshots == 0"),
                 "the destructive transformation must prove that a second pass makes no changes");
-        require(jsp.contains("snapshot(1210, 25) + \",\" + snapshot(1209, 24)"),
-                "week 1210 and week 1209 must both retain their already-correct ages");
-        require(jsp.contains("snapshot(1209, 24) + \",\" + snapshot(1208, 24) + \",\" + snapshot(1197, 24)"),
-                "weeks 1 to 12 must be normalized to the exact age stored at week 13");
-        require(jsp.contains("missingReference"),
-                "the self-test must verify that players without week 1209 are skipped");
+
+        require(jsp.contains("snapshot(1210, 25) + \",\" + snapshot(1209, 25) + \",\" + snapshot(1208, 24)"),
+                "a 1210 reference must keep 1209 at the same age and put 1208 in the previous season");
+        require(jsp.contains("snapshot(1196, 24) + \",\" + snapshot(1195, 23)"),
+                "a 1210/1209 reference must repair the complete previous season and the preceding week 13 boundary");
+        require(jsp.contains("snapshot(1208, 24) + \",\" + snapshot(1196, 24) + \",\" + snapshot(1195, 23)"),
+                "a 1208 reference must keep that season age and subtract one year at 1195");
+        require(jsp.contains("unsupportedLatest"),
+                "the self-test must verify that players whose latest week is outside 1208..1210 are skipped");
     }
 
     private static String read(Path path) throws Exception {
