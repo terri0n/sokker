@@ -13,6 +13,7 @@ public final class CredentialHygieneHarness {
         legacyPasswordCookieIsExpiredSafely();
         sourceContainsNoCleartextPasswordRetention();
         rememberPasswordIsExplicitAndBrowserLocal();
+        rememberedAssistantPasswordPrefillsSokkerUpdateForSameUser();
     }
 
     private static void legacyPasswordCookieIsExpiredSafely() {
@@ -79,6 +80,22 @@ public final class CredentialHygieneHarness {
         require(util.contains("document.cookie"), "Legacy password-cookie migration is missing");
         require(util.contains("getAssistantLegacyCookie(\"apassword\")"),
                 "Legacy apassword cookie is not handled during migration");
+    }
+
+    private static void rememberedAssistantPasswordPrefillsSokkerUpdateForSameUser() throws Exception {
+        String assistantJsp = read("sokker/WebContent/jsp/asistente/asistente.jsp");
+        String util = read("sokker/WebContent/js/util.js");
+
+        require(assistantJsp.contains("data-assistant-login=\"${sessionScope.usuario.login}\""),
+                "Sokker update form does not expose the current Assistant login");
+        require(util.contains("initAssistantSokkerPassword"),
+                "Sokker update password initialization is missing");
+        require(util.contains("form[action$='/asistente/actualizar']"),
+                "Sokker update form is not located safely");
+        require(util.contains("rememberedLogin !== assistantLogin"),
+                "Remembered password is not restricted to the same Assistant user");
+        require(util.contains("$form.find(\"#ipassword\").val(password)"),
+                "Remembered Assistant password is not copied into the Sokker password field");
     }
 
     private static String read(String path) throws Exception {
