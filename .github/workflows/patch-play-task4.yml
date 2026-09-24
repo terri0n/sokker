@@ -1,0 +1,100 @@
+name: Patch Play Task 4
+
+on:
+  push:
+    branches:
+      - feature/play-console-compliance
+    paths:
+      - '.github/workflows/patch-play-task4.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/play-console-compliance
+      - name: Apply admin ordering and in-app request UI
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          bo = Path('sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java')
+          text = bo.read_text(encoding='utf-8')
+          pattern = re.compile(r'\tpublic static String listar_usuarios\(\) throws UnsupportedEncodingException \{.*?\n\t\}\n\n\tpublic static String listar_jornadas', re.S)
+          replacement = r'''\tpublic static String listar_usuarios() throws UnsupportedEncodingException {
+\t\tString[] archivos = UsuarioBO.obtener_usuarios();
+\t\tList<String> pendientes = UsuarioBO.obtener_usuarios_con_borrado_solicitado();
+\t\tSet<String> pendientesSet = new HashSet<String>(pendientes);
+
+\t\tString salida = "Total: " + archivos.length + "<br/>"
+\t\t\t\t+ "<label id='' for='reset_intentos'><input type='checkbox' id='reset_intentos' /> Resetear</label><br/>";
+
+\t\tif (!pendientes.isEmpty()) {
+\t\t\tsalida += "<strong>Pending account deletion requests</strong><br/>";
+\t\t\tfor (String usuario : pendientes) {
+\t\t\t\tsalida += "<a href='asistente/login_como?usuario=" + URLEncoder.encode(usuario, "UTF-8") + "'>" + usuario + "</a>"
+\t\t\t\t\t\t+ " <a href='asistente/examinar_usuario?usuario=" + URLEncoder.encode(usuario, "UTF-8") + "'><i class=\"fa-solid fa-binoculars azul\"></i></a><br/>";
+\t\t\t}
+\t\t\tsalida += "<hr/>";
+\t\t}
+
+\t\tArrays.sort(archivos);
+\t\tfor (String s : archivos) {
+\t\t\ttry {
+\t\t\t\tString usuario = s.split(".properties")[0].substring(1);
+\t\t\t\tif (pendientesSet.contains(usuario)) {
+\t\t\t\t\tcontinue;
+\t\t\t\t}
+\t\t\t\tFile fUsuario = new File(SystemUtil.getVar(SystemUtil.PATH) + "/" + s);
+\t\t\t\tDate fecha = new Date(fUsuario.lastModified());
+\t\t\t\tUsuario usr = UsuarioBO.leer_usuario(usuario, false);
+
+\t\t\t\tsalida += Util.dateToString(fecha)
+\t\t\t\t\t\t+ " <a href='javascript:void(0)' onclick=\"location.href='asistente/login_como?usuario=" + URLEncoder.encode(usuario, "UTF-8") + "&reset_intentos=' + $('#reset_intentos').val()\">" + usuario + "</a> ";
+\t\t\t\tsalida += "[" + usr.getTid() + "]"
+\t\t\t\t\t\t+ " <a href='javascript:void(0)' onclick=\"location.href='asistente/examinar_usuario?usuario=" + URLEncoder.encode(usuario, "UTF-8") + "'\"><i class=\"fa-solid fa-binoculars azul\"></i></a>"
+\t\t\t\t\t\t+ " <br/>";
+\t\t\t} catch (Exception e) {
+\t\t\t\te.printStackTrace();
+\t\t\t\tsalida += "-- Error leyendo " + s + "<br />";
+\t\t\t}
+\t\t}
+
+\t\treturn salida;
+\t}
+
+\tpublic static String listar_jornadas'''
+          text2, n = pattern.subn(replacement, text, count=1)
+          if n != 1:
+              raise SystemExit('listar_usuarios method replacement failed: %d' % n)
+          bo.write_text(text2, encoding='utf-8', newline='')
+
+          jsp = Path('sokker/WebContent/jsp/asistente/asistente.jsp')
+          text = jsp.read_text(encoding='utf-8')
+          marker = '</body>'
+          if marker not in text:
+              raise SystemExit('asistente.jsp body marker not found')
+          block = '''\n\t<c:if test="${not empty sessionScope.usuario and empty sessionScope.admin}">\n\t\t<div id="account_deletion_request" style="margin: 12px; text-align: center;">\n\t\t\t<%\n\t\t\t\tUsuario deletionUser = (Usuario) session.getAttribute("usuario");\n\t\t\t\tLong deletionRequestedAt = deletionUser == null ? null : UsuarioBO.obtener_fecha_solicitud_borrado(deletionUser.getLogin());\n\t\t\t\tif (deletionRequestedAt == null) {\n\t\t\t%>\n\t\t\t<form method="post" action="${pageContext.request.contextPath}/asistente/solicitar_eliminacion_cuenta" onsubmit="return confirm('Request deletion of this account?');">\n\t\t\t\t<button type="submit">Request account deletion</button>\n\t\t\t</form>\n\t\t\t<% } else { %>\n\t\t\t<strong>Account deletion requested</strong>\n\t\t\t<% } %>\n\t\t</div>\n\t</c:if>\n'''
+          if 'id="account_deletion_request"' not in text:
+              text = text.replace(marker, block + marker, 1)
+          jsp.write_text(text, encoding='utf-8', newline='')
+          PY
+      - name: Verify task 4 surface
+        run: |
+          grep -q 'obtener_usuarios_con_borrado_solicitado' sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java
+          grep -q 'Pending account deletion requests' sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java
+          grep -q 'solicitar_eliminacion_cuenta' sokker/WebContent/jsp/asistente/asistente.jsp
+          ! grep -q 'borrar_usuario_click' <(sed -n '/listar_usuarios/,/listar_jornadas/p' sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java)
+      - name: Commit patch
+        run: |
+          git config user.name 'Terrion'
+          git config user.email '63014185+terri0n@users.noreply.github.com'
+          git add sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java sokker/WebContent/jsp/asistente/asistente.jsp
+          git commit -m 'feat: prioritize account deletion requests for admins'
+          git push origin HEAD:feature/play-console-compliance
