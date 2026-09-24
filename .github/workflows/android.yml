@@ -45,15 +45,19 @@ jobs:
           grep -q 'gradle-8.14.2-bin.zip' gradle/wrapper/gradle-wrapper.properties
           ./gradlew --version
 
-      - name: Unit tests and build
+      - name: Unit tests and clean build
         working-directory: android/SokkerAsistente
-        run: ./gradlew testDebugUnitTest assembleDebug bundleRelease --stacktrace
+        run: ./gradlew clean testDebugUnitTest assembleDebug bundleRelease --stacktrace
 
-      - name: Verify build outputs
+      - name: Verify build outputs and release version
         working-directory: android/SokkerAsistente
         run: |
           test -s app/build/outputs/apk/debug/app-debug.apk
           test -s app/build/outputs/bundle/release/app-release.aab
+          grep -Eq 'compileSdk(Version)?[[:space:]]+36' app/build.gradle
+          grep -Eq 'targetSdk(Version)?[[:space:]]+36' app/build.gradle
+          grep -Eq 'versionCode[[:space:]]+11' app/build.gradle
+          grep -Eq 'versionName[[:space:]]+["'"']1\.11["'"']' app/build.gradle
 
       - name: Verify proxy integration contract
         run: |
