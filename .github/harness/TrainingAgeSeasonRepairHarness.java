@@ -46,6 +46,8 @@ public final class TrainingAgeSeasonRepairHarness {
                 "the old artificial lower limit at week 1170 must be removed");
         require(jsp.contains("latestAge + seasonIndex(snapshotWeek) - seasonIndex(latestWeek)"),
                 "historical ages must be derived from the number of crossed season boundaries");
+        require(jsp.contains("week >= NEW_TRAINING_FORMAT_WEEK_REPAIR ? base + \",true\" : base"),
+                "the JSP self-test must generate both pre-993 and post-993 snapshot formats correctly");
         require(jsp.contains("future_key=keep\\\\:exactly"),
                 "the JSP self-test must protect unknown properties during round-trip");
         require(jsp.contains("requireRepair(second.modifiedSnapshots == 0"),
@@ -53,6 +55,8 @@ public final class TrainingAgeSeasonRepairHarness {
 
         require(jsp.contains("snapshot(1210, 25) + \",\" + snapshot(1209, 25) + \",\" + snapshot(1208, 24)"),
                 "a 1210 reference must keep 1209 at the same age and put 1208 in the previous season");
+        require(jsp.contains("snapshot(993, 8) + \",\" + snapshot(992, 8)"),
+                "the self-test must cross the historical training-format boundary at week 993");
         require(jsp.contains("snapshot(988, 8) + \",\" + snapshot(987, 7) + \",\" + snapshot(976, 7)"),
                 "the repair must continue through all 13-week training seasons down to week 976");
         require(jsp.contains("snapshot(976, 7) + \",\" + snapshot(975, 19)"),
