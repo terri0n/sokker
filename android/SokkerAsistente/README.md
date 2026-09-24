@@ -30,6 +30,8 @@ app/build/outputs/apk/debug/app-debug.apk
 app/build/outputs/bundle/release/app-release.aab
 ```
 
+El AAB producido por CI sirve para verificar compilación/empaquetado. Antes de subirlo a Google Play debe firmarse con la clave de subida de la cuenta de Play.
+
 Los APK/AAB son artefactos generados y no deben versionarse.
 
 ## Proxy de Sokker
@@ -60,13 +62,37 @@ keytool -genkeypair \
   -validity 10000
 ```
 
+Generar primero el bundle:
+
+```bash
+./gradlew bundleRelease
+```
+
+Firmarlo después con la clave de subida. `jarsigner` pedirá la contraseña de forma interactiva, por lo que no hace falta escribirla en scripts ni argumentos:
+
+```bash
+jarsigner \
+  -keystore "$HOME/.android/sokker-asistente-upload.jks" \
+  app/build/outputs/bundle/release/app-release.aab \
+  sokker-asistente-upload
+```
+
+Comprobar la firma antes de subirlo:
+
+```bash
+jarsigner -verify -verbose -certs \
+  app/build/outputs/bundle/release/app-release.aab
+```
+
+Sólo después de esa verificación se debe subir `app/build/outputs/bundle/release/app-release.aab` a Google Play y enrolar la aplicación en Play App Signing.
+
 Reglas:
 
 - no copiar el keystore al repositorio;
 - no versionar `*.jks`, `*.keystore`, `key.properties` ni passwords;
 - no incluir credenciales de firma en commits o documentación;
-- enrolar la primera release en Play App Signing;
-- subir a Play el AAB de `app/build/outputs/bundle/release/app-release.aab`.
+- conservar de forma segura la clave de subida fuera de Git;
+- no tratar el AAB sin firmar que produce CI como artefacto listo para subir a Play.
 
 Como la firma será distinta de la del APK antiguo distribuido manualmente, un usuario que conserve ese APK con el mismo package id tendrá que desinstalarlo antes de instalar la versión nueva firmada para Play.
 
@@ -86,4 +112,4 @@ Antes de promover una release desde el canal interno de Google Play:
 
 ## CI
 
-`.github/workflows/android.yml` usa JDK 17, Android API 36 y una versión de Gradle fijada. Ejecuta tests unitarios, construye APK debug y AAB release, y comprueba que el repositorio no contiene artefactos generados ni material de firma.
+`.github/workflows/android.yml` usa JDK 17, Android API 36 y el wrapper Gradle 8.14.2 versionado con el proyecto. Ejecuta tests unitarios, construye APK debug y AAB release, y comprueba que el repositorio no contiene artefactos generados ni material de firma.
