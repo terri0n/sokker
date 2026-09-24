@@ -8,6 +8,8 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -23,12 +25,87 @@ import com.formulamanager.sokker.entity.Jugador.DEMARCACION;
 import com.formulamanager.sokker.entity.Usuario;
 
 public class UsuarioBO {
+	public static final String ACCOUNT_DELETION_REQUESTED_AT = "account_deletion_requested_at";
+
+	private static String ruta_usuario(String login) {
+		String loginNormalizado = login.toLowerCase();
+		return SystemUtil.getVar("path") + (loginNormalizado.startsWith("prueba/") ? "" : "_") + loginNormalizado + ".properties";
+	}
+
+	private static Properties cargar_properties_usuario(String login) throws IOException {
+		String ruta = ruta_usuario(login);
+		File file = new File(ruta);
+		if (!file.exists()) {
+			throw new IOException("Usuario no encontrado: " + login);
+		}
+
+		Properties prop = new Properties();
+		try (InputStream input = new FileInputStream(file)) {
+			prop.load(input);
+		}
+		return prop;
+	}
+
+	private static Properties cargar_properties_usuario_sin_excepcion(String login) {
+		try {
+			return cargar_properties_usuario(login);
+		} catch (Exception e) {
+			return new Properties();
+		}
+	}
+
+	public static void solicitar_borrado(String login, long timestamp) throws IOException {
+		Properties prop = cargar_properties_usuario(login);
+		prop.setProperty(ACCOUNT_DELETION_REQUESTED_AT, String.valueOf(timestamp));
+		Util.guardar_properties(prop, ruta_usuario(login));
+	}
+
+	public static Long obtener_fecha_solicitud_borrado(String login) {
+		Properties prop = cargar_properties_usuario_sin_excepcion(login);
+		String value = prop.getProperty(ACCOUNT_DELETION_REQUESTED_AT);
+		if (value == null || value.trim().isEmpty()) {
+			return null;
+		}
+		try {
+			return Long.valueOf(value);
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
+	public static List<String> obtener_usuarios_con_borrado_solicitado() {
+		String[] archivos = obtener_usuarios();
+		final HashMap<String, Long> fechas = new HashMap<String, Long>();
+		List<String> usuarios = new ArrayList<String>();
+
+		for (String archivo : archivos) {
+			if (archivo == null || !archivo.startsWith("_") || !archivo.endsWith(".properties")) {
+				continue;
+			}
+			String login = archivo.substring(1, archivo.length() - ".properties".length());
+			Long fecha = obtener_fecha_solicitud_borrado(login);
+			if (fecha != null) {
+				fechas.put(login, fecha);
+				usuarios.add(login);
+			}
+		}
+
+		Collections.sort(usuarios, new Comparator<String>() {
+			@Override
+			public int compare(String a, String b) {
+				int fecha = fechas.get(a).compareTo(fechas.get(b));
+				return fecha != 0 ? fecha : a.compareToIgnoreCase(b);
+			}
+		});
+		return usuarios;
+	}
+
 	public static Usuario leer_usuario (String login, boolean leer_scouts) {
 		Properties prop = new Properties();
 		InputStream input = null;
 	
 		try {
-			String BD = SystemUtil.getVar("path") + (login.startsWith("prueba/") ? "" : "_") + login.toLowerCase() + ".properties";
+			String BD = ruta_usuario(login);
 			
 			File file = new File(BD);
 			if (!file.exists()) {
@@ -99,7 +176,6 @@ public class UsuarioBO {
 						if (u != null && u.getTid_nt() != null) {
 							usuario.getScout_de().put(entry.getKey(), u);
 						}
-					}
 				}
 			}
 			
@@ -145,9 +221,18 @@ public class UsuarioBO {
 		return String.join(",", resultado) + ",*";
 	}
 
+	private static String purgar_secreto_actualizacion_automatica(String serializado) {
+		List<String> valores = Arrays.asList(serializado.split(",", -1));
+		int fin = valores.indexOf("*");
+		if (fin > 0) {
+			// El último campo conocido antes del asterisco es la contraseña Base64 de la actualización automática retirada.
+			valores.set(fin - 1, "");
+		}
+		return String.join(",", valores);
+	}
+
 	public static void grabar_usuario(Usuario usuario) throws IOException {
-		// El usuario de prueba tiene "prueba/" como prefijo
-		String ruta = SystemUtil.getVar("path") + (usuario.getLogin().startsWith("prueba/") ? "" : "_") + usuario.getLogin() + ".properties";
+		String ruta = ruta_usuario(usuario.getLogin());
 		Properties prop = new Properties();
 		File file = new File(ruta);
 		if (file.exists()) {
@@ -167,7 +252,8 @@ public class UsuarioBO {
 			}
 		}
 		
-		prop.setProperty("usuario", conservar_valores_usuario_desconocidos(usuario_anterior, usuario.serializar()));
+		String usuario_serializado = purgar_secreto_actualizacion_automatica(usuario.serializar());
+		prop.setProperty("usuario", conservar_valores_usuario_desconocidos(usuario_anterior, usuario_serializado));
 		prop.setProperty("notas", Util.nvl(usuario.getNotas()));
 
 		// Entrenamiento
