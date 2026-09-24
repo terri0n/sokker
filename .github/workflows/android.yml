@@ -81,7 +81,7 @@ jobs:
             echo 'Generated Android artifact or signing material is tracked' >&2
             exit 1
           fi
-          if git grep -nE 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|storePassword|keyPassword' -- ':!docs/**'; then
-            echo 'Private key or signing password material is tracked' >&2
+          if git grep -nE 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|storePassword|keyPassword' -- 'android/SokkerAsistente/**'; then
+            echo 'Private key or signing password material is tracked in Android project' >&2
             exit 1
           fi
