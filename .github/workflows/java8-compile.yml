@@ -34,7 +34,6 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
-
           source = Path('sokker/src')
           target = Path('/tmp/sokker-src')
           for path in source.rglob('*.java'):
@@ -57,8 +56,7 @@ jobs:
           JSP="$HOME/.m2/repository/javax/servlet/jsp/javax.servlet.jsp-api/2.3.3/javax.servlet.jsp-api-2.3.3.jar"
           MAVEN_CP="$(cat /tmp/maven-classpath.txt)"
           CP="sokker/WebContent/WEB-INF/lib/*:${MAVEN_CP}:${SERVLET}:${JSP}"
-          find /tmp/sokker-src -name '*.java' -print0 \
-            | xargs -0 javac -source 8 -target 8 -encoding UTF-8 -cp "$CP" -d /tmp/sokker-classes
+          find /tmp/sokker-src -name '*.java' -print0 | xargs -0 javac -source 8 -target 8 -encoding UTF-8 -cp "$CP" -d /tmp/sokker-classes
 
       - name: Verify compatibility harnesses
         shell: bash
@@ -69,13 +67,12 @@ jobs:
           JSP="$HOME/.m2/repository/javax/servlet/jsp/javax.servlet.jsp-api/2.3.3/javax.servlet.jsp-api-2.3.3.jar"
           MAVEN_CP="$(cat /tmp/maven-classpath.txt)"
           CP="sokker/WebContent/WEB-INF/lib/*:${MAVEN_CP}:${SERVLET}:${JSP}"
-          javac -source 8 -target 8 -encoding UTF-8 \
-            -cp "/tmp/sokker-classes:${CP}" \
-            -d /tmp/compat-harness \
+          javac -source 8 -target 8 -encoding UTF-8 -cp "/tmp/sokker-classes:${CP}" -d /tmp/compat-harness \
             .github/harness/PersistenceRoundTrip.java \
             .github/harness/AccountDeletionHarness.java \
             .github/harness/CredentialHygieneHarness.java \
             .github/harness/AccountDeletionUiHarness.java \
+            .github/harness/AdminAccountDeletionHarness.java \
             .github/harness/TrainerMappingHarness.java \
             .github/harness/TrainingMatchMappingHarness.java \
             .github/harness/TrainingAgeBoundaryHarness.java \
@@ -95,6 +92,7 @@ jobs:
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" com.formulamanager.sokker.bo.AccountDeletionHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" com.formulamanager.sokker.acciones.asistente.CredentialHygieneHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" AccountDeletionUiHarness
+          java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" com.formulamanager.sokker.acciones.asistente.AdminAccountDeletionHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainerMappingHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainingMatchMappingHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TrainingAgeBoundaryHarness
@@ -129,12 +127,10 @@ jobs:
           mkdir -p /tmp/sokker-war/WEB-INF/classes
           cp -a sokker/WebContent/. /tmp/sokker-war/
           cp -a /tmp/sokker-classes/. /tmp/sokker-war/WEB-INF/classes/
-
           test -f /tmp/sokker-war/WEB-INF/web.xml
           test -f /tmp/sokker-war/WEB-INF/classes/com/formulamanager/sokker/bo/AsistenteBO.class
           test -d /tmp/sokker-war/WEB-INF/lib
           test "$(find /tmp/sokker-war/WEB-INF/lib -type f -name '*.jar' | wc -l)" -gt 0
-
           jar cf /tmp/sokker.war -C /tmp/sokker-war .
           jar tf /tmp/sokker.war > /tmp/sokker-war-entries.txt
           grep -Fxq 'WEB-INF/web.xml' /tmp/sokker-war-entries.txt
