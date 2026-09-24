@@ -246,10 +246,9 @@
 				<%-- ACCESO --%>
 				
 				<div class="inicio_bloque fin_bloque doble" style="text-align: right;" id="acceso">
-					<form id="assistant-login-form" method="post" action="${pageContext.request.contextPath}/asistente/login" onsubmit="rememberAssistantPassword(this); $('input[type=submit]').prop('disabled', true);">
-						<fmt:message key="common.login" /> <input type="text" name="alogin" required="required" autocomplete="username" value="<%= Util.nvl(Util.getCookie(request, "alogin")) %>"><br/>
-						<fmt:message key="common.password" /> <input type="password" name="apassword" required="required" autocomplete="current-password"><br/>
-						<label class="peque" for="recordar"><input type="checkbox" name="recordar" id="recordar" /><fmt:message key="login.remember_password" /></label><br/>
+					<form method="post" action="${pageContext.request.contextPath}/asistente/login" onsubmit="$('input[type=submit]').prop('disabled', true);">
+						<fmt:message key="common.login" /> <input type="text" name="alogin" required="required" value="<%= Util.nvl(Util.getCookie(request, "alogin")) %>"><br/>
+						<fmt:message key="common.password" /> <input type="password" name="apassword" required="required"><br/>
 						<input type="submit" /><br/>
 					</form>
 				</div>
