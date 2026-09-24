@@ -89,6 +89,19 @@ public class SokkerProxyTest {
     }
 
     @Test
+    public void webViewUserAgentIsReplacedWithSokkerAsistenteIdentity() {
+        Map<String, String> headers = new LinkedHashMap<>();
+        headers.put("User-Agent", "Mozilla/5.0 Chrome/WebView");
+        headers.put("Accept", "*/*");
+
+        Map<String, String> result = SokkerProxy.buildForwardHeaders(headers);
+
+        assertEquals("Sokker Asistente (+https://raqueto.com/sokker/asistente)",
+                valueIgnoreCase(result, "User-Agent"));
+        assertEquals(1, countHeaderIgnoreCase(result, "User-Agent"));
+    }
+
+    @Test
     public void connectionManagedAndContentEncodingHeadersAreNotForwarded() {
         Map<String, String> headers = new LinkedHashMap<>();
         headers.put("Host", "sokker.org");
