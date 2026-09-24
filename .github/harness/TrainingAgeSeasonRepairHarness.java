@@ -55,8 +55,10 @@ public final class TrainingAgeSeasonRepairHarness {
                 "the full season 1183..1195 must have one age and cross correctly into 1182");
         require(jsp.contains("snapshot(1170, 22) + \",\" + snapshot(1169, 19)"),
                 "week 1170 must be repaired while 1169 and older stay untouched");
-        require(jsp.contains("snapshot(1208, 24) + \",\" + snapshot(1195, 23) + \",\" + snapshot(1183, 23)"),
-                "a 1208 reference must also reconstruct the two older complete seasons");
+        require(jsp.contains("snapshot(1208, 24) + \",\" + snapshot(1196, 24) + \",\" + snapshot(1195, 23)"),
+                "when 1208 is the reference, its whole 1196..1208 season must keep the base age");
+        require(jsp.contains("snapshot(1183, 23) + \",\" + snapshot(1182, 22) + \",\" + snapshot(1170, 22)"),
+                "a 1208 reference must step down only when crossing into older seasons");
         require(jsp.contains("unsupportedLatest"),
                 "the self-test must verify that players whose latest week is outside 1208..1210 are skipped");
     }
