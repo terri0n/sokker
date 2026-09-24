@@ -57,9 +57,54 @@ jobs:
       - name: Verify Android signing configuration contract
         run: python3 .github/harness/AndroidSigningConfigHarness.py
 
-      - name: Unit tests and clean build
+      - name: Restore and verify upload keystore
+        if: github.event_name != 'pull_request'
+        env:
+          ANDROID_UPLOAD_KEYSTORE_BASE64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+          ANDROID_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
+          ANDROID_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          ANDROID_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$ANDROID_UPLOAD_KEYSTORE_BASE64"
+          test -n "$ANDROID_UPLOAD_STORE_PASSWORD"
+          test -n "$ANDROID_UPLOAD_KEY_ALIAS"
+          test -n "$ANDROID_UPLOAD_KEY_PASSWORD"
+          mkdir -p "$RUNNER_TEMP/android-signing"
+          KEYSTORE="$RUNNER_TEMP/android-signing/upload-keystore.jks"
+          printf '%s' "$ANDROID_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
+          chmod 600 "$KEYSTORE"
+          ACTUAL_SHA1="$(keytool -list -v -keystore "$KEYSTORE" -alias "$ANDROID_UPLOAD_KEY_ALIAS" -storepass:env ANDROID_UPLOAD_STORE_PASSWORD | sed -n 's/^[[:space:]]*SHA1: //p' | head -n 1)"
+          test "$ACTUAL_SHA1" = '8D:44:8A:8D:5D:A4:54:B3:94:2E:5B:D3:A8:12:04:FC:65:87:B0:D4'
+          echo "ANDROID_UPLOAD_STORE_FILE=$KEYSTORE" >> "$GITHUB_ENV"
+
+      - name: Unit tests and debug build
         working-directory: android/SokkerAsistente
-        run: ./gradlew clean testDebugUnitTest assembleDebug bundleRelease --stacktrace
+        run: ./gradlew clean testDebugUnitTest assembleDebug --stacktrace
+
+      - name: Build signed release bundle
+        if: github.event_name != 'pull_request'
+        working-directory: android/SokkerAsistente
+        env:
+          ANDROID_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
+          ANDROID_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          ANDROID_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+        run: ./gradlew bundleRelease --stacktrace
+
+      - name: Build unsigned release bundle for pull request
+        if: github.event_name == 'pull_request'
+        working-directory: android/SokkerAsistente
+        run: ./gradlew bundleRelease --stacktrace
+
+      - name: Verify signed release bundle
+        if: github.event_name != 'pull_request'
+        working-directory: android/SokkerAsistente
+        run: |
+          set -euo pipefail
+          AAB=app/build/outputs/bundle/release/app-release.aab
+          jarsigner -verify -verbose -certs "$AAB" >/dev/null
+          AAB_SHA1="$(keytool -printcert -jarfile "$AAB" | sed -n 's/^[[:space:]]*SHA1: //p' | head -n 1)"
+          test "$AAB_SHA1" = '8D:44:8A:8D:5D:A4:54:B3:94:2E:5B:D3:A8:12:04:FC:65:87:B0:D4'
 
       - name: Verify build outputs and release version
         working-directory: android/SokkerAsistente
@@ -110,8 +155,12 @@ jobs:
             echo 'Generated Android artifact or signing material is tracked' >&2
             exit 1
           fi
-          if git grep -nE 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|storePassword|keyPassword' -- 'android/SokkerAsistente/**'; then
-            echo 'Private key or signing password material is tracked in Android project' >&2
+          if git grep -nE 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY' -- 'android/SokkerAsistente/**'; then
+            echo 'Private key material is tracked in Android project' >&2
+            exit 1
+          fi
+          if git grep -nE "(storePassword|keyPassword)[[:space:]]+['\"][^'\"]+['\"]" -- 'android/SokkerAsistente/**'; then
+            echo 'Hardcoded signing password is tracked in Android project' >&2
             exit 1
           fi
 
