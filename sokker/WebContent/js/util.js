@@ -116,9 +116,38 @@ function rememberAssistantPassword(form) {
 	assistantStorageSet(ASSISTANT_REMEMBER_PASSWORD_KEY, $form.find("input[name='apassword']").val() || "");
 }
 
+function ensureAssistantRememberPasswordControls($form) {
+	var label = window.SOKKER_ASSISTANT_REMEMBER_PASSWORD_LABEL;
+	var $login = $form.find("input[name='alogin']");
+	var $password = $form.find("input[name='apassword']");
+	var $submit = $form.find("input[type='submit']").first();
+
+	if (!label || !$login.length || !$password.length || !$submit.length) {
+		return false;
+	}
+
+	$login.attr("autocomplete", "username");
+	$password.attr("autocomplete", "current-password");
+
+	if (!$form.find("input[name='recordar']").length) {
+		var $checkbox = $("<input>", {
+			type: "checkbox",
+			name: "recordar",
+			id: "recordar"
+		});
+		var $label = $("<label>").addClass("peque").attr("for", "recordar");
+		$label.append($checkbox);
+		$label.append(document.createTextNode(label));
+		$label.insertBefore($submit);
+		$("<br>").insertBefore($submit);
+	}
+
+	return true;
+}
+
 function initAssistantRememberPassword() {
-	var $form = $("#assistant-login-form");
-	if (!$form.length) {
+	var $form = $("form[action$='/asistente/login']").first();
+	if (!$form.length || !ensureAssistantRememberPasswordControls($form)) {
 		return;
 	}
 
@@ -145,11 +174,17 @@ function initAssistantRememberPassword() {
 		$form.find("input[name='recordar']").prop("checked", true);
 	}
 
-	$form.find("input[name='recordar']").on("change", function() {
-		if (!this.checked) {
-			clearAssistantRememberPassword();
-		}
+	$form.off("submit.assistantRememberPassword").on("submit.assistantRememberPassword", function() {
+		rememberAssistantPassword(this);
 	});
+
+	$form.find("input[name='recordar']")
+		.off("change.assistantRememberPassword")
+		.on("change.assistantRememberPassword", function() {
+			if (!this.checked) {
+				clearAssistantRememberPassword();
+			}
+		});
 }
 
 $(function() {
