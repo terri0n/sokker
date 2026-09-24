@@ -20,18 +20,20 @@
 
 <%!
     /*
-     * Reparación puntual, manual y de una sola ejecución para el cambio de
-     * temporada de septiembre de 2026. Toda la implementación vive en este
-     * JSP para poder retirarla del servidor después de ejecutarla.
+     * Reparación puntual y manual para el cambio de temporada de septiembre
+     * de 2026. Toda la implementación vive en este JSP para poder retirarla
+     * del servidor después de ejecutarla.
      *
      * Referencia de edad actual:
      *   1210 si el equipo ya se actualizó esta semana.
-     *   1209 si todavía no se ha actualizado. En este caso se captura primero
-     *   su edad como referencia y después 1209 también se corrige como jornada
-     *   13 de la temporada anterior.
+     *   1209 si todavía no se ha actualizado. El snapshot usado como referencia
+     *   no se modifica; solo se normalizan los snapshots anteriores.
      *
      * Único cambio permitido:
-     *   snapshots 1197..1209 -> edad actual - 1.
+     *   snapshots de la temporada anterior anteriores a la referencia
+     *   (1197..1209) -> edad actual - 1.
+     *
+     * La transformación es idempotente: repetirla no vuelve a restar edad.
      */
     private static final int MIN_CLUB_TID_REPAIR = 801;
     private static final int NEW_TRAINING_FORMAT_WEEK_REPAIR = 993;
@@ -43,9 +45,9 @@
             return null;
         }
 
-        // Si 1209 es el último snapshot, su edad se usa como referencia pero
-        // el propio snapshot sigue siendo la jornada 13 de la temporada anterior.
-        if (snapshotWeek > latestWeek) {
+        // El snapshot que aporta la edad actual nunca se reescribe. Esto es
+        // imprescindible para que una segunda ejecución sea un no-op.
+        if (snapshotWeek >= latestWeek) {
             return null;
         }
 
@@ -389,10 +391,8 @@
                 "La jornada 1 de la temporada anterior debe quedar en edad actual - 1");
         requireRepair(fixed.content.contains(snapshot(1196, 23)),
                 "No se debe tocar una temporada más antigua");
-        requireRepair(!fixed.content.contains(snapshot(1209, 25)),
-                "Si el equipo aún no se actualizó, 1209 solo aporta la edad actual antes de ser corregida");
-        requireRepair(fixed.content.contains(snapshot(1209, 24) + "," + snapshot(1208, 24) + "," + snapshot(1197, 24)),
-                "Un equipo sin actualizar debe quedar corregido desde la jornada 13 hasta la 1 en una sola ejecución");
+        requireRepair(fixed.content.contains(snapshot(1209, 25) + "," + snapshot(1208, 24) + "," + snapshot(1197, 24)),
+                "Si el equipo aún no se actualizó, 1209 debe conservarse como referencia y solo se corrigen las semanas anteriores");
         requireRepair(fixed.content.contains(unsupportedReference),
                 "No se debe reparar un jugador cuya referencia no sea 1209 o 1210");
         requireRepair(fixed.content.contains("future_key=keep\\:exactly"),
@@ -511,8 +511,6 @@
         return;
     }
 
-    final String executionMarker = "repairTrainingAges20260924Executed";
-    boolean alreadyExecuted = Boolean.TRUE.equals(application.getAttribute(executionMarker));
     File dataDirectory = new File(SystemUtil.getVar(SystemUtil.PATH));
     String result = null;
     String error = null;
@@ -532,39 +530,25 @@
         }
         session.removeAttribute("repairTrainingAgesCsrf20260924");
 
-        synchronized (application) {
-            alreadyExecuted = Boolean.TRUE.equals(application.getAttribute(executionMarker));
-            if (alreadyExecuted) {
-                result = "Esta reparación ya se ejecutó en este arranque del servidor. No se ha modificado nada.";
+        try {
+            RepairSummary summary = repairDirectory(dataDirectory);
+            if (summary.concurrentSkips == 0) {
+                result = "Reparación terminada. Ficheros revisados: " + summary.scannedFiles
+                        + ", ficheros modificados: " + summary.modifiedFiles
+                        + ", jugadores corregidos: " + summary.modifiedPlayers
+                        + ", edades corregidas: " + summary.modifiedSnapshots + ".";
             } else {
-                try {
-                    RepairSummary summary = repairDirectory(dataDirectory);
-                    if (summary.concurrentSkips == 0) {
-                        application.setAttribute("repairTrainingAges20260924Executed", Boolean.TRUE);
-                        alreadyExecuted = true;
-                        result = "Reparación terminada. Ficheros revisados: " + summary.scannedFiles
-                                + ", ficheros modificados: " + summary.modifiedFiles
-                                + ", jugadores corregidos: " + summary.modifiedPlayers
-                                + ", edades corregidas: " + summary.modifiedSnapshots + ".";
-                    } else {
-                        error = "La reparación no se marca como ejecutada porque " + summary.concurrentSkips
-                                + " fichero(s) cambiaron mientras se procesaban. Los ficheros concurrentes se dejaron intactos."
-                                + " Repite la ejecución cuando no haya actualizaciones en curso.";
-                    }
-                } catch (Throwable e) {
-                    error = e.getClass().getName() + ": " + e.getMessage();
-                }
+                error = "Durante la reparación " + summary.concurrentSkips
+                        + " fichero(s) cambiaron mientras se procesaban. Los ficheros concurrentes se dejaron intactos."
+                        + " Repite la ejecución cuando no haya actualizaciones en curso; los ya reparados no volverán a cambiar.";
             }
+        } catch (Throwable e) {
+            error = e.getClass().getName() + ": " + e.getMessage();
         }
     }
 
-    if (error == null && !alreadyExecuted && !"POST".equalsIgnoreCase(request.getMethod())) {
-        csrf = UUID.randomUUID().toString();
-        session.setAttribute("repairTrainingAgesCsrf20260924", csrf);
-    } else if (error != null && !alreadyExecuted) {
-        csrf = UUID.randomUUID().toString();
-        session.setAttribute("repairTrainingAgesCsrf20260924", csrf);
-    }
+    csrf = UUID.randomUUID().toString();
+    session.setAttribute("repairTrainingAgesCsrf20260924", csrf);
 %>
 <!DOCTYPE html>
 <html>
@@ -580,18 +564,15 @@
     <h2><%= escapeHtmlRepair(result) %></h2>
 <% } %>
 
-<% if (alreadyExecuted) { %>
-    <p>La reparación ya ha sido ejecutada. Elimina este JSP del despliegue.</p>
-<% } else { %>
-    <h2>Reparar edades de la temporada anterior</h2>
-    <p>Herramienta puntual de administración. Debe ejecutarse manualmente una sola vez y retirarse después.</p>
-    <p>Toma como edad actual la del último snapshot: jornada 1210 si el equipo ya se actualizó, o jornada 1209 si todavía no lo ha hecho. En este último caso captura primero esa edad y después corrige también 1209.</p>
-    <p>Solo corrige la temporada anterior, jornadas 13 a 1 (1209-1197), para que tengan exactamente edad actual - 1. No toca otras temporadas ni otros campos.</p>
-    <p>No utiliza backups como referencia ni crea copias auxiliares.</p>
-    <form method="post">
-        <input type="hidden" name="csrf" value="<%= escapeHtmlRepair(csrf) %>">
-        <button type="submit">Ejecutar reparación una vez</button>
-    </form>
-<% } %>
+<h2>Reparar edades de la temporada anterior</h2>
+<p>Herramienta puntual de administración. Está pensada para ejecutarse manualmente una vez y retirarse después.</p>
+<p>Toma como edad actual la del último snapshot: jornada 1210 si el equipo ya se actualizó, o jornada 1209 si todavía no lo ha hecho.</p>
+<p>Si la referencia es 1210, corrige 1209-1197 a edad actual - 1. Si la referencia es 1209, conserva 1209 como edad actual y corrige solo 1208-1197. No toca otras temporadas ni otros campos.</p>
+<p>La operación es idempotente: si se ejecuta otra vez sobre los mismos datos, no vuelve a restar edad.</p>
+<p>No utiliza backups como referencia ni crea copias auxiliares.</p>
+<form method="post">
+    <input type="hidden" name="csrf" value="<%= escapeHtmlRepair(csrf) %>">
+    <button type="submit">Ejecutar reparación</button>
+</form>
 </body>
 </html>
