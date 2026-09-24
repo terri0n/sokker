@@ -1,4 +1,4 @@
-package com.formulamanager.sokker.asistente;
+package com.raqueto.sokkerasistente;
 
 import org.junit.Test;
 

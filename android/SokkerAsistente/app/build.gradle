@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace "com.formulamanager.sokker.asistente"
+    namespace "com.raqueto.sokkerasistente"
     compileSdk 36
 
     defaultConfig {
-        applicationId "com.formulamanager.sokker.asistente"
+        applicationId "com.raqueto.sokkerasistente"
         minSdk 21
         targetSdk 36
         versionCode 11

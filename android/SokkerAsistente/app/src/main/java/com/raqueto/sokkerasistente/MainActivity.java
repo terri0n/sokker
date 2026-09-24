@@ -1,4 +1,4 @@
-package com.formulamanager.sokker.asistente;
+package com.raqueto.sokkerasistente;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;

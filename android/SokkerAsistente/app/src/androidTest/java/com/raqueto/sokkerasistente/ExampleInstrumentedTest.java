@@ -1,4 +1,4 @@
-package com.formulamanager.sokker.asistente;
+package com.raqueto.sokkerasistente;
 
 import android.content.Context;
 
@@ -22,6 +22,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
 
-        assertEquals("com.formulamanager.sokker.asistente", appContext.getPackageName());
+        assertEquals("com.raqueto.sokkerasistente", appContext.getPackageName());
     }
 }

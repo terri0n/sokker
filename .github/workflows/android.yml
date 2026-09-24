@@ -61,6 +61,7 @@ jobs:
           grep -Eq 'namespace[[:space:]]+"com\.raqueto\.sokkerasistente"' app/build.gradle
           grep -Eq 'applicationId[[:space:]]+"com\.raqueto\.sokkerasistente"' app/build.gradle
           grep -q 'package="com.raqueto.sokkerasistente"' app/src/main/AndroidManifest.xml
+          apkanalyzer manifest application-id app/build/outputs/apk/debug/app-debug.apk | grep -qx 'com.raqueto.sokkerasistente'
           if grep -R -n 'com\.formulamanager\.sokker\.asistente' app/src; then
             echo 'Legacy Android package is still present under app/src' >&2
             exit 1
@@ -68,8 +69,8 @@ jobs:
 
       - name: Verify proxy integration contract
         run: |
-          MAIN=android/SokkerAsistente/app/src/main/java/com/formulamanager/sokker/asistente/MainActivity.java
-          PROXY=android/SokkerAsistente/app/src/main/java/com/formulamanager/sokker/asistente/SokkerProxy.java
+          MAIN=android/SokkerAsistente/app/src/main/java/com/raqueto/sokkerasistente/MainActivity.java
+          PROXY=android/SokkerAsistente/app/src/main/java/com/raqueto/sokkerasistente/SokkerProxy.java
           WEB_UTIL=sokker/WebContent/js/util.js
           grep -q 'SokkerProxy.isSokkerUrl' "$MAIN"
           grep -q 'SokkerProxy.buildForwardHeaders' "$MAIN"

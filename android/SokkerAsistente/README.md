@@ -7,7 +7,7 @@ Aplicación Android ligera que carga Sokker Asistente en un `WebView` y actúa c
 - JDK 17
 - Android SDK platform 36
 - Android build-tools 36.0.0
-- application id: `com.formulamanager.sokker.asistente`
+- application id: `com.raqueto.sokkerasistente`
 - `minSdk`: 21
 - `targetSdk`: 36
 - `versionCode`: 11
@@ -49,7 +49,7 @@ Si en el futuro una petición POST distinta necesita un body arbitrario, hay que
 
 ## Firma y Google Play
 
-La aplicación anterior se distribuía fuera de Google Play, por lo que esta primera publicación puede establecer una firma nueva.
+La aplicación anterior se distribuía fuera de Google Play con el identificador `com.formulamanager.sokker.asistente`. La publicación en Google Play usa el identificador nuevo `com.raqueto.sokkerasistente`, por lo que se registra como una aplicación distinta y puede establecer una firma nueva.
 
 Para Google Play se usará Play App Signing. Se puede generar una clave de subida nueva fuera del repositorio, por ejemplo:
 
@@ -94,7 +94,7 @@ Reglas:
 - conservar de forma segura la clave de subida fuera de Git;
 - no tratar el AAB sin firmar que produce CI como artefacto listo para subir a Play.
 
-Como la firma será distinta de la del APK antiguo distribuido manualmente, un usuario que conserve ese APK con el mismo package id tendrá que desinstalarlo antes de instalar la versión nueva firmada para Play.
+La app con `com.raqueto.sokkerasistente` puede convivir con el APK antiguo porque Android las considera aplicaciones distintas.
 
 ## Checklist de internal testing
 
@@ -112,4 +112,4 @@ Antes de promover una release desde el canal interno de Google Play:
 
 ## CI
 
-`.github/workflows/android.yml` usa JDK 17, Android API 36 y el wrapper Gradle 8.14.2 versionado con el proyecto. Ejecuta tests unitarios, construye APK debug y AAB release, y comprueba que el repositorio no contiene artefactos generados ni material de firma.
+`.github/workflows/android.yml` usa JDK 17, Android API 36 y el wrapper Gradle 8.14.2 versionado con el proyecto. Ejecuta tests unitarios, construye APK debug y AAB release, comprueba el application id del APK construido y verifica que el repositorio no contiene artefactos generados ni material de firma.

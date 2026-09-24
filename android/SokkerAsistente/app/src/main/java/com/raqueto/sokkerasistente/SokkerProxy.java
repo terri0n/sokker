@@ -1,4 +1,4 @@
-package com.formulamanager.sokker.asistente;
+package com.raqueto.sokkerasistente;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
