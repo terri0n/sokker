@@ -1,7 +1,11 @@
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import com.formulamanager.sokker.bo.NtdbBO;
 
 public class TeamIdThresholdHarness {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         if (NtdbBO.MAX_ID_SELECCION != 800) {
             throw new AssertionError("Expected MAX_ID_SELECCION=800 but was " + NtdbBO.MAX_ID_SELECCION);
         }
@@ -15,8 +19,25 @@ public class TeamIdThresholdHarness {
         assertNational(506);
         assertClub(995);
         assertClub(998);
+        assertDemoAccountDoesNotSwitchTeams();
 
         System.out.println("Team ID threshold compatibility OK");
+    }
+
+    private static void assertDemoAccountDoesNotSwitchTeams() throws Exception {
+        String jsp = read("sokker/WebContent/jsp/asistente/asistente.jsp");
+        String servlet = read("sokker/src/com/formulamanager/sokker/acciones/asistente/CambiarEquipo.java");
+
+        if (!jsp.contains("sessionScope.usuario.login ne 'demo'")) {
+            throw new AssertionError("Demo account must not expose the team-switch link");
+        }
+        if (!servlet.contains("\"demo\".equalsIgnoreCase(usuario.getLogin())")) {
+            throw new AssertionError("Demo account must be protected server-side from team switching");
+        }
+    }
+
+    private static String read(String path) throws Exception {
+        return new String(Files.readAllBytes(Paths.get(path)), StandardCharsets.UTF_8);
     }
 
     private static void assertNational(int tid) {
