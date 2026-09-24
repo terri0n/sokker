@@ -14,6 +14,7 @@ on:
       - 'sokker/WebContent/jsp/asistente/privacidad.jsp'
       - 'sokker/WebContent/jsp/asistente/eliminar_cuenta.jsp'
       - '.github/workflows/android.yml'
+      - '.github/harness/AndroidSigningConfigHarness.py'
   pull_request:
     paths:
       - 'android/SokkerAsistente/**'
@@ -22,6 +23,7 @@ on:
       - 'sokker/WebContent/jsp/asistente/privacidad.jsp'
       - 'sokker/WebContent/jsp/asistente/eliminar_cuenta.jsp'
       - '.github/workflows/android.yml'
+      - '.github/harness/AndroidSigningConfigHarness.py'
   workflow_dispatch:
 
 permissions:
@@ -51,6 +53,9 @@ jobs:
           test -x ./gradlew
           grep -q 'gradle-8.14.2-bin.zip' gradle/wrapper/gradle-wrapper.properties
           ./gradlew --version
+
+      - name: Verify Android signing configuration contract
+        run: python3 .github/harness/AndroidSigningConfigHarness.py
 
       - name: Unit tests and clean build
         working-directory: android/SokkerAsistente
