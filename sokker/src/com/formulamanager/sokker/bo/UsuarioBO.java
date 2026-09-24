@@ -114,71 +114,46 @@ public class UsuarioBO {
 			
 			input = new FileInputStream(file);
 	
-			// load a properties file
 			prop.load(input);
 			String linea = prop.getProperty("usuario");
 			Usuario usuario = new Usuario(Arrays.asList(linea.split(",")));
 			usuario.setNotas(prop.getProperty("notas", ""));
-			
-			// ENTRENAMIENTO
 
 			for (Entry<Object, Object> e : prop.entrySet()) {
 				String key = e.getKey().toString();
 				if (key.matches("entrenamiento[0-9]+")) {
 					int jornada = Integer.valueOf(key.substring("entrenamiento".length()));
 					String[] split = e.getValue().toString().split(",");
-					
 					if (!split[0].contains("-")) {
-						// Sistema de entrenamiento antiguo
-						if (Util.nnvl(split[0]) != null) {
-							usuario.getTipo_entrenamiento(0).put(jornada, TIPO_ENTRENAMIENTO.valueOf(split[0]));
-						}
-						if (Util.nnvl(split[1]) != null) {
-							usuario.getDemarcacion().put(jornada, DEMARCACION.valueOf(split[1]));
-						}
+						if (Util.nnvl(split[0]) != null) usuario.getTipo_entrenamiento(0).put(jornada, TIPO_ENTRENAMIENTO.valueOf(split[0]));
+						if (Util.nnvl(split[1]) != null) usuario.getDemarcacion().put(jornada, DEMARCACION.valueOf(split[1]));
 					} else {
-						// Sistema de entrenamiento nuevo
-						// NOTA: si los últimos entrenamientos no están definidos, el array creado por split tiene menos elementos. Añado un elemento extra para evitarlo
 						String[] tipo_entrenamiento = (split[0] + "-*").split("-");
-						if (Util.nnvl(tipo_entrenamiento[0]) != null) {
-							usuario.getTipo_entrenamiento(0).put(jornada, TIPO_ENTRENAMIENTO.valueOf(tipo_entrenamiento[0]));
-						}
-						if (Util.nnvl(tipo_entrenamiento[1]) != null) {
-							usuario.getTipo_entrenamiento(1).put(jornada, TIPO_ENTRENAMIENTO.valueOf(tipo_entrenamiento[1]));
-						}
-						if (Util.nnvl(tipo_entrenamiento[2]) != null) {
-							usuario.getTipo_entrenamiento(2).put(jornada, TIPO_ENTRENAMIENTO.valueOf(tipo_entrenamiento[2]));
-						}
-						if (Util.nnvl(tipo_entrenamiento[3]) != null) {
-							usuario.getTipo_entrenamiento(3).put(jornada, TIPO_ENTRENAMIENTO.valueOf(tipo_entrenamiento[3]));
-						}
+						if (Util.nnvl(tipo_entrenamiento[0]) != null) usuario.getTipo_entrenamiento(0).put(jornada, TIPO_ENTRENAMIENTO.valueOf(tipo_entrenamiento[0]));
+						if (Util.nnvl(tipo_entrenamiento[1]) != null) usuario.getTipo_entrenamiento(1).put(jornada, TIPO_ENTRENAMIENTO.valueOf(tipo_entrenamiento[1]));
+						if (Util.nnvl(tipo_entrenamiento[2]) != null) usuario.getTipo_entrenamiento(2).put(jornada, TIPO_ENTRENAMIENTO.valueOf(tipo_entrenamiento[2]));
+						if (Util.nnvl(tipo_entrenamiento[3]) != null) usuario.getTipo_entrenamiento(3).put(jornada, TIPO_ENTRENAMIENTO.valueOf(tipo_entrenamiento[3]));
 					}
-
 					if (split.length > 2 && split[2].length() > 0) {
 						usuario.getEntrenador_principal().put(jornada, new Jugador(split[2]));
 						usuario.getNivel_asistentes().put(jornada, Util.stringToBigDecimal(split[3]));
-						if (split.length > 4) {
-							usuario.getNivel_juveniles().put(jornada, Util.stringToBigDecimal(split[4]));
-						}
+						if (split.length > 4) usuario.getNivel_juveniles().put(jornada, Util.stringToBigDecimal(split[4]));
 					}
 				}
 			}
 
-			// Leemos los scouts del archivo de scouts
 			if (leer_scouts) {
 				HashMap<String, String> map = Util.leer_hashmap("NTDB");
 				usuario.setScouts(map.get(usuario.getLogin()));
-				
 				for (Entry<String, String> entry : map.entrySet()) {
 					String scouts = "," + entry.getValue() + ",";
 					if (scouts.contains("," + usuario.getLogin() + ",")) {
 						Usuario u = UsuarioBO.leer_usuario(entry.getKey(), false);
-						if (u != null && u.getTid_nt() != null) {
-							usuario.getScout_de().put(entry.getKey(), u);
-						}
+						if (u != null && u.getTid_nt() != null) usuario.getScout_de().put(entry.getKey(), u);
+					}
 				}
 			}
-			
+
 			return usuario;
 		} catch (IOException ex) {
 			ex.printStackTrace();
@@ -196,26 +171,16 @@ public class UsuarioBO {
 				}
 			}
 		}
-		
 		return null;
 	}
 
 	private static String conservar_valores_usuario_desconocidos(String anterior, String serializado) {
-		if (anterior == null) {
-			return serializado;
-		}
-
+		if (anterior == null) return serializado;
 		List<String> valores_anteriores = Arrays.asList(anterior.split(",", -1));
 		List<String> valores_serializados = Arrays.asList(serializado.split(",", -1));
 		int fin_anterior = valores_anteriores.indexOf("*");
 		int fin_serializado = valores_serializados.indexOf("*");
-
-		// Las versiones nuevas añaden los campos al final, antes del asterisco.
-		// Si el fichero anterior no tiene más campos que el formato que conocemos, no hay nada que conservar.
-		if (fin_anterior < 0 || fin_serializado < 0 || fin_anterior <= fin_serializado) {
-			return serializado;
-		}
-
+		if (fin_anterior < 0 || fin_serializado < 0 || fin_anterior <= fin_serializado) return serializado;
 		List<String> resultado = new ArrayList<String>(valores_serializados.subList(0, fin_serializado));
 		resultado.addAll(valores_anteriores.subList(fin_serializado, fin_anterior));
 		return String.join(",", resultado) + ",*";
@@ -224,10 +189,7 @@ public class UsuarioBO {
 	private static String purgar_secreto_actualizacion_automatica(String serializado) {
 		List<String> valores = Arrays.asList(serializado.split(",", -1));
 		int fin = valores.indexOf("*");
-		if (fin > 0) {
-			// El último campo conocido antes del asterisco es la contraseña Base64 de la actualización automática retirada.
-			valores.set(fin - 1, "");
-		}
+		if (fin > 0) valores.set(fin - 1, "");
 		return String.join(",", valores);
 	}
 
@@ -243,20 +205,16 @@ public class UsuarioBO {
 
 		String usuario_anterior = prop.getProperty("usuario");
 		HashMap<String, String> entrenamientos_anteriores = new HashMap<String, String>();
-
-		// Solo reconstruimos las claves que gestiona UsuarioBO. Las demás pueden pertenecer a versiones más nuevas.
 		for (String key : new ArrayList<String>(prop.stringPropertyNames())) {
 			if (key.matches("entrenamiento[0-9]+")) {
 				entrenamientos_anteriores.put(key, prop.getProperty(key));
 				prop.remove(key);
 			}
 		}
-		
 		String usuario_serializado = purgar_secreto_actualizacion_automatica(usuario.serializar());
 		prop.setProperty("usuario", conservar_valores_usuario_desconocidos(usuario_anterior, usuario_serializado));
 		prop.setProperty("notas", Util.nvl(usuario.getNotas()));
 
-		// Entrenamiento
 		for (Integer jornada : usuario.getTipo_entrenamiento(0).keySet()) {
 			String tipo_entrenamiento;
 			String entrenamiento_serializado;
@@ -264,22 +222,13 @@ public class UsuarioBO {
 				tipo_entrenamiento = Util.nvl(usuario.getTipo_entrenamiento(0).get(jornada));
 				entrenamiento_serializado = tipo_entrenamiento + "," + Util.nvl(usuario.getDemarcacion().get(jornada)) + "," + (usuario.getEntrenador_principal().get(jornada) == null ? "" : usuario.getEntrenador_principal().get(jornada).serializar_entrenador()) + "," + Util.nvl(usuario.getNivel_asistentes().get(jornada)) + "," + Util.nvl(usuario.getNivel_juveniles().get(jornada)) + ",*";
 			} else {
-				tipo_entrenamiento = Util.nvl(usuario.getTipo_entrenamiento(0).get(jornada)) + "-" +
-									Util.nvl(usuario.getTipo_entrenamiento(1).get(jornada)) + "-" +
-									Util.nvl(usuario.getTipo_entrenamiento(2).get(jornada)) + "-" +
-									Util.nvl(usuario.getTipo_entrenamiento(3).get(jornada));
-				// Aquí dejo en blanco la demarcación
+				tipo_entrenamiento = Util.nvl(usuario.getTipo_entrenamiento(0).get(jornada)) + "-" + Util.nvl(usuario.getTipo_entrenamiento(1).get(jornada)) + "-" + Util.nvl(usuario.getTipo_entrenamiento(2).get(jornada)) + "-" + Util.nvl(usuario.getTipo_entrenamiento(3).get(jornada));
 				entrenamiento_serializado = tipo_entrenamiento + ",," + (usuario.getEntrenador_principal().get(jornada) == null ? "" : usuario.getEntrenador_principal().get(jornada).serializar_entrenador()) + "," + Util.nvl(usuario.getNivel_asistentes().get(jornada)) + "," + Util.nvl(usuario.getNivel_juveniles().get(jornada)) + ",*";
 			}
-
 			String key = "entrenamiento" + jornada;
 			prop.setProperty(key, conservar_valores_usuario_desconocidos(entrenamientos_anteriores.get(key), entrenamiento_serializado));
 		}
-
 		Util.guardar_properties(prop, ruta);
-
-//		ruta = AsistenteBO.PATH_BACKUP + "_" + usuario.getLogin() + ".properties";
-//		Util.guardar_properties(prop, ruta);
 	}
 
 	public static void borrar_usuario(String login) throws IOException {
@@ -290,14 +239,12 @@ public class UsuarioBO {
 	public static String[] obtener_usuarios() {
 		try {
 			File f = new File(SystemUtil.getVar("path"));
-	
 			String[] archivos = f.list(new FilenameFilter() {
 				@Override
 				public boolean accept(File dir, String name) {
 					return name.startsWith("_");
 				}
 			});
-			
 			return archivos == null ? new String[0] : archivos;
 		} catch (Exception e) {
 			return new String[] {"Error reading users"};
@@ -308,56 +255,41 @@ public class UsuarioBO {
 		File f = new File(SystemUtil.getVar("path"));
 		Calendar c = Calendar.getInstance();
 		c.add(Calendar.DAY_OF_MONTH, -dias);
-
 		String[] archivos = f.list(new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String name) {
 				File f = new File(SystemUtil.getVar("path") + "/" + name);
-
-				return f.isFile()
-					&& c.getTime().before(new Date(f.lastModified()))
-					&& name.startsWith("_");
+				return f.isFile() && c.getTime().before(new Date(f.lastModified())) && name.startsWith("_");
 			}
 		});
-		
 		return archivos;
 	}
 	
 	public static List<Usuario> leer_usuarios() {
 		String[] archivos = obtener_usuarios();
 		List<Usuario> usuarios = new ArrayList<Usuario>();
-		for (String login : archivos) {
-			Usuario usuario = leer_usuario(login.split(".properties")[0].substring(1), false);
-			usuarios.add(usuario);
-		}
+		for (String login : archivos) usuarios.add(leer_usuario(login.split(".properties")[0].substring(1), false));
 		return usuarios;
 	}
 
 	public static List<Usuario> leer_ultimos_usuarios(int dias) {
 		String[] archivos = obtener_ultimos_usuarios(dias);
 		List<Usuario> usuarios = new ArrayList<Usuario>();
-		for (String login : archivos) {
-			Usuario usuario = leer_usuario(login.split(".properties")[0].substring(1), false);
-			usuarios.add(usuario);
-		}
+		for (String login : archivos) usuarios.add(leer_usuario(login.split(".properties")[0].substring(1), false));
 		return usuarios;
 	}
 	
-	public static String[] obtener_backups(int tid) {
+	public static String[] obtener_backups(final int tid) {
 		File f = new File(SystemUtil.getVar("path") + "/backup/");
-
-		String[] archivos = f.list(new FilenameFilter() {
+		return f.list(new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String name) {
 				return name.matches(tid + "_[0-9]+\\.properties");
 			}
 		});
-		
-		return archivos;
 	}
 	
 	public static void main(String[] args) {
-//		System.out.println("_texex_123.properties".matches("_texex_[0-9]+\\.properties"));
 		System.out.println(Arrays.asList("Porteria-Defensa---*".split("-")));
 	}
 }
