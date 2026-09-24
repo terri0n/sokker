@@ -38,6 +38,9 @@ public class I18nParityHarness {
                 throw new AssertionError("ntdb_menu.jsp still contains hardcoded UI text: " + hardcoded);
             }
         }
+        if (jsp.contains("<fmt:message key=\"common.append\" /> <fmt:message key=\"common.players\" />")) {
+            throw new AssertionError("ntdb_menu.jsp still exposes the Append Players button");
+        }
 
         System.out.println("I18n parity OK for " + Arrays.toString(LANGUAGES));
     }
