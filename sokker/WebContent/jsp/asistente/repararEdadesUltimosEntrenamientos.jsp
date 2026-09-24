@@ -20,40 +20,38 @@
 
 <%!
     /*
-     * Reparación puntual, manual y de una sola ejecución para el cambio de
-     * temporada de septiembre de 2026. Toda la implementación vive en este
-     * JSP para poder retirarla del servidor después de ejecutarla.
+     * Reparación puntual y manual para el cambio de temporada de septiembre
+     * de 2026. Toda la implementación vive en este JSP para poder retirarla
+     * del servidor después de ejecutarla.
      *
-     * Referencia de edad actual:
-     *   1210 si el equipo ya se actualizó esta semana.
-     *   1209 si todavía no se ha actualizado. En este caso se captura primero
-     *   su edad como referencia y después 1209 también se corrige como jornada
-     *   13 de la temporada anterior.
+     * La última semana disponible (1210, 1209 o 1208) aporta una edad válida.
+     * A partir de esa edad se reconstruyen todos los snapshots existentes desde
+     * la semana 976 hasta la última semana, respetando el ciclo confirmado de
+     * temporadas de entrenamiento de 13 semanas anclado en 1209.
      *
-     * Único cambio permitido:
-     *   snapshots 1197..1209 -> edad actual - 1.
+     * La edad de la semana de referencia pertenece siempre a su propia
+     * temporada. Así, si la referencia es 1208, todo 1196..1208 conserva
+     * esa misma edad. No se inventan snapshots ausentes ni se toca ninguna
+     * semana anterior a 976. La transformación es idempotente.
      */
     private static final int MIN_CLUB_TID_REPAIR = 801;
     private static final int NEW_TRAINING_FORMAT_WEEK_REPAIR = 993;
     private static final Pattern TEAM_FILE_REPAIR = Pattern.compile("[0-9]+\\.properties");
     private static final Pattern PLAYER_LINE_REPAIR = Pattern.compile("(?m)^([0-9]+)([=:])(.*?)(\\r?)$");
 
-    private Integer expectedHistoricalAge(int latestWeek, int latestAge, int snapshotWeek) {
-        if (latestWeek != 1209 && latestWeek != 1210) {
+    private int seasonIndex(int week) {
+        return Math.floorDiv(week - 1209, 13);
+    }
+
+    private Integer expectedAge(int latestWeek, int latestAge, int snapshotWeek) {
+        if (latestWeek != 1210 && latestWeek != 1209 && latestWeek != 1208) {
+            return null;
+        }
+        if (snapshotWeek < 976 || snapshotWeek > latestWeek) {
             return null;
         }
 
-        // Si 1209 es el último snapshot, su edad se usa como referencia pero
-        // el propio snapshot sigue siendo la jornada 13 de la temporada anterior.
-        if (snapshotWeek > latestWeek) {
-            return null;
-        }
-
-        if (snapshotWeek < 1197 || snapshotWeek > 1209) {
-            return null;
-        }
-
-        return Integer.valueOf(latestAge - 1);
+        return Integer.valueOf(latestAge + seasonIndex(snapshotWeek) - seasonIndex(latestWeek));
     }
 
     private RepairSummary repairDirectory(File directory) throws IOException {
@@ -204,10 +202,16 @@
                 return new ArrayList<AgeReplacement>();
             }
             previousWeek = snapshot.week;
+        }
 
-            Integer expectedAge = expectedHistoricalAge(latest.week, latest.age, snapshot.week);
-            if (expectedAge != null && snapshot.age != expectedAge.intValue()) {
-                result.add(new AgeReplacement(snapshot.ageIndex, expectedAge.intValue()));
+        if (latest.week != 1210 && latest.week != 1209 && latest.week != 1208) {
+            return result;
+        }
+
+        for (Snapshot snapshot : parsed.snapshots) {
+            Integer expected = expectedAge(latest.week, latest.age, snapshot.week);
+            if (expected != null && snapshot.age != expected.intValue()) {
+                result.add(new AgeReplacement(snapshot.ageIndex, expected.intValue()));
             }
         }
 
@@ -349,7 +353,8 @@
     }
 
     private String snapshot(int week, int age) {
-        return week + "," + age + ",100000,5,5,5,5,5,5,5,5,-0,10,DEF,100.0,-1,1,1,true";
+        String base = week + "," + age + ",100000,5,5,5,5,5,5,5,5,-0,10,DEF,100.0,-1,1,1";
+        return week >= NEW_TRAINING_FORMAT_WEEK_REPAIR ? base + ",true" : base;
     }
 
     private String player(int pid, String snapshots) {
@@ -359,42 +364,77 @@
     }
 
     private void selfTestRepair() throws Exception {
-        String damaged = player(77,
+        String latest1210 = player(77,
                 snapshot(1210, 25) + ","
-                + snapshot(1209, 23) + ","
+                + snapshot(1209, 24) + ","
                 + snapshot(1208, 25) + ","
-                + snapshot(1197, 24) + ","
-                + snapshot(1196, 23));
-        String notUpdated = player(88,
-                snapshot(1209, 25) + ","
-                + snapshot(1208, 23) + ","
-                + snapshot(1197, 25));
-        String unsupportedReference = player(99,
-                snapshot(1211, 30) + ","
-                + snapshot(1209, 28));
+                + snapshot(1196, 23) + ","
+                + snapshot(1195, 24) + ","
+                + snapshot(1183, 21) + ","
+                + snapshot(1182, 23) + ","
+                + snapshot(1170, 20) + ","
+                + snapshot(1169, 19) + ","
+                + snapshot(1001, 15) + ","
+                + snapshot(1000, 14) + ","
+                + snapshot(993, 13) + ","
+                + snapshot(992, 12) + ","
+                + snapshot(988, 11) + ","
+                + snapshot(987, 10) + ","
+                + snapshot(976, 9) + ","
+                + snapshot(975, 19));
+        String latest1209 = player(88,
+                snapshot(1209, 30) + ","
+                + snapshot(1208, 30) + ","
+                + snapshot(1196, 28) + ","
+                + snapshot(1195, 29) + ","
+                + snapshot(1183, 27) + ","
+                + snapshot(1182, 28) + ","
+                + snapshot(1170, 26) + ","
+                + snapshot(1169, 26));
+        String latest1208 = player(99,
+                snapshot(1208, 24) + ","
+                + snapshot(1196, 23) + ","
+                + snapshot(1195, 24) + ","
+                + snapshot(1183, 22) + ","
+                + snapshot(1182, 23) + ","
+                + snapshot(1170, 20) + ","
+                + snapshot(1169, 19) + ","
+                + snapshot(976, 12) + ","
+                + snapshot(975, 18));
+        String unsupportedLatest = player(100,
+                snapshot(1211, 31) + ","
+                + snapshot(1210, 30) + ","
+                + snapshot(1208, 29) + ","
+                + snapshot(1195, 28) + ","
+                + snapshot(1182, 27));
 
         String content = "future_key=keep\\:exactly\n"
-                + damaged
-                + notUpdated
-                + unsupportedReference;
+                + latest1210
+                + latest1209
+                + latest1208
+                + unsupportedLatest;
 
         RepairResult fixed = repairContent(content);
-        requireRepair(fixed.content.contains(snapshot(1210, 25)),
-                "La edad actual de 1210 debe conservarse");
-        requireRepair(fixed.content.contains(snapshot(1209, 24)),
-                "La jornada 13 debe quedar en edad actual - 1 cuando 1210 es la referencia");
-        requireRepair(fixed.content.contains(snapshot(1208, 24)),
-                "Las jornadas anteriores deben quedar en edad actual - 1");
-        requireRepair(fixed.content.contains(snapshot(1197, 24)),
-                "La jornada 1 de la temporada anterior debe quedar en edad actual - 1");
-        requireRepair(fixed.content.contains(snapshot(1196, 23)),
-                "No se debe tocar una temporada más antigua");
-        requireRepair(!fixed.content.contains(snapshot(1209, 25)),
-                "Si el equipo aún no se actualizó, 1209 solo aporta la edad actual antes de ser corregida");
-        requireRepair(fixed.content.contains(snapshot(1209, 24) + "," + snapshot(1208, 24) + "," + snapshot(1197, 24)),
-                "Un equipo sin actualizar debe quedar corregido desde la jornada 13 hasta la 1 en una sola ejecución");
-        requireRepair(fixed.content.contains(unsupportedReference),
-                "No se debe reparar un jugador cuya referencia no sea 1209 o 1210");
+        requireRepair(fixed.content.contains(
+                snapshot(1210, 25) + "," + snapshot(1209, 25) + "," + snapshot(1208, 24)
+                + "," + snapshot(1196, 24) + "," + snapshot(1195, 23) + "," + snapshot(1183, 23)
+                + "," + snapshot(1182, 22) + "," + snapshot(1170, 22) + "," + snapshot(1169, 21)
+                + "," + snapshot(1001, 9) + "," + snapshot(1000, 8) + "," + snapshot(993, 8)
+                + "," + snapshot(992, 8) + "," + snapshot(988, 8) + "," + snapshot(987, 7)
+                + "," + snapshot(976, 7) + "," + snapshot(975, 19)),
+                "Con referencia 1210 deben reconstruirse todos los snapshots desde 976 y conservarse 975");
+        requireRepair(fixed.content.contains(
+                snapshot(1209, 30) + "," + snapshot(1208, 29) + "," + snapshot(1196, 29)
+                + "," + snapshot(1195, 28) + "," + snapshot(1183, 28) + "," + snapshot(1182, 27)
+                + "," + snapshot(1170, 27) + "," + snapshot(1169, 26)),
+                "Con referencia 1209 deben aplicarse exactamente los saltos de temporada hacia atrás");
+        requireRepair(fixed.content.contains(
+                snapshot(1208, 24) + "," + snapshot(1196, 24) + "," + snapshot(1195, 23)
+                + "," + snapshot(1183, 23) + "," + snapshot(1182, 22) + "," + snapshot(1170, 22)
+                + "," + snapshot(1169, 21) + "," + snapshot(976, 7) + "," + snapshot(975, 18)),
+                "Con referencia 1208 debe conservarse su temporada y repararse hasta 976 sin tocar 975");
+        requireRepair(fixed.content.contains(unsupportedLatest),
+                "No se debe reparar un jugador cuya última semana no sea 1210, 1209 o 1208");
         requireRepair(fixed.content.contains("future_key=keep\\:exactly"),
                 "Las claves desconocidas deben conservarse exactamente");
 
@@ -511,8 +551,6 @@
         return;
     }
 
-    final String executionMarker = "repairTrainingAges20260924Executed";
-    boolean alreadyExecuted = Boolean.TRUE.equals(application.getAttribute(executionMarker));
     File dataDirectory = new File(SystemUtil.getVar(SystemUtil.PATH));
     String result = null;
     String error = null;
@@ -532,39 +570,25 @@
         }
         session.removeAttribute("repairTrainingAgesCsrf20260924");
 
-        synchronized (application) {
-            alreadyExecuted = Boolean.TRUE.equals(application.getAttribute(executionMarker));
-            if (alreadyExecuted) {
-                result = "Esta reparación ya se ejecutó en este arranque del servidor. No se ha modificado nada.";
+        try {
+            RepairSummary summary = repairDirectory(dataDirectory);
+            if (summary.concurrentSkips == 0) {
+                result = "Reparación terminada. Ficheros revisados: " + summary.scannedFiles
+                        + ", ficheros modificados: " + summary.modifiedFiles
+                        + ", jugadores corregidos: " + summary.modifiedPlayers
+                        + ", edades corregidas: " + summary.modifiedSnapshots + ".";
             } else {
-                try {
-                    RepairSummary summary = repairDirectory(dataDirectory);
-                    if (summary.concurrentSkips == 0) {
-                        application.setAttribute("repairTrainingAges20260924Executed", Boolean.TRUE);
-                        alreadyExecuted = true;
-                        result = "Reparación terminada. Ficheros revisados: " + summary.scannedFiles
-                                + ", ficheros modificados: " + summary.modifiedFiles
-                                + ", jugadores corregidos: " + summary.modifiedPlayers
-                                + ", edades corregidas: " + summary.modifiedSnapshots + ".";
-                    } else {
-                        error = "La reparación no se marca como ejecutada porque " + summary.concurrentSkips
-                                + " fichero(s) cambiaron mientras se procesaban. Los ficheros concurrentes se dejaron intactos."
-                                + " Repite la ejecución cuando no haya actualizaciones en curso.";
-                    }
-                } catch (Throwable e) {
-                    error = e.getClass().getName() + ": " + e.getMessage();
-                }
+                error = "Durante la reparación " + summary.concurrentSkips
+                        + " fichero(s) cambiaron mientras se procesaban. Los ficheros concurrentes se dejaron intactos."
+                        + " Repite la ejecución cuando no haya actualizaciones en curso; los ya reparados no volverán a cambiar.";
             }
+        } catch (Throwable e) {
+            error = e.getClass().getName() + ": " + e.getMessage();
         }
     }
 
-    if (error == null && !alreadyExecuted && !"POST".equalsIgnoreCase(request.getMethod())) {
-        csrf = UUID.randomUUID().toString();
-        session.setAttribute("repairTrainingAgesCsrf20260924", csrf);
-    } else if (error != null && !alreadyExecuted) {
-        csrf = UUID.randomUUID().toString();
-        session.setAttribute("repairTrainingAgesCsrf20260924", csrf);
-    }
+    csrf = UUID.randomUUID().toString();
+    session.setAttribute("repairTrainingAgesCsrf20260924", csrf);
 %>
 <!DOCTYPE html>
 <html>
@@ -580,18 +604,16 @@
     <h2><%= escapeHtmlRepair(result) %></h2>
 <% } %>
 
-<% if (alreadyExecuted) { %>
-    <p>La reparación ya ha sido ejecutada. Elimina este JSP del despliegue.</p>
-<% } else { %>
-    <h2>Reparar edades de la temporada anterior</h2>
-    <p>Herramienta puntual de administración. Debe ejecutarse manualmente una sola vez y retirarse después.</p>
-    <p>Toma como edad actual la del último snapshot: jornada 1210 si el equipo ya se actualizó, o jornada 1209 si todavía no lo ha hecho. En este último caso captura primero esa edad y después corrige también 1209.</p>
-    <p>Solo corrige la temporada anterior, jornadas 13 a 1 (1209-1197), para que tengan exactamente edad actual - 1. No toca otras temporadas ni otros campos.</p>
-    <p>No utiliza backups como referencia ni crea copias auxiliares.</p>
-    <form method="post">
-        <input type="hidden" name="csrf" value="<%= escapeHtmlRepair(csrf) %>">
-        <button type="submit">Ejecutar reparación una vez</button>
-    </form>
-<% } %>
+<h2>Reparar edades históricas de entrenamientos</h2>
+<p>Herramienta puntual de administración. Está pensada para ejecutarse manualmente y retirarse después.</p>
+<p>Para cada jugador toma como edad válida la de su última semana guardada, siempre que sea 1210, 1209 o 1208.</p>
+<p>La semana de referencia conserva su edad en toda su temporada. A partir de ahí reconstruye hacia atrás todos los snapshots existentes hasta la semana 976, restando un año únicamente al cruzar cada límite de temporada de 13 semanas.</p>
+<p>No modifica la semana 975 ni ninguna anterior, no inventa snapshots ausentes y no toca otros campos.</p>
+<p>La operación es idempotente: si se ejecuta otra vez sobre los mismos datos, no vuelve a modificar las edades.</p>
+<p>No utiliza backups como referencia ni crea copias auxiliares.</p>
+<form method="post">
+    <input type="hidden" name="csrf" value="<%= escapeHtmlRepair(csrf) %>">
+    <button type="submit">Ejecutar reparación</button>
+</form>
 </body>
 </html>
