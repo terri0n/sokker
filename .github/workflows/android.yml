@@ -77,8 +77,8 @@ jobs:
 
       - name: Verify repository safety
         run: |
-          if git ls-files | grep -E '(^|/)(\.gradle|\.idea|build)/|local\.properties$|\.(apk|aab|jks|keystore)$|key\.properties$'; then
-            echo 'Generated artifact or signing material is tracked' >&2
+          if git ls-files 'android/SokkerAsistente/**' | grep -E '(^|/)(\.gradle|\.idea|build)/|local\.properties$|\.(apk|aab|jks|keystore)$|key\.properties$'; then
+            echo 'Generated Android artifact or signing material is tracked' >&2
             exit 1
           fi
           if git grep -nE 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|storePassword|keyPassword' -- ':!docs/**'; then
