@@ -1973,7 +1973,7 @@ Thank you!</textarea>
 
 	<c:if test="${not empty sessionScope.admin and not empty sessionScope.admin_impersonated_login and sessionScope.admin_impersonated_login == sessionScope.usuario.login and sessionScope.usuario.login != sessionScope.admin_original_user.login}">
 		<div id="admin_account_delete" style="margin: 12px; text-align: center;">
-			<a href="${pageContext.request.contextPath}/asistente/eliminar_cuenta_admin?usuario=${sessionScope.usuario.login}">Delete this account and all associated data</a>
+			<a href="${pageContext.request.contextPath}/asistente/eliminar_cuenta_admin?usuario=${sessionScope.usuario.login}"><fmt:message key="account.delete.admin.link" /></a>
 		</div>
 	</c:if>
 	<c:if test="${not empty sessionScope.usuario and empty sessionScope.admin}">
@@ -1981,11 +1981,16 @@ Thank you!</textarea>
 			<% Usuario deletionUser = (Usuario) session.getAttribute("usuario");
 			   Long deletionRequestedAt = deletionUser == null ? null : UsuarioBO.obtener_fecha_solicitud_borrado(deletionUser.getLogin());
 			   if (deletionRequestedAt == null) { %>
-			<form method="post" action="${pageContext.request.contextPath}/asistente/solicitar_eliminacion_cuenta" onsubmit="return confirm('Request deletion of this account?');">
-				<button type="submit">Request account deletion</button>
+			<form method="post" action="${pageContext.request.contextPath}/asistente/solicitar_eliminacion_cuenta" onsubmit="return confirm('<fmt:message key="account.delete.request" />?');">
+				<button type="submit"><fmt:message key="account.delete.request" /></button>
 			</form>
-			<% } else { %><strong>Account deletion requested</strong><% } %>
+			<% } else { %><strong><fmt:message key="account.delete.pending" /></strong><% } %>
 		</div>
 	</c:if>
+	<div id="privacy_links" style="margin: 12px; text-align: center;">
+		<a href="${pageContext.request.contextPath}/asistente/privacidad"><fmt:message key="privacy.title" /></a>
+		&nbsp;|&nbsp;
+		<a href="${pageContext.request.contextPath}/asistente/eliminar_cuenta"><fmt:message key="account.delete.request" /></a>
+	</div>
 </body>
 </html>
