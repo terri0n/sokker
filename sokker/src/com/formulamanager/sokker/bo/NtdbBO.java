@@ -3,8 +3,10 @@ package com.formulamanager.sokker.bo;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
+import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.entity.Jugador;
 import com.formulamanager.sokker.entity.Usuario;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
@@ -18,6 +20,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlInput;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlSelect;
 import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
+import com.gargoylesoftware.htmlunit.javascript.host.event.Event;
 
 /**
  * NOTA: solo he probado las dos webs mayoritarias y la de Francia:
@@ -238,8 +241,11 @@ public class NtdbBO {
 //					System.out.println(j.getNombre());
 //					System.out.println(respuesta.isHtmlPage() ? ((HtmlPage)respuesta).asXml() : respuesta);
 //				}
+				
 			}
+
 		}
+
 	}
 	
 	/**
