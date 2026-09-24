@@ -1,0 +1,28 @@
+name: Patch Play Task 5
+
+on:
+  push:
+    branches:
+      - feature/play-console-compliance
+    paths:
+      - '.github/workflows/patch-play-task5.yml'
+      - '.github/scripts/patch_task5.py'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/play-console-compliance
+      - run: python3 .github/scripts/patch_task5.py
+      - run: grep -q 'admin_account_delete' sokker/WebContent/jsp/asistente/asistente.jsp
+      - run: |
+          git config user.name Terrion
+          git config user.email 63014185+terri0n@users.noreply.github.com
+          git add sokker/WebContent/jsp/asistente/asistente.jsp
+          git commit -m 'feat: expose final deletion only while impersonating'
+          git push origin HEAD:feature/play-console-compliance
