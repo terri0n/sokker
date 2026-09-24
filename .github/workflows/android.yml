@@ -4,16 +4,22 @@ on:
   push:
     branches:
       - main
-      - 'feature/android-*'
+      - 'feature/**'
       - 'fix/android-*'
     paths:
       - 'android/SokkerAsistente/**'
       - 'sokker/WebContent/js/util.js'
+      - 'sokker/WebContent/jsp/asistente/asistente.jsp'
+      - 'sokker/WebContent/jsp/asistente/privacidad.jsp'
+      - 'sokker/WebContent/jsp/asistente/eliminar_cuenta.jsp'
       - '.github/workflows/android.yml'
   pull_request:
     paths:
       - 'android/SokkerAsistente/**'
       - 'sokker/WebContent/js/util.js'
+      - 'sokker/WebContent/jsp/asistente/asistente.jsp'
+      - 'sokker/WebContent/jsp/asistente/privacidad.jsp'
+      - 'sokker/WebContent/jsp/asistente/eliminar_cuenta.jsp'
       - '.github/workflows/android.yml'
   workflow_dispatch:
 
@@ -84,6 +90,13 @@ jobs:
           test -n "$ANDROID_KEY"
           test -n "$WEB_KEY"
           test "$ANDROID_KEY" = "$WEB_KEY"
+
+      - name: Verify privacy and deletion web contract
+        run: |
+          grep -q '/asistente/privacidad' sokker/WebContent/jsp/asistente/asistente.jsp
+          grep -q '/asistente/eliminar_cuenta' sokker/WebContent/jsp/asistente/asistente.jsp
+          ! grep -Eq 'googletagmanager|adsbygoogle|google_ad_client' sokker/WebContent/jsp/asistente/privacidad.jsp
+          ! grep -Eq 'googletagmanager|adsbygoogle|google_ad_client' sokker/WebContent/jsp/asistente/eliminar_cuenta.jsp
 
       - name: Verify repository safety
         run: |
