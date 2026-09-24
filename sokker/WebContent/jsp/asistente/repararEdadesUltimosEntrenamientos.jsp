@@ -20,40 +20,31 @@
 
 <%!
     /*
-     * Reparación puntual, manual y de una sola ejecución para el cambio de
-     * temporada de septiembre de 2026. Toda la implementación vive en este
-     * JSP para poder retirarla del servidor después de ejecutarla.
+     * Reparación puntual y manual para el cambio de temporada de septiembre
+     * de 2026. Toda la implementación vive en este JSP para poder retirarla
+     * del servidor después de ejecutarla.
      *
-     * Referencia de edad actual:
-     *   1210 si el equipo ya se actualizó esta semana.
-     *   1209 si todavía no se ha actualizado. En este caso se captura primero
-     *   su edad como referencia y después 1209 también se corrige como jornada
-     *   13 de la temporada anterior.
+     * Referencia de edad:
+     *   1209 es la jornada 13 de la temporada anterior y conserva su edad.
+     *   1210 es la jornada 1 de la temporada actual y también se conserva.
      *
      * Único cambio permitido:
-     *   snapshots 1197..1209 -> edad actual - 1.
+     *   snapshots 1197..1208 (jornadas 1..12 de la temporada anterior)
+     *   -> exactamente la edad almacenada en 1209.
+     *
+     * Si falta 1209 no se toca el jugador. La transformación es idempotente:
+     * repetirla sobre los mismos datos no produce cambios adicionales.
      */
     private static final int MIN_CLUB_TID_REPAIR = 801;
     private static final int NEW_TRAINING_FORMAT_WEEK_REPAIR = 993;
     private static final Pattern TEAM_FILE_REPAIR = Pattern.compile("[0-9]+\\.properties");
     private static final Pattern PLAYER_LINE_REPAIR = Pattern.compile("(?m)^([0-9]+)([=:])(.*?)(\\r?)$");
 
-    private Integer expectedHistoricalAge(int latestWeek, int latestAge, int snapshotWeek) {
-        if (latestWeek != 1209 && latestWeek != 1210) {
+    private Integer expectedHistoricalAge(int referenceAge, int snapshotWeek) {
+        if (snapshotWeek < 1197 || snapshotWeek > 1208) {
             return null;
         }
-
-        // Si 1209 es el último snapshot, su edad se usa como referencia pero
-        // el propio snapshot sigue siendo la jornada 13 de la temporada anterior.
-        if (snapshotWeek > latestWeek) {
-            return null;
-        }
-
-        if (snapshotWeek < 1197 || snapshotWeek > 1209) {
-            return null;
-        }
-
-        return Integer.valueOf(latestAge - 1);
+        return Integer.valueOf(referenceAge);
     }
 
     private RepairSummary repairDirectory(File directory) throws IOException {
@@ -196,7 +187,7 @@
 
     private List<AgeReplacement> findAgeReplacements(ParsedPlayer parsed) {
         List<AgeReplacement> result = new ArrayList<AgeReplacement>();
-        Snapshot latest = parsed.snapshots.get(0);
+        Snapshot reference = null;
         int previousWeek = Integer.MAX_VALUE;
 
         for (Snapshot snapshot : parsed.snapshots) {
@@ -204,8 +195,17 @@
                 return new ArrayList<AgeReplacement>();
             }
             previousWeek = snapshot.week;
+            if (snapshot.week == 1209) {
+                reference = snapshot;
+            }
+        }
 
-            Integer expectedAge = expectedHistoricalAge(latest.week, latest.age, snapshot.week);
+        if (reference == null) {
+            return result;
+        }
+
+        for (Snapshot snapshot : parsed.snapshots) {
+            Integer expectedAge = expectedHistoricalAge(reference.age, snapshot.week);
             if (expectedAge != null && snapshot.age != expectedAge.intValue()) {
                 result.add(new AgeReplacement(snapshot.ageIndex, expectedAge.intValue()));
             }
@@ -361,40 +361,35 @@
     private void selfTestRepair() throws Exception {
         String damaged = player(77,
                 snapshot(1210, 25) + ","
-                + snapshot(1209, 23) + ","
+                + snapshot(1209, 24) + ","
                 + snapshot(1208, 25) + ","
-                + snapshot(1197, 24) + ","
+                + snapshot(1197, 23) + ","
                 + snapshot(1196, 23));
         String notUpdated = player(88,
                 snapshot(1209, 25) + ","
                 + snapshot(1208, 23) + ","
-                + snapshot(1197, 25));
-        String unsupportedReference = player(99,
-                snapshot(1211, 30) + ","
-                + snapshot(1209, 28));
+                + snapshot(1197, 24));
+        String missingReference = player(99,
+                snapshot(1210, 30) + ","
+                + snapshot(1208, 28) + ","
+                + snapshot(1197, 27));
 
         String content = "future_key=keep\\:exactly\n"
                 + damaged
                 + notUpdated
-                + unsupportedReference;
+                + missingReference;
 
         RepairResult fixed = repairContent(content);
-        requireRepair(fixed.content.contains(snapshot(1210, 25)),
-                "La edad actual de 1210 debe conservarse");
-        requireRepair(fixed.content.contains(snapshot(1209, 24)),
-                "La jornada 13 debe quedar en edad actual - 1 cuando 1210 es la referencia");
-        requireRepair(fixed.content.contains(snapshot(1208, 24)),
-                "Las jornadas anteriores deben quedar en edad actual - 1");
-        requireRepair(fixed.content.contains(snapshot(1197, 24)),
-                "La jornada 1 de la temporada anterior debe quedar en edad actual - 1");
+        requireRepair(fixed.content.contains(snapshot(1210, 25) + "," + snapshot(1209, 24)),
+                "Las edades correctas de 1210 y 1209 deben conservarse");
+        requireRepair(fixed.content.contains(snapshot(1209, 24) + "," + snapshot(1208, 24) + "," + snapshot(1197, 24)),
+                "Las jornadas 1 a 12 deben quedar con la edad correcta de la jornada 13");
         requireRepair(fixed.content.contains(snapshot(1196, 23)),
                 "No se debe tocar una temporada más antigua");
-        requireRepair(!fixed.content.contains(snapshot(1209, 25)),
-                "Si el equipo aún no se actualizó, 1209 solo aporta la edad actual antes de ser corregida");
-        requireRepair(fixed.content.contains(snapshot(1209, 24) + "," + snapshot(1208, 24) + "," + snapshot(1197, 24)),
-                "Un equipo sin actualizar debe quedar corregido desde la jornada 13 hasta la 1 en una sola ejecución");
-        requireRepair(fixed.content.contains(unsupportedReference),
-                "No se debe reparar un jugador cuya referencia no sea 1209 o 1210");
+        requireRepair(fixed.content.contains(snapshot(1209, 25) + "," + snapshot(1208, 25) + "," + snapshot(1197, 25)),
+                "Un equipo sin 1210 debe usar igualmente 1209 como referencia sin modificarla");
+        requireRepair(fixed.content.contains(missingReference),
+                "No se debe reparar un jugador que no tenga snapshot 1209");
         requireRepair(fixed.content.contains("future_key=keep\\:exactly"),
                 "Las claves desconocidas deben conservarse exactamente");
 
@@ -511,8 +506,6 @@
         return;
     }
 
-    final String executionMarker = "repairTrainingAges20260924Executed";
-    boolean alreadyExecuted = Boolean.TRUE.equals(application.getAttribute(executionMarker));
     File dataDirectory = new File(SystemUtil.getVar(SystemUtil.PATH));
     String result = null;
     String error = null;
@@ -532,39 +525,25 @@
         }
         session.removeAttribute("repairTrainingAgesCsrf20260924");
 
-        synchronized (application) {
-            alreadyExecuted = Boolean.TRUE.equals(application.getAttribute(executionMarker));
-            if (alreadyExecuted) {
-                result = "Esta reparación ya se ejecutó en este arranque del servidor. No se ha modificado nada.";
+        try {
+            RepairSummary summary = repairDirectory(dataDirectory);
+            if (summary.concurrentSkips == 0) {
+                result = "Reparación terminada. Ficheros revisados: " + summary.scannedFiles
+                        + ", ficheros modificados: " + summary.modifiedFiles
+                        + ", jugadores corregidos: " + summary.modifiedPlayers
+                        + ", edades corregidas: " + summary.modifiedSnapshots + ".";
             } else {
-                try {
-                    RepairSummary summary = repairDirectory(dataDirectory);
-                    if (summary.concurrentSkips == 0) {
-                        application.setAttribute("repairTrainingAges20260924Executed", Boolean.TRUE);
-                        alreadyExecuted = true;
-                        result = "Reparación terminada. Ficheros revisados: " + summary.scannedFiles
-                                + ", ficheros modificados: " + summary.modifiedFiles
-                                + ", jugadores corregidos: " + summary.modifiedPlayers
-                                + ", edades corregidas: " + summary.modifiedSnapshots + ".";
-                    } else {
-                        error = "La reparación no se marca como ejecutada porque " + summary.concurrentSkips
-                                + " fichero(s) cambiaron mientras se procesaban. Los ficheros concurrentes se dejaron intactos."
-                                + " Repite la ejecución cuando no haya actualizaciones en curso.";
-                    }
-                } catch (Throwable e) {
-                    error = e.getClass().getName() + ": " + e.getMessage();
-                }
+                error = "Durante la reparación " + summary.concurrentSkips
+                        + " fichero(s) cambiaron mientras se procesaban. Los ficheros concurrentes se dejaron intactos."
+                        + " Repite la ejecución cuando no haya actualizaciones en curso; los ya reparados no volverán a cambiar.";
             }
+        } catch (Throwable e) {
+            error = e.getClass().getName() + ": " + e.getMessage();
         }
     }
 
-    if (error == null && !alreadyExecuted && !"POST".equalsIgnoreCase(request.getMethod())) {
-        csrf = UUID.randomUUID().toString();
-        session.setAttribute("repairTrainingAgesCsrf20260924", csrf);
-    } else if (error != null && !alreadyExecuted) {
-        csrf = UUID.randomUUID().toString();
-        session.setAttribute("repairTrainingAgesCsrf20260924", csrf);
-    }
+    csrf = UUID.randomUUID().toString();
+    session.setAttribute("repairTrainingAgesCsrf20260924", csrf);
 %>
 <!DOCTYPE html>
 <html>
@@ -580,18 +559,15 @@
     <h2><%= escapeHtmlRepair(result) %></h2>
 <% } %>
 
-<% if (alreadyExecuted) { %>
-    <p>La reparación ya ha sido ejecutada. Elimina este JSP del despliegue.</p>
-<% } else { %>
-    <h2>Reparar edades de la temporada anterior</h2>
-    <p>Herramienta puntual de administración. Debe ejecutarse manualmente una sola vez y retirarse después.</p>
-    <p>Toma como edad actual la del último snapshot: jornada 1210 si el equipo ya se actualizó, o jornada 1209 si todavía no lo ha hecho. En este último caso captura primero esa edad y después corrige también 1209.</p>
-    <p>Solo corrige la temporada anterior, jornadas 13 a 1 (1209-1197), para que tengan exactamente edad actual - 1. No toca otras temporadas ni otros campos.</p>
-    <p>No utiliza backups como referencia ni crea copias auxiliares.</p>
-    <form method="post">
-        <input type="hidden" name="csrf" value="<%= escapeHtmlRepair(csrf) %>">
-        <button type="submit">Ejecutar reparación una vez</button>
-    </form>
-<% } %>
+<h2>Reparar edades de la temporada anterior</h2>
+<p>Herramienta puntual de administración. Está pensada para ejecutarse manualmente una vez y retirarse después.</p>
+<p>Las jornadas 1210 (1 de la temporada actual) y 1209 (13 de la temporada anterior) ya tienen la edad correcta y no se modifican.</p>
+<p>Para cada jugador que tenga snapshot 1209, restaura únicamente las jornadas 1 a 12 de la temporada anterior (1197-1208) a la misma edad almacenada en 1209. Si falta 1209, el jugador se deja intacto.</p>
+<p>La operación es idempotente: si se ejecuta otra vez sobre los mismos datos, no vuelve a modificar las edades.</p>
+<p>No utiliza backups como referencia ni crea copias auxiliares.</p>
+<form method="post">
+    <input type="hidden" name="csrf" value="<%= escapeHtmlRepair(csrf) %>">
+    <button type="submit">Ejecutar reparación</button>
+</form>
 </body>
 </html>
