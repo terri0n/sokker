@@ -89,11 +89,12 @@ public class SokkerProxyTest {
     }
 
     @Test
-    public void hopByHopAndConnectionManagedHeadersAreNotForwarded() {
+    public void connectionManagedAndContentEncodingHeadersAreNotForwarded() {
         Map<String, String> headers = new LinkedHashMap<>();
         headers.put("Host", "sokker.org");
         headers.put("Content-Length", "123");
         headers.put("Connection", "keep-alive");
+        headers.put("Accept-Encoding", "gzip, deflate, br");
         headers.put("Accept", "application/json");
 
         Map<String, String> result = SokkerProxy.buildForwardHeaders(headers);
@@ -101,6 +102,7 @@ public class SokkerProxyTest {
         assertFalse(containsHeaderIgnoreCase(result, "Host"));
         assertFalse(containsHeaderIgnoreCase(result, "Content-Length"));
         assertFalse(containsHeaderIgnoreCase(result, "Connection"));
+        assertFalse(containsHeaderIgnoreCase(result, "Accept-Encoding"));
         assertEquals("application/json", result.get("Accept"));
     }
 
