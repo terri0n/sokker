@@ -45,7 +45,9 @@ The email is HTML and contains:
 - timestamp/source;
 - a direct link to the admin deletion-review flow for that login.
 
-The link itself contains no secret and is not an authorization token. Opening it requires an authenticated admin session. If the admin is not logged in, the requested target is retained in the session through the admin login flow and, after successful admin login, the user is returned to the deletion review. A non-admin login must not gain access to the review and must clear/ignore the pending admin target.
+The link itself contains no secret and is not an authorization token. Opening it requires an authenticated admin session. If the admin is not logged in, the requested target is retained in the session through the admin login flow. After a successful login as the configured administrator, the flow enters the requested account using the same authorization semantics as `LoginComo`, records an explicit impersonation marker in the session and redirects to the deletion review. A non-admin login must clear/ignore the pending admin target.
+
+If the administrator is already logged in, the direct email link performs the same explicit admin-only “enter this user for deletion review” transition before showing the manifest. It never deletes from a GET request.
 
 The email link never performs a one-click deletion.
 
@@ -69,21 +71,24 @@ must retain `account_deletion_requested_at` and every other unknown key.
 
 The existing administrator user list remains the main admin surface. It is not replaced by a separate panel.
 
-When the administrator logs in, users with `account_deletion_requested_at` appear first in a clearly separated “Pending account deletion requests” section, ordered by request date. Each pending user has a button/link to enter the user with the existing `LoginComo` flow. The rest of the users appear afterward with the current behavior preserved.
+When the administrator logs in, users with `account_deletion_requested_at` appear first in a clearly separated “Pending account deletion requests” section, ordered by request date. Each pending user has a review/enter button that uses the existing `LoginComo` flow. The rest of the users appear afterward with the current behavior preserved.
 
 There is no destructive delete button directly in the list.
 
 ### 4. Final deletion from an impersonated account
 
+`LoginComo` must set an explicit session marker such as `admin_impersonated_login=<login>`. Normal login/logout must clear it. This makes the destructive authorization test observable and prevents a `usuario=` request parameter from being sufficient.
+
 The destructive action is only exposed when all of the following are true:
 
 - the session still has the admin flag;
-- `session.usuario` is the user being reviewed via `LoginComo`;
+- `session.usuario` is the user being reviewed;
+- `admin_impersonated_login` exactly matches `session.usuario.login`;
 - the target is not the configured administrator account.
 
-Only then is an “Delete this account and all associated data” action shown.
+Only then is a “Delete this account and all associated data” action shown.
 
-The action first displays a deletion manifest: account file, personal log, cross-account references and any club/TID data that is safe to delete. Final confirmation requires entering the exact login. The request is POST-only.
+The action first displays a deletion manifest: account file, personal log, cross-account references and any club/TID data that is safe to delete. Final confirmation requires entering the exact login. The deletion request is POST-only.
 
 The existing player reset controls remain completely separate and unchanged.
 
@@ -127,21 +132,23 @@ Do not delete national-team player/history datasets merely because the selector 
 
 Do not rewrite global/shared security logs by arbitrary string substitution. Existing maintenance already trims logs to a 30-day retention window. The privacy policy will disclose this limited retention for security/diagnostic purposes.
 
-## Failure and atomicity behavior
+## Failure, idempotency and atomicity behavior
 
-Deletion cannot be made fully transactional on the filesystem, so sequencing must minimize irreversible partial state.
+Filesystem deletion cannot be fully transactional, so the executor must be preflighted, idempotent and retry-safe.
 
-Order:
+Before changing anything it builds the full deletion manifest, validates that every target is inside the allowed data directories/patterns, computes whether the TID is shared and checks that shared files to be rewritten are readable/writable.
 
-1. Build and validate the deletion manifest.
-2. Remove cross-account references such as NTDB/scout links.
+Execution order:
+
+1. Build and validate the complete deletion manifest.
+2. Remove cross-account references such as NTDB/scout links using safe parse/rewrite operations.
 3. Remove TID-scoped data only if ownership checks permit it.
 4. Remove the individual account log.
 5. Remove `_<login>.properties` last.
 
-If any step before the final account-file removal fails, the account remains present and marked pending, so the administrator can retry and the failure is visible. The implementation reports which manifest item failed; it must not silently continue and declare success.
+Every operation is idempotent: an intended file that is already absent or an already-removed reference counts as completed, not as a new error. If a failure occurs after some intended data has already been deleted, the account file remains present and marked pending; a second execution recomputes the manifest and safely continues the remaining work. The UI reports failure rather than declaring success.
 
-The admin account is explicitly protected from deletion.
+The account is considered deleted only after the account file itself is removed successfully. The admin account is explicitly protected from deletion.
 
 ## Privacy policy
 
@@ -172,6 +179,8 @@ Required changes:
 
 - stop writing `apassword` to cookies;
 - expire/remove an existing `apassword` cookie when encountered so legacy cleartext copies disappear from active browsers;
+- keep only the login identifier as the optional remembered browser value;
+- where Sokker authentication is required later, require the password again or keep it only for the minimum lifetime needed by the current request/session; never persist it to disk/cookie;
 - never include entered passwords in application logs or deletion-request emails;
 - remove/neutralize future persistence of the retired `actualizacion_automatica` plaintext/Base64 secret while keeping old files readable and preserving all unrelated/unknown properties.
 
@@ -181,7 +190,7 @@ The existing account password hash format is not migrated in this task. A safe p
 
 Reuse `EmailSenderService` and extend it cleanly so HTML mail is supported without requiring attachments. Existing attachment email behavior must remain compatible.
 
-The deletion-request email’s direct admin link contains only the requested login as an identifier. Authorization is always enforced server-side by the existing admin session mechanism plus final confirmation.
+The deletion-request email’s direct admin link contains only the requested login as an identifier. Authorization is always enforced server-side by the existing admin session mechanism, the explicit impersonation marker and final confirmation.
 
 The recipient should be an administrator/support address controlled by Sokker Asistente. Prefer an existing configurable server value if available; otherwise introduce a single explicit configuration point rather than scattering the address across new code.
 
@@ -221,9 +230,10 @@ Create harness/test coverage for at least:
 - two users sharing a TID: deleting one removes personal data/references but preserves all TID data;
 - national-team relationship: shared NT datasets remain;
 - pending request: user appears in the admin pending section before normal users;
-- failure before account-file deletion: user file remains and deletion remains retryable;
+- deletion is idempotent and a retry completes a deliberately interrupted run;
 - admin account cannot be deleted;
-- final action cannot be invoked by a normal user or by an admin targeting an arbitrary user without the approved impersonation/review flow;
+- final action cannot be invoked by a normal user, by passing an arbitrary `usuario` parameter, or without a matching `admin_impersonated_login` marker;
+- normal login/logout clears the impersonation marker;
 - existing player reset behavior remains present and unchanged.
 
 ### Credential hygiene
@@ -237,7 +247,8 @@ Create harness/test coverage for at least:
 
 - accessible without login;
 - deletion form sends an email but does not delete/mark an internal account automatically;
-- email admin link is correctly URL-encoded and contains no secret;
+- email admin link is correctly URL-encoded, contains no secret and cannot delete via GET;
+- unauthenticated email-link flow returns to deletion review only after a successful admin login;
 - privacy and deletion links are visible from the application.
 
 ### Build / regression
