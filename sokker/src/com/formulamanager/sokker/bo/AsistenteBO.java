@@ -938,30 +938,38 @@ if (nuevo.getLesion() > 0) {
 
 	public static String listar_usuarios() throws UnsupportedEncodingException {
 		String[] archivos = UsuarioBO.obtener_usuarios();
+		List<String> pendientes = UsuarioBO.obtener_usuarios_con_borrado_solicitado();
+		Set<String> pendientesSet = new HashSet<String>(pendientes);
 
 		String salida = "Total: " + archivos.length + "<br/>"
 				+ "<label id='' for='reset_intentos'><input type='checkbox' id='reset_intentos' /> Resetear</label><br/>";
-		
+
+		if (!pendientes.isEmpty()) {
+			salida += "<strong>Pending account deletion requests</strong><br/>";
+			for (String usuario : pendientes) {
+				salida += "<a href='asistente/login_como?usuario=" + URLEncoder.encode(usuario, "UTF-8") + "'>" + usuario + "</a>"
+						+ " <a href='asistente/examinar_usuario?usuario=" + URLEncoder.encode(usuario, "UTF-8") + "'><i class=\"fa-solid fa-binoculars azul\"></i></a><br/>";
+			}
+			salida += "<hr/>";
+		}
+
 		Arrays.sort(archivos);
-		
 		for (String s : archivos) {
 			try {
+				String usuario = s.split(".properties")[0].substring(1);
+				if (pendientesSet.contains(usuario)) continue;
 				File fUsuario = new File(SystemUtil.getVar(SystemUtil.PATH) + "/" + s);
 				Date fecha = new Date(fUsuario.lastModified());
-				String usuario = s.split(".properties")[0].substring(1);
 				Usuario usr = UsuarioBO.leer_usuario(usuario, false);
-	
-				salida += Util.dateToString(fecha) 
+				salida += Util.dateToString(fecha)
 						+ " <a href='javascript:void(0)' onclick=\"location.href='asistente/login_como?usuario=" + URLEncoder.encode(usuario, "UTF-8") + "&reset_intentos=' + $('#reset_intentos').val()\">" + usuario + "</a> ";
-				salida += "[" + usr.getTid() + "] <a href='javascript:borrar_usuario_click(\"" + URLEncoder.encode(usuario, "UTF-8") + "\")'><i class='fas fa-trash-alt'></i></a>"
-						+ " <a href='javascript:void(0)' onclick=\"location.href='asistente/examinar_usuario?usuario=" + URLEncoder.encode(usuario, "UTF-8") + "'\"><i class=\"fa-solid fa-binoculars azul\"></i></a>"
-						+ " <br/>";
+				salida += "[" + usr.getTid() + "]"
+						+ " <a href='javascript:void(0)' onclick=\"location.href='asistente/examinar_usuario?usuario=" + URLEncoder.encode(usuario, "UTF-8") + "'\"><i class=\"fa-solid fa-binoculars azul\"></i></a> <br/>";
 			} catch (Exception e) {
 				e.printStackTrace();
 				salida += "-- Error leyendo " + s + "<br />";
 			}
 		}
-
 		return salida;
 	}
 

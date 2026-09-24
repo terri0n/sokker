@@ -1970,5 +1970,17 @@ Thank you!</textarea>
 	<div class="sombra" style="position:absolute; display: none; padding: 5px; background-color: white;" id="editar_instalacion">
 		<%@include file="instalacion.jsp" %>
 	</div>
+
+	<c:if test="${not empty sessionScope.usuario and empty sessionScope.admin}">
+		<div id="account_deletion_request" style="margin: 12px; text-align: center;">
+			<% Usuario deletionUser = (Usuario) session.getAttribute("usuario");
+			   Long deletionRequestedAt = deletionUser == null ? null : UsuarioBO.obtener_fecha_solicitud_borrado(deletionUser.getLogin());
+			   if (deletionRequestedAt == null) { %>
+			<form method="post" action="${pageContext.request.contextPath}/asistente/solicitar_eliminacion_cuenta" onsubmit="return confirm('Request deletion of this account?');">
+				<button type="submit">Request account deletion</button>
+			</form>
+			<% } else { %><strong>Account deletion requested</strong><% } %>
+		</div>
+	</c:if>
 </body>
 </html>
