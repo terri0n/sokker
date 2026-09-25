@@ -1,7 +1,7 @@
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -21,7 +21,7 @@ public class TrainingMatchMappingHarness {
         rejectsPageMatchMissingId();
         rejectsUnresolvableWeekDay();
         recognizesInternationalCupAsOfficialTraining();
-        recognizesUnknownOfficialCompetitionAsOfficialTraining();
+        mapsUnknownOfficialCompetitionToLegacyOfficialLeague();
     }
 
     private static void rejectsMissingTiming() {
@@ -129,15 +129,16 @@ public class TrainingMatchMappingHarness {
         }
     }
 
-    // New competitions can receive new type codes. If Sokker explicitly marks the
-    // competition as official, training must not fail only because the type code is new.
-    private static void recognizesUnknownOfficialCompetitionAsOfficialTraining() throws Exception {
-        String source = new String(Files.readAllBytes(Paths.get(
-                "sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java")), StandardCharsets.UTF_8);
-        int juniorBranch = source.indexOf("if (tipo == 7)");
-        int officialBranch = source.indexOf("if (oficial)");
-        if (juniorBranch < 0 || officialBranch < 0 || juniorBranch > officialBranch) {
-            throw new AssertionError("Unknown /api/league type codes marked isOfficial=true must use official training, while junior matches must remain excluded");
+    private static void mapsUnknownOfficialCompetitionToLegacyOfficialLeague() {
+        Map<String, Object> type = new LinkedHashMap<String, Object>();
+        type.put("code", Integer.valueOf(99));
+        Map<String, Object> league = new LinkedHashMap<String, Object>();
+        league.put("type", type);
+        league.put("isOfficial", Boolean.TRUE);
+
+        String xml = SokkerXmlCompat.buildLeagueXml(league);
+        if (!xml.contains("<type>0</type><isOfficial>1</isOfficial>")) {
+            throw new AssertionError("Unknown official Sokker competition types must map to the legacy official-league representation instead of breaking training calculation: " + xml);
         }
     }
 
