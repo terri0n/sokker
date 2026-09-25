@@ -123,7 +123,8 @@ public class Servlet extends SERVLET_ASISTENTE {
 
 		int pid = Integer.valueOf(request.getParameter("pid"));
 		String tipo = request.getParameter("tipo");
-		boolean historico = Util.getInt(request.getSession(), "historico") > 0;
+		boolean historico = Util.getInt(request.getSession(), "historico") > 0
+				|| "1".equals(request.getParameter("historico"));
 		boolean juveniles = "talento".equals(tipo);
 		Jugador j = AsistenteBO.buscar_jugador(request, pid, historico, juveniles);
 
