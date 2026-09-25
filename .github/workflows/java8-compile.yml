@@ -90,7 +90,8 @@ jobs:
             .github/harness/NtSkillMergeHarness.java \
             .github/harness/SokkerClientIdentificationHarness.java \
             .github/harness/NtdbSendingDisabledHarness.java \
-            .github/harness/TotalSalaryHarness.java
+            .github/harness/TotalSalaryHarness.java \
+            .github/harness/ColorAssignmentHarness.java
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" PersistenceRoundTrip
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" com.formulamanager.sokker.bo.AccountDeletionHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" com.formulamanager.sokker.acciones.asistente.CredentialHygieneHarness
@@ -114,6 +115,7 @@ jobs:
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" SokkerClientIdentificationHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" NtdbSendingDisabledHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TotalSalaryHarness
+          java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" ColorAssignmentHarness
 
       - name: Verify team ID classification uses shared threshold
         shell: bash
@@ -135,10 +137,12 @@ jobs:
           cp -a /tmp/sokker-classes/. /tmp/sokker-war/WEB-INF/classes/
           test -f /tmp/sokker-war/WEB-INF/web.xml
           test -f /tmp/sokker-war/WEB-INF/classes/com/formulamanager/sokker/bo/AsistenteBO.class
+          test -f /tmp/sokker-war/WEB-INF/classes/com/formulamanager/sokker/acciones/asistente/Cambiar_color.class
           test -d /tmp/sokker-war/WEB-INF/lib
           test "$(find /tmp/sokker-war/WEB-INF/lib -type f -name '*.jar' | wc -l)" -gt 0
           jar cf /tmp/sokker.war -C /tmp/sokker-war .
           jar tf /tmp/sokker.war > /tmp/sokker-war-entries.txt
           grep -Fxq 'WEB-INF/web.xml' /tmp/sokker-war-entries.txt
           grep -Fxq 'WEB-INF/classes/com/formulamanager/sokker/bo/AsistenteBO.class' /tmp/sokker-war-entries.txt
+          grep -Fxq 'WEB-INF/classes/com/formulamanager/sokker/acciones/asistente/Cambiar_color.class' /tmp/sokker-war-entries.txt
           test -s /tmp/sokker.war
