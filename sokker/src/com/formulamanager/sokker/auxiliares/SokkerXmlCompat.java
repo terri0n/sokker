@@ -427,7 +427,7 @@ public final class SokkerXmlCompat {
 					} catch (RuntimeException ignored) {
 					}
 				}
-		}
+			}
 		}
 		return null;
 	}
@@ -463,6 +463,7 @@ public final class SokkerXmlCompat {
 				if (found != null) {
 					return found;
 				}
+			}
 		}
 		return null;
 	}
