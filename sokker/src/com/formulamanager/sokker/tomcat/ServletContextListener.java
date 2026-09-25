@@ -36,6 +36,8 @@ import com.gargoylesoftware.htmlunit.WebClient;
  */
 @WebListener
 public class ServletContextListener implements javax.servlet.ServletContextListener {
+    private volatile Thread scheduledWorker;
+
 	/**
      * Default constructor. 
      */
@@ -46,8 +48,19 @@ public class ServletContextListener implements javax.servlet.ServletContextListe
 	/**
      * @see ServletContextListener#contextDestroyed(ServletContextEvent)
      */
-    public void contextDestroyed(ServletContextEvent arg0)  { 
+    public void contextDestroyed(ServletContextEvent arg0)  {
+        Thread worker = scheduledWorker;
+        scheduledWorker = null;
+        if (worker == null) {
+            return;
+        }
 
+        worker.interrupt();
+        try {
+            worker.join(5000L);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
 	/**
@@ -58,7 +71,7 @@ public class ServletContextListener implements javax.servlet.ServletContextListe
 		
 		SystemUtil.saveRealPath(event.getServletContext());
 		
-    	new Thread() {
+    	scheduledWorker = new Thread() {
     		@Override
     		public synchronized void run() {
     			boolean seguir = true;
@@ -89,7 +102,8 @@ public class ServletContextListener implements javax.servlet.ServletContextListe
 
     	    	System.out.println("Finalizando ServletContextListener...");
     		}
-    	}.start();
+    	};
+        scheduledWorker.start();
     }
 
 //	private String[] obtener_archivos(String carpeta) {
