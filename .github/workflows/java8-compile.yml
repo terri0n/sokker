@@ -8,81 +8,11 @@ on:
       - 'feature/**'
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   compile:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Apply lifecycle patch preserving source bytes
-        if: github.ref == 'refs/heads/fix/tomcat-listener-shutdown'
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-
-          path = Path('sokker/src/com/formulamanager/sokker/tomcat/ServletContextListener.java')
-          data = path.read_bytes()
-          if b'private volatile Thread scheduledWorker;' in data:
-              raise SystemExit(0)
-
-          nl = b'\r\n' if b'\r\n' in data else b'\n'
-
-          def replace_once(old, new, description):
-              global data
-              count = data.count(old)
-              if count != 1:
-                  raise SystemExit('%s: expected exactly one match, got %d' % (description, count))
-              data = data.replace(old, new, 1)
-
-          class_line = b'public class ServletContextListener implements javax.servlet.ServletContextListener {' + nl
-          replace_once(
-              class_line,
-              class_line + b'    private volatile Thread scheduledWorker;' + nl + nl,
-              'worker field')
-
-          old_destroy = (
-              b'    public void contextDestroyed(ServletContextEvent arg0)  { ' + nl +
-              nl +
-              b'    }')
-          new_destroy = (
-              b'    public void contextDestroyed(ServletContextEvent arg0)  {' + nl +
-              b'        Thread worker = scheduledWorker;' + nl +
-              b'        scheduledWorker = null;' + nl +
-              b'        if (worker == null) {' + nl +
-              b'            return;' + nl +
-              b'        }' + nl +
-              nl +
-              b'        worker.interrupt();' + nl +
-              b'        try {' + nl +
-              b'            worker.join(5000L);' + nl +
-              b'        } catch (InterruptedException e) {' + nl +
-              b'            Thread.currentThread().interrupt();' + nl +
-              b'        }' + nl +
-              b'    }')
-          replace_once(old_destroy, new_destroy, 'contextDestroyed')
-
-          replace_once(b'    \tnew Thread() {', b'    \tscheduledWorker = new Thread() {', 'worker creation')
-          replace_once(
-              b'    \t}.start();',
-              b'    \t};' + nl + b'        scheduledWorker.start();',
-              'worker start')
-
-          path.write_bytes(data)
-          PY
-
-          if git diff --quiet -- sokker/src/com/formulamanager/sokker/tomcat/ServletContextListener.java; then
-            exit 0
-          fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add sokker/src/com/formulamanager/sokker/tomcat/ServletContextListener.java
-          git commit -m 'Stop scheduled worker on webapp shutdown'
-          git push origin HEAD:fix/tomcat-listener-shutdown
 
       - uses: actions/setup-java@v4
         with:
