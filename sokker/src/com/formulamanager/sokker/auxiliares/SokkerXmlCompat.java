@@ -330,6 +330,20 @@ public final class SokkerXmlCompat {
 		// El código legado trata una liga sin type como oficial. Si la API no da
 		// ambos campos, preservamos exactamente ese fallback en vez de inventar datos.
 		if (type != null && official != null) {
+			// La API moderna puede introducir nuevos códigos de competición. El
+			// consumidor legado solo conoce unos pocos; si Sokker marca explícitamente
+			// una competición nueva como oficial, la representamos como liga oficial
+			// (type=0 + isOfficial=1) para conservar el significado sin depender del
+			// número de type.code. Juniors (7) y los tipos ya conocidos se conservan.
+			if (official.booleanValue()
+					&& type.intValue() != 0
+					&& type.intValue() != 1
+					&& type.intValue() != 2
+					&& type.intValue() != 7
+					&& type.intValue() != 9
+					&& type.intValue() != 13) {
+				type = Integer.valueOf(0);
+			}
 			xml.append("<type>").append(type).append("</type><isOfficial>")
 				.append(official.booleanValue() ? 1 : 0).append("</isOfficial>");
 		}
@@ -449,7 +463,6 @@ public final class SokkerXmlCompat {
 				if (found != null) {
 					return found;
 				}
-			}
 		}
 		return null;
 	}
