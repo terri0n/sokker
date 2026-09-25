@@ -22,6 +22,7 @@ public class TrainingMatchMappingHarness {
         rejectsUnresolvableWeekDay();
         recognizesInternationalCupAsOfficialTraining();
         mapsUnknownOfficialCompetitionToLegacyOfficialLeague();
+        promotedJuniorTalentUsesHistoricalLookup();
     }
 
     private static void rejectsMissingTiming() {
@@ -139,6 +140,20 @@ public class TrainingMatchMappingHarness {
         String xml = SokkerXmlCompat.buildLeagueXml(league);
         if (!xml.contains("<type>0</type><isOfficial>1</isOfficial>")) {
             throw new AssertionError("Unknown official Sokker competition types must map to the legacy official-league representation instead of breaking training calculation: " + xml);
+        }
+    }
+
+    private static void promotedJuniorTalentUsesHistoricalLookup() throws Exception {
+        String tag = new String(Files.readAllBytes(Paths.get(
+                "sokker/WebContent/WEB-INF/tags/jugadores.tag")), StandardCharsets.UTF_8);
+        String servlet = new String(Files.readAllBytes(Paths.get(
+                "sokker/src/com/formulamanager/sokker/servlets/Servlet.java")), StandardCharsets.UTF_8);
+
+        if (!tag.contains("grafica_ajax($(this), 'talento', ${j.juvenil.pid}, 1);")) {
+            throw new AssertionError("Promoted-junior talent graph must request historical junior data");
+        }
+        if (!servlet.contains("\"1\".equals(request.getParameter(\"historico\"))")) {
+            throw new AssertionError("datos_grafica must honor the explicit historico=1 override used by first-team talent links");
         }
     }
 
