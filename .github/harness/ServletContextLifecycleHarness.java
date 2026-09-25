@@ -34,7 +34,7 @@ public class ServletContextLifecycleHarness {
         Thread worker = null;
         try {
             listener.contextInitialized(event);
-            worker = findListenerThread(before);
+            worker = findNewNonDaemonThread(before);
             if (worker == null) {
                 throw new AssertionError("ServletContextListener must start its scheduled worker thread");
             }
@@ -45,14 +45,14 @@ public class ServletContextLifecycleHarness {
                 throw new AssertionError("ServletContextListener worker must stop when the web context is destroyed");
             }
         } finally {
-            stopListenerThreads(before);
+            stopNewNonDaemonThreads(before);
         }
     }
 
-    private static Thread findListenerThread(Set<Thread> before) throws InterruptedException {
+    private static Thread findNewNonDaemonThread(Set<Thread> before) throws InterruptedException {
         for (int attempt = 0; attempt < 20; attempt++) {
             for (Thread thread : Thread.getAllStackTraces().keySet()) {
-                if (!before.contains(thread) && thread.isAlive() && isListenerThread(thread)) {
+                if (!before.contains(thread) && thread.isAlive() && !thread.isDaemon()) {
                     return thread;
                 }
             }
@@ -61,16 +61,12 @@ public class ServletContextLifecycleHarness {
         return null;
     }
 
-    private static void stopListenerThreads(Set<Thread> before) throws InterruptedException {
+    private static void stopNewNonDaemonThreads(Set<Thread> before) throws InterruptedException {
         for (Thread thread : Thread.getAllStackTraces().keySet()) {
-            if (!before.contains(thread) && thread.isAlive() && isListenerThread(thread)) {
+            if (!before.contains(thread) && thread.isAlive() && !thread.isDaemon()) {
                 thread.interrupt();
                 thread.join(1000L);
             }
         }
-    }
-
-    private static boolean isListenerThread(Thread thread) {
-        return thread.getClass().getName().startsWith("com.formulamanager.sokker.tomcat.ServletContextListener$");
     }
 }
