@@ -117,7 +117,7 @@ jobs:
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" NtdbSendingDisabledHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" TotalSalaryHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" ColorAssignmentHarness
-          java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" ServletContextLifecycleHarness
+          timeout 5s java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" ServletContextLifecycleHarness
 
       - name: Verify team ID classification uses shared threshold
         shell: bash
