@@ -45,27 +45,32 @@ public class ServletContextLifecycleHarness {
                 throw new AssertionError("ServletContextListener worker must stop when the web context is destroyed");
             }
         } finally {
-            if (worker != null && worker.isAlive()) {
-                worker.interrupt();
-                worker.join(1000L);
-            }
+            stopListenerThreads(before);
         }
     }
 
     private static Thread findListenerThread(Set<Thread> before) throws InterruptedException {
         for (int attempt = 0; attempt < 20; attempt++) {
             for (Thread thread : Thread.getAllStackTraces().keySet()) {
-                if (before.contains(thread) || !thread.isAlive()) {
-                    continue;
-                }
-                for (StackTraceElement element : thread.getStackTrace()) {
-                    if (element.getClassName().startsWith("com.formulamanager.sokker.tomcat.ServletContextListener$")) {
-                        return thread;
-                    }
+                if (!before.contains(thread) && thread.isAlive() && isListenerThread(thread)) {
+                    return thread;
                 }
             }
             Thread.sleep(25L);
         }
         return null;
+    }
+
+    private static void stopListenerThreads(Set<Thread> before) throws InterruptedException {
+        for (Thread thread : Thread.getAllStackTraces().keySet()) {
+            if (!before.contains(thread) && thread.isAlive() && isListenerThread(thread)) {
+                thread.interrupt();
+                thread.join(1000L);
+            }
+        }
+    }
+
+    private static boolean isListenerThread(Thread thread) {
+        return thread.getClass().getName().startsWith("com.formulamanager.sokker.tomcat.ServletContextListener$");
     }
 }
