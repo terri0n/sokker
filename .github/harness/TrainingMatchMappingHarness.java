@@ -21,6 +21,7 @@ public class TrainingMatchMappingHarness {
         rejectsPageMatchMissingId();
         rejectsUnresolvableWeekDay();
         recognizesInternationalCupAsOfficialTraining();
+        recognizesUnknownOfficialCompetitionAsOfficialTraining();
     }
 
     private static void rejectsMissingTiming() {
@@ -125,6 +126,18 @@ public class TrainingMatchMappingHarness {
                 "sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java")), StandardCharsets.UTF_8);
         if (!source.contains("tipo == 13")) {
             throw new AssertionError("Sokker league type 13 (international cup) must use official training percentage");
+        }
+    }
+
+    // New competitions can receive new type codes. If Sokker explicitly marks the
+    // competition as official, training must not fail only because the type code is new.
+    private static void recognizesUnknownOfficialCompetitionAsOfficialTraining() throws Exception {
+        String source = new String(Files.readAllBytes(Paths.get(
+                "sokker/src/com/formulamanager/sokker/bo/AsistenteBO.java")), StandardCharsets.UTF_8);
+        int juniorBranch = source.indexOf("if (tipo == 7)");
+        int officialBranch = source.indexOf("if (oficial)");
+        if (juniorBranch < 0 || officialBranch < 0 || juniorBranch > officialBranch) {
+            throw new AssertionError("Unknown /api/league type codes marked isOfficial=true must use official training, while junior matches must remain excluded");
         }
     }
 
