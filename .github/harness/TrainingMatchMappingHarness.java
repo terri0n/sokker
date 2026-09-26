@@ -23,6 +23,7 @@ public class TrainingMatchMappingHarness {
         recognizesInternationalCupAsOfficialTraining();
         mapsUnknownOfficialCompetitionToLegacyOfficialLeague();
         promotedJuniorTalentUsesHistoricalLookup();
+        trainingPointsPopupUsesWholePercentage();
     }
 
     private static void rejectsMissingTiming() {
@@ -154,6 +155,15 @@ public class TrainingMatchMappingHarness {
         }
         if (!servlet.contains("\"1\".equals(request.getParameter(\"historico\"))")) {
             throw new AssertionError("datos_grafica must honor the explicit historico=1 override used by first-team talent links");
+        }
+    }
+
+    private static void trainingPointsPopupUsesWholePercentage() throws Exception {
+        String jsp = new String(Files.readAllBytes(Paths.get(
+                "sokker/WebContent/jsp/asistente/asistente.jsp")), StandardCharsets.UTF_8);
+
+        if (!jsp.contains("$(\"input[name='puntos_entrenamiento']\").val(Math.min(100, Math.floor(puntos_entrenamiento)));")) {
+            throw new AssertionError("Training points popup must display a whole percentage capped at 100");
         }
     }
 
