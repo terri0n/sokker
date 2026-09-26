@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.formulamanager.sokker.auxiliares.SokkerXmlCompat;
+import com.formulamanager.sokker.entity.Jugador;
 
 public class TrainingMatchMappingHarness {
     public static void main(String[] args) throws Exception {
@@ -24,6 +25,8 @@ public class TrainingMatchMappingHarness {
         mapsUnknownOfficialCompetitionToLegacyOfficialLeague();
         promotedJuniorTalentUsesHistoricalLookup();
         trainingPointsPopupUsesWholePercentage();
+        advancedTrainingUsesNinetyThreeInternalPoints();
+        trainingEffectivenessCapsAtHundred();
     }
 
     private static void rejectsMissingTiming() {
@@ -164,6 +167,48 @@ public class TrainingMatchMappingHarness {
 
         if (!jsp.contains("$(\"input[name='puntos_entrenamiento']\").val(Math.min(100, Math.floor(puntos_entrenamiento)));")) {
             throw new AssertionError("Training points popup must display a whole percentage capped at 100");
+        }
+    }
+
+    private static void advancedTrainingUsesNinetyThreeInternalPoints() {
+        Jugador jugador = new Jugador(Integer.valueOf(1), "Test", Integer.valueOf(20), Integer.valueOf(0), Integer.valueOf(1), null);
+        jugador.setEntrenamiento_avanzado(true);
+
+        jugador.setMinutos(Float.valueOf(50f));
+        assertClose(0f, jugador.getPuntos_entrenamiento(), "Advanced training baseline must equal zero internal match points");
+
+        jugador.setMinutos(Float.valueOf(96.5f));
+        assertClose(93f, jugador.getPuntos_entrenamiento(), "One full official match must equal 93 internal points at 96.5% effectiveness");
+
+        jugador.setMinutos(Float.valueOf(100f));
+        assertClose(186f, jugador.getPuntos_entrenamiento(), "100% advanced effectiveness must equal two full official matches");
+    }
+
+    private static void trainingEffectivenessCapsAtHundred() throws Exception {
+        Method method;
+        try {
+            method = Jugador.class.getDeclaredMethod("getEfectividad_entrenamiento", float.class, boolean.class);
+        } catch (NoSuchMethodException e) {
+            throw new AssertionError("Training point conversion must have one shared inverse so match accumulation cannot diverge from getPuntos_entrenamiento", e);
+        }
+        method.setAccessible(true);
+
+        assertClose(50f, invokeEffectiveness(method, 0f, true), "Advanced training without match points must retain the 50% baseline");
+        assertClose(96.5f, invokeEffectiveness(method, 93f, true), "One full official match must produce 96.5% advanced effectiveness");
+        assertClose(100f, invokeEffectiveness(method, 186f, true), "Two full official matches must produce 100% advanced effectiveness");
+        assertClose(100f, invokeEffectiveness(method, 279f, true), "Extra official match points must never exceed 100% advanced effectiveness");
+        assertClose(93f, invokeEffectiveness(method, 93f, false), "One full official match must retain 93% normal effectiveness");
+        assertClose(100f, invokeEffectiveness(method, 186f, false), "Two full official matches must produce 100% normal effectiveness");
+        assertClose(100f, invokeEffectiveness(method, 279f, false), "Extra official match points must never exceed 100% normal effectiveness");
+    }
+
+    private static float invokeEffectiveness(Method method, float points, boolean advanced) throws Exception {
+        return ((Number) method.invoke(null, Float.valueOf(points), Boolean.valueOf(advanced))).floatValue();
+    }
+
+    private static void assertClose(float expected, float actual, String message) {
+        if (Math.abs(expected - actual) > 0.0001f) {
+            throw new AssertionError(message + ": expected " + expected + " but got " + actual);
         }
     }
 
