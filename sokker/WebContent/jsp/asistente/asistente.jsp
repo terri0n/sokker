@@ -258,7 +258,7 @@
 			
 			$('#nombre').text(nombre);
 			$('#jornada').text((jornada + 1 < <%=AsistenteBO.JORNADA_NUEVO_SISTEMA_LIGAS%> ? (jornada + 1) % 16 : (jornada + 1 - <%=AsistenteBO.JORNADA_NUEVO_SISTEMA_LIGAS%>) % <%=AsistenteBO.JORNADAS_TEMPORADA%>) + 1);
-			$("input[name='puntos_entrenamiento']").val(puntos_entrenamiento);
+			$("input[name='puntos_entrenamiento']").val(Math.min(100, Math.floor(puntos_entrenamiento)));
 			$("input[name='avanzado']").prop("checked", avanzado);
 			$("input[name='lesion']").val(lesion);
 			$("select[name='demarcacion_entrenamiento']").val(demarcacion_entrenamiento);
