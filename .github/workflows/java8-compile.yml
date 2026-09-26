@@ -8,11 +8,42 @@ on:
       - 'feature/**'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   compile:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Apply whole-number training points display
+        if: github.ref == 'refs/heads/fix/training-points-integer-display'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('sokker/WebContent/jsp/asistente/asistente.jsp')
+          data = path.read_bytes()
+          old = b'$("input[name=\'puntos_entrenamiento\']").val(puntos_entrenamiento);'
+          new = b'$("input[name=\'puntos_entrenamiento\']").val(Math.min(100, Math.floor(puntos_entrenamiento)));'
+          count = data.count(old)
+          if count == 0 and new in data:
+              raise SystemExit(0)
+          if count != 1:
+              raise SystemExit('expected exactly one training-points popup assignment, got %d' % count)
+          path.write_bytes(data.replace(old, new, 1))
+          PY
+
+          if git diff --quiet -- sokker/WebContent/jsp/asistente/asistente.jsp; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sokker/WebContent/jsp/asistente/asistente.jsp
+          git commit -m 'fix: show whole-number training points'
+          git push origin HEAD:fix/training-points-integer-display
 
       - uses: actions/setup-java@v4
         with:
