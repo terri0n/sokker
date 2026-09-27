@@ -36,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
 
         myWebView = findViewById(R.id.webview);
         myWebView.getSettings().setJavaScriptEnabled(true);
+        myWebView.getSettings().setDomStorageEnabled(true);
 
         myWebView.setWebChromeClient(new WebChromeClient() {
             private View mCustomView;
