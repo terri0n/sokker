@@ -35,6 +35,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set unique Android build version
+        run: |
+          set -euo pipefail
+          VERSION_CODE=$((GITHUB_RUN_NUMBER * 100 + GITHUB_RUN_ATTEMPT))
+          VERSION_NAME="1.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}"
+          echo "ANDROID_VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
+          echo "ANDROID_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "Android build version: $VERSION_NAME ($VERSION_CODE)"
+
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -113,12 +122,14 @@ jobs:
           test -s app/build/outputs/bundle/release/app-release.aab
           grep -Eq 'compileSdk(Version)?[[:space:]]+36' app/build.gradle
           grep -Eq 'targetSdk(Version)?[[:space:]]+36' app/build.gradle
-          grep -Eq 'versionCode[[:space:]]+13' app/build.gradle
-          grep -Eq 'versionName[[:space:]]+"1\.13"' app/build.gradle
+          grep -q 'ANDROID_VERSION_CODE' app/build.gradle
+          grep -q 'ANDROID_VERSION_NAME' app/build.gradle
           grep -Eq 'namespace[[:space:]]+"com\.raqueto\.sokkerasistente"' app/build.gradle
           grep -Eq 'applicationId[[:space:]]+"com\.raqueto\.sokkerasistente"' app/build.gradle
           grep -q 'package="com.raqueto.sokkerasistente"' app/src/main/AndroidManifest.xml
           apkanalyzer manifest application-id app/build/outputs/apk/debug/app-debug.apk | grep -qx 'com.raqueto.sokkerasistente'
+          apkanalyzer manifest version-code app/build/outputs/apk/debug/app-debug.apk | grep -qx "$ANDROID_VERSION_CODE"
+          apkanalyzer manifest version-name app/build/outputs/apk/debug/app-debug.apk | grep -qx "$ANDROID_VERSION_NAME"
           if grep -R -n 'com\.formulamanager\.sokker\.asistente' app/src; then
             echo 'Legacy Android package is still present under app/src' >&2
             exit 1
@@ -170,7 +181,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: SokkerAsistente-1.13-apk
+          name: SokkerAsistente-1.${{ github.run_number }}.${{ github.run_attempt }}-apk
           path: android/SokkerAsistente/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
@@ -178,7 +189,7 @@ jobs:
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: SokkerAsistente-1.13-aab
+          name: SokkerAsistente-1.${{ github.run_number }}.${{ github.run_attempt }}-aab
           path: android/SokkerAsistente/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 30
