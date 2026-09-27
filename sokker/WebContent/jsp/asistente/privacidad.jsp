@@ -12,7 +12,7 @@
     <h1><fmt:message key="privacy.title" /></h1>
 
     <h2><fmt:message key="privacy.account_data" /></h2>
-    <p>Sokker Asistente stores the account login, the hashed password representation used by the service, preferences, notes and training configuration required to provide the application. Clear-text passwords are used only for the requested authentication or Sokker operation and are not intentionally retained by the application.</p>
+    <p>Sokker Asistente stores the account login, the hashed password representation used by the service, preferences, notes and training configuration required to provide the application. Clear-text passwords are used for the requested authentication or Sokker operation. If the user enables "Remember password", the login and password are also stored locally in that browser or app WebView so they can be restored later; this option does not store the clear-text password on the Sokker Asistente server.</p>
 
     <h2><fmt:message key="privacy.sokker_data" /></h2>
     <p>The service downloads and stores team, player, junior, training and related Sokker data needed to provide historical analysis and the features requested by the user.</p>
