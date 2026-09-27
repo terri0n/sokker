@@ -64,7 +64,7 @@ jobs:
           replacement = eol.join([
               b"\t\t\t\t\t\t\t\t// Vuelvo a calcular la efectividad con la conversion inversa y limitada al 100%",
               b"\t\t\t\t\t\t\t\tjug_semana.setMinutos(Jugador.getEfectividad_entrenamiento(puntos_entrenamiento, jug_semana.isEntrenamiento_avanzado()));",
-              b"\t\t\t\t\t\t\t\t",
+              b"",
           ])
           data = data[:start] + replacement + data[end + len(end_marker) - len(b"SERVLET_ASISTENTE._log_linea"):]
           bo_path.write_bytes(data)
