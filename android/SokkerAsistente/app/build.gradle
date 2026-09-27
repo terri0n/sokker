@@ -9,6 +9,8 @@ def uploadKeyAlias = System.getenv("ANDROID_UPLOAD_KEY_ALIAS")
 def uploadKeyPassword = System.getenv("ANDROID_UPLOAD_KEY_PASSWORD")
 def releaseSigningConfigured = [uploadStoreFile, uploadStorePassword, uploadKeyAlias, uploadKeyPassword]
         .every { value -> value != null && !value.trim().isEmpty() }
+def ciVersionCode = System.getenv("ANDROID_VERSION_CODE")?.trim()
+def ciVersionName = System.getenv("ANDROID_VERSION_NAME")?.trim()
 
 android {
     namespace "com.raqueto.sokkerasistente"
@@ -18,8 +20,8 @@ android {
         applicationId "com.raqueto.sokkerasistente"
         minSdk 21
         targetSdk 36
-        versionCode 13
-        versionName "1.13"
+        versionCode ciVersionCode ? ciVersionCode.toInteger() : 13
+        versionName ciVersionName ? ciVersionName : "1.13"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
