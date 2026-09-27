@@ -113,8 +113,8 @@ jobs:
           test -s app/build/outputs/bundle/release/app-release.aab
           grep -Eq 'compileSdk(Version)?[[:space:]]+36' app/build.gradle
           grep -Eq 'targetSdk(Version)?[[:space:]]+36' app/build.gradle
-          grep -Eq 'versionCode[[:space:]]+12' app/build.gradle
-          grep -Eq 'versionName[[:space:]]+"1\.12"' app/build.gradle
+          grep -Eq 'versionCode[[:space:]]+13' app/build.gradle
+          grep -Eq 'versionName[[:space:]]+"1\.13"' app/build.gradle
           grep -Eq 'namespace[[:space:]]+"com\.raqueto\.sokkerasistente"' app/build.gradle
           grep -Eq 'applicationId[[:space:]]+"com\.raqueto\.sokkerasistente"' app/build.gradle
           grep -q 'package="com.raqueto.sokkerasistente"' app/src/main/AndroidManifest.xml
@@ -170,7 +170,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: SokkerAsistente-1.12-apk
+          name: SokkerAsistente-1.13-apk
           path: android/SokkerAsistente/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
@@ -178,7 +178,7 @@ jobs:
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: SokkerAsistente-1.12-aab
+          name: SokkerAsistente-1.13-aab
           path: android/SokkerAsistente/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 30
