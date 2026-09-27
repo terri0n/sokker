@@ -2105,12 +2105,21 @@ public class Jugador implements Comparable<Jugador> {
 	
 	public float getPuntos_entrenamiento() {
 		if (isEntrenamiento_avanzado()) {
-			return getMinutos() == 0 ? 0f : getMinutos() < AsistenteBO.PORCENTAJE_OFICIALES_AVANZADO ? (getMinutos() - 50) * 2 : AsistenteBO.PORCENTAJE_OFICIALES_AVANZADO + (getMinutos() - AsistenteBO.PORCENTAJE_OFICIALES_AVANZADO) * (186f - AsistenteBO.PORCENTAJE_OFICIALES_AVANZADO) / (100f - AsistenteBO.PORCENTAJE_OFICIALES_AVANZADO);
+			return getMinutos() == 0 ? 0f : getMinutos() <= AsistenteBO.PORCENTAJE_OFICIALES_AVANZADO ? (getMinutos() - 50) * 2 : AsistenteBO.PORCENTAJE_OFICIALES + (getMinutos() - AsistenteBO.PORCENTAJE_OFICIALES_AVANZADO) * (186f - AsistenteBO.PORCENTAJE_OFICIALES) / (100f - AsistenteBO.PORCENTAJE_OFICIALES_AVANZADO);
 		} else {
 			return getMinutos() < AsistenteBO.PORCENTAJE_OFICIALES ? getMinutos() : AsistenteBO.PORCENTAJE_OFICIALES + (getMinutos() - AsistenteBO.PORCENTAJE_OFICIALES) * (186f - AsistenteBO.PORCENTAJE_OFICIALES) / (100f - AsistenteBO.PORCENTAJE_OFICIALES);
 		}
 	}
 
+
+	public static float getEfectividad_entrenamiento(float puntos_entrenamiento, boolean avanzado) {
+		float puntos = Math.min(186f, puntos_entrenamiento);
+		if (avanzado) {
+			return puntos <= AsistenteBO.PORCENTAJE_OFICIALES ? 50f + puntos * 0.5f : AsistenteBO.PORCENTAJE_OFICIALES_AVANZADO + (puntos - AsistenteBO.PORCENTAJE_OFICIALES) * (100f - AsistenteBO.PORCENTAJE_OFICIALES_AVANZADO) / (186f - AsistenteBO.PORCENTAJE_OFICIALES);
+		} else {
+			return puntos <= AsistenteBO.PORCENTAJE_OFICIALES ? puntos : AsistenteBO.PORCENTAJE_OFICIALES + (puntos - AsistenteBO.PORCENTAJE_OFICIALES) * (100f - AsistenteBO.PORCENTAJE_OFICIALES) / (186f - AsistenteBO.PORCENTAJE_OFICIALES);
+		}
+	}
 	// Devuelve el usuario correspondiente en la jornada indicada
 	// Si se trata de un jugador de prueba, el usuario será usuario2
 	// Si se trata de un jugador traspasado, el usuario tras el traspaso será el actual y antes del traspaso será usuario2

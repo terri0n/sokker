@@ -511,13 +511,8 @@ SERVLET_ASISTENTE._log_linea(usuario.getLogin(), "\t" + j.getPid() + " " + week 
 												// Deshago la conversión de puntos de entrenamiento a efectividad y le sumo los nuevos puntos de entrenamiento
 												float puntos_entrenamiento = jug_semana.getPuntos_entrenamiento() + tiempo_total;
 
-												// Vuelvo a calcular la efectividad
-												if (jug_semana.isEntrenamiento_avanzado()) {
-													jug_semana.setMinutos((puntos_entrenamiento < PORCENTAJE_OFICIALES_AVANZADO ? (50f + puntos_entrenamiento * 0.5f) : PORCENTAJE_OFICIALES_AVANZADO + ((puntos_entrenamiento - PORCENTAJE_OFICIALES_AVANZADO) / PORCENTAJE_OFICIALES_AVANZADO) * (100f - PORCENTAJE_OFICIALES_AVANZADO)));
-												} else {
-													jug_semana.setMinutos((puntos_entrenamiento < PORCENTAJE_OFICIALES ? puntos_entrenamiento : PORCENTAJE_OFICIALES + ((puntos_entrenamiento - PORCENTAJE_OFICIALES) / PORCENTAJE_OFICIALES) * (100f - PORCENTAJE_OFICIALES)));
-												}
-												
+												// Vuelvo a calcular la efectividad con la conversion inversa y limitada al 100%
+								jug_semana.setMinutos(Jugador.getEfectividad_entrenamiento(puntos_entrenamiento, jug_semana.isEntrenamiento_avanzado()));
 SERVLET_ASISTENTE._log_linea(usuario.getLogin(), "\t" + j.getPid() + " " + week + ": " + tiempo_total);
 											}
 										}
