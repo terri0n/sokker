@@ -97,7 +97,9 @@ public final class SokkerTrainerMapping {
                 ? 100.0d
                 : (value.doubleValue() + 1.0d) * PERCENT_PER_LEVEL;
         return percent.doubleValue() + 1e-9d >= min
-                && percent.doubleValue() < max + 1e-9d;
+                && (value.intValue() == 16
+                        ? percent.doubleValue() <= max + 1e-9d
+                        : percent.doubleValue() < max);
     }
 
     private static Integer job(String assignment) {
