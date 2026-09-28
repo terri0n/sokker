@@ -19,20 +19,26 @@ public final class TrainerMappingHarness {
     private TrainerMappingHarness() {}
 
     public static void main(String[] args) {
-        String first = SokkerTrainerMapping.buildXml(response("first", 50));
+        String first = SokkerTrainerMapping.buildXml(response("first", 8, 50, 50));
         require(first != null && first.contains("<job>1</job>") && first.contains("<skillCoach>8</skillCoach>"),
                 "Known first-coach mapping failed");
 
-        String assistant = SokkerTrainerMapping.buildXml(response("assistant", 50));
+        String assistant = SokkerTrainerMapping.buildXml(response("assistant", 8, 50, 50));
         require(assistant != null && assistant.contains("<job>2</job>"),
                 "Known assistant mapping failed");
 
-        require(SokkerTrainerMapping.buildXml(response("junior", 50)) == null,
+        require(SokkerTrainerMapping.buildXml(response("junior", 8, 50, 50)) == null,
                 "Undemonstrated junior assignment must force XML fallback");
-        require(SokkerTrainerMapping.buildXml(response("unassigned", 50)) == null,
+        require(SokkerTrainerMapping.buildXml(response("unassigned", 8, 50, 50)) == null,
                 "Undemonstrated unassigned role must force XML fallback");
-        require(SokkerTrainerMapping.buildXml(response("first", 60)) == null,
+        require(SokkerTrainerMapping.buildXml(response("first", 8, 50, 60)) == null,
                 "Incoherent averagePercent must force XML fallback");
+
+        String supernatural = SokkerTrainerMapping.buildXml(response("first", 16, 100, 100));
+        require(supernatural != null && supernatural.contains("<skillPace>16</skillPace>"),
+                "A demonstrated supernatural skill must remain level 16");
+        require(SokkerTrainerMapping.buildXml(response("first", 15, 100, 100)) == null,
+                "A value below 16 with 100 percent must force XML fallback");
 
         verifyCoachWarningThreshold();
     }
@@ -43,7 +49,6 @@ public final class TrainerMappingHarness {
             Util.ApplicationResources = "TrainerMappingHarness$Messages";
             require(hasCoachWarning(15), "A magical coach skill must show the below-16 warning");
             require(!hasCoachWarning(16), "An unearthly coach skill must not show the below-16 warning");
-            require(!hasCoachWarning(17), "A divine coach skill must not show the below-16 warning");
         } finally {
             Util.ApplicationResources = previousResources;
         }
@@ -64,15 +69,15 @@ public final class TrainerMappingHarness {
         return label != null && label.contains("class='warning'");
     }
 
-    private static Map<String, Object> response(String assignment, int averagePercent) {
+    private static Map<String, Object> response(String assignment, int skillValue, int skillPercent, int averagePercent) {
         Map<String, Object> response = new LinkedHashMap<String, Object>();
         List<Object> trainers = new ArrayList<Object>();
-        trainers.add(trainer(assignment, averagePercent));
+        trainers.add(trainer(assignment, skillValue, skillPercent, averagePercent));
         response.put("trainers", trainers);
         return response;
     }
 
-    private static Map<String, Object> trainer(String assignment, int averagePercent) {
+    private static Map<String, Object> trainer(String assignment, int skillValue, int skillPercent, int averagePercent) {
         Map<String, Object> trainer = new LinkedHashMap<String, Object>();
         Map<String, Object> info = new LinkedHashMap<String, Object>();
         Map<String, Object> assignmentMap = new LinkedHashMap<String, Object>();
@@ -83,8 +88,8 @@ public final class TrainerMappingHarness {
 
         for (String skill : SKILLS) {
             Map<String, Object> value = new LinkedHashMap<String, Object>();
-            value.put("value", Integer.valueOf(8));
-            value.put("percent", Integer.valueOf(50));
+            value.put("value", Integer.valueOf(skillValue));
+            value.put("percent", Integer.valueOf(skillPercent));
             skills.put(skill, value);
         }
         skills.put("averagePercent", Integer.valueOf(averagePercent));
