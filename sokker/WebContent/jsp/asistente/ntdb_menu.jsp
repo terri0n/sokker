@@ -116,7 +116,7 @@
 <body>
 	<c:if test="${not empty(param.mensaje)}">
 		<c:if test="${param.error == 2}">
-			<div class="error">${param.mensaje}</div>
+			<div class="error"><c:out value="${param.mensaje}" /></div>
 		</c:if>
 		<c:if test="${param.error != 2}">
 			<div class="${empty param.error ? 'mensaje' : 'error'}"><fmt:message key="messages.${param.mensaje}" /></div>
