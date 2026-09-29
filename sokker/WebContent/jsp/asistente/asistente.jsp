@@ -321,7 +321,7 @@
 		function get_checked() {
 			var resp = '';
 			$('input[id^="check"]:checked').each(function() {
-				resp += $(this).attr('id').split('check')[1] + ",";
+				resp += $(this).attr('id').split("check")[1] + ",";
 			});
 			return resp;
 		}
@@ -659,7 +659,7 @@
 				var defensa0 = sokker(parseFloat($('#pr_defensa0').val())) + parseFloat($('#pr_defensaE').val()) + entrenamientos * ${sessionScope.usuario.factor_residual};
 				var creacion0 = sokker(parseFloat($('#pr_creacion0').val())) + parseFloat($('#pr_creacionE').val()) + entrenamientos * ${sessionScope.usuario.factor_residual};
 				var anotacion0 = sokker(parseFloat($('#pr_anotacion0').val()) + 2) + parseFloat($('#pr_anotacionE').val()) + entrenamientos * ${sessionScope.usuario.factor_residual};
-				
+	
 				var rapidez = Math.max(0, sokker(parseInt($('#editar_proyeccion').find("select[name='pace']").val()) + 2) - rapidez0);
 				var tecnica = Math.max(0, sokker(parseInt($('#editar_proyeccion').find("select[name='technique']").val()) + 0.5) - tecnica0);
 				var pases = Math.max(0, sokker(parseInt($('#editar_proyeccion').find("select[name='passing']").val())) - pases0);
@@ -992,7 +992,7 @@ request.setAttribute("j", new Jugador());
 <body onload="carga()">
 	<c:if test="${not empty(param.mensaje)}">
 		<c:if test="${param.error == 2}">
-			<div class="error">${param.mensaje}</div>
+			<div class="error"><c:out value="${param.mensaje}" /></div>
 		</c:if>
 		<c:if test="${param.error != 2}">
 			<div class="${empty param.error ? 'mensaje' : 'error'}"><fmt:message key="messages.${param.mensaje}" /></div>
