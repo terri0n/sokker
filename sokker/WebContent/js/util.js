@@ -11,29 +11,19 @@ function sokkerPost(url, data, success, dataType) {
 		type: "POST",
 		data: data,
 		dataType: dataType,
+		timeout: 10000,
 		headers: {
 			"X-Sokker-Client": SOKKER_CLIENT_KEY
 		}
 	}).done(function() {
 		deferred.resolveWith(this, arguments);
-	}).fail(function(xhr) {
-		var failedContext = this;
-		var failedArguments = arguments;
-
-		// Mientras Sokker no acepte el preflight CORS del header identificador,
-		// mantenemos el flujo anterior. Con status 0 el POST de credenciales no
-		// ha sido enviado porque el navegador ha bloqueado antes el preflight.
-		if (xhr && xhr.status === 0) {
-			$.post(url, data, null, dataType)
-				.done(function() {
-					deferred.resolveWith(this, arguments);
-				})
-				.fail(function() {
-					deferred.rejectWith(this, arguments);
-				});
-		} else {
-			deferred.rejectWith(failedContext, failedArguments);
-		}
+	}).fail(function() {
+		// Un fallo CORS puede quedar como un error de red (status 0) y no
+		// entregar nunca una respuesta HTTP a jQuery. No repetimos la petición
+		// sin X-Sokker-Client: Sokker exige que la aplicación se identifique.
+		// El timeout garantiza que el Deferred termine y los llamadores puedan
+		// ejecutar su manejador de error en lugar de quedarse esperando.
+		deferred.rejectWith(this, arguments);
 	});
 
 	var request = deferred.promise();

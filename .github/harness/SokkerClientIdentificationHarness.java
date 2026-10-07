@@ -20,7 +20,8 @@ public final class SokkerClientIdentificationHarness {
         require(sharedJs, "function sokkerPost", "shared utility JavaScript must expose sokkerPost");
         require(sharedJs, "X-Sokker-Client", "sokkerPost must set X-Sokker-Client");
         require(sharedJs, CLIENT_KEY, "sokkerPost must use the assigned Sokker client key");
-        require(sharedJs, "xhr.status === 0", "browser identification must preserve the legacy fallback while Sokker preflight is unavailable");
+        require(sharedJs, "timeout: 10000", "Sokker requests must have a bounded timeout when the browser blocks the CORS preflight");
+        require(sharedJs, "deferred.rejectWith(this, arguments)", "Sokker request failures must reach callers");
         forbid(sharedJs, "$.post =", "shared utility JavaScript must not monkey-patch $.post");
 
         requireUtilAndSokkerPost("sokker/WebContent/jsp/asistente/login.jsp", "assistant login");
