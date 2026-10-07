@@ -133,6 +133,10 @@
 				</div>`).appendTo(document.body);
 		}
 
+		function ocultar_actualizando() {
+			$("#asistente_actualizando").remove();
+		}
+
 		function form_submit(form) {
 			if ($("form[name='" + form + "'] input[name='confirmed']").val() == '1') {
 				mostrar_actualizando();
