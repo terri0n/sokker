@@ -1300,6 +1300,13 @@ if (nuevo.getLesion() > 0) {
 			if (usuario != null) {
 				Integer seleccion = seleccion_usuario.get(usuario.getLogin_sokker().toLowerCase());
 
+				// Si este usuario no es el seleccionador actual, conservamos su
+				// tid_nt y actualizamos los datos del mismo equipo. Puede haber
+				// varios usuarios del asistente apuntando a la misma selección.
+				if (seleccion == null && usuario.getTid_nt() != null && nombre_seleccion.containsKey(usuario.getTid_nt())) {
+					seleccion = usuario.getTid_nt();
+				}
+
 				if (usuario.getTid_nt() == null && seleccion != null || usuario.getTid_nt() != null && !usuario.getTid_nt().equals(seleccion)) {
 					usuario.setTid_nt(seleccion);
 					usuario.setEquipo_nt(seleccion == null ? null : nombre_seleccion.get(seleccion));
