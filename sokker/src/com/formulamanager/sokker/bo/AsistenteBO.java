@@ -1734,11 +1734,28 @@ System.out.print("Creando backups...");
 		
 		String zipFile = JugadorBO.PATH_BASE + ASISTENTE_BACKUP;
 		File f = new File(SystemUtil.getVar(SystemUtil.PATH));
-		String[] files = f.list();
-
-		for (int i = 0; i < files.length; i++) {
-			files[i] = SystemUtil.getVar(SystemUtil.PATH) + files[i];
+		File[] sourceFiles = f.listFiles();
+		if (sourceFiles == null) {
+			throw new RuntimeException("No se puede listar el directorio de datos del asistente: " + f.getAbsolutePath());
 		}
+		List<String> filesList = new ArrayList<String>();
+		String backupPath;
+		try {
+			backupPath = new File(zipFile).getCanonicalPath();
+		} catch (IOException e) {
+			throw new RuntimeException("No se puede resolver la ruta del backup del asistente: " + zipFile, e);
+		}
+		for (File sourceFile : sourceFiles) {
+			try {
+				// No incluir el propio ZIP de salida: se truncaría al crearlo y podría corromper el backup.
+				if (!sourceFile.getCanonicalPath().equals(backupPath) && sourceFile.isFile()) {
+					filesList.add(sourceFile.getAbsolutePath());
+				}
+			} catch (IOException e) {
+				throw new RuntimeException("No se puede resolver el fichero de backup: " + sourceFile, e);
+			}
+		}
+		String[] files = filesList.toArray(new String[filesList.size()]);
 
 		try {
 			Zip.comprimir(files, zipFile);
@@ -1748,14 +1765,20 @@ System.out.print("Creando backups...");
 		}
 
 		// FACTOR X
-		
+
 		zipFile = JugadorBO.PATH_BASE + FACTORX_BACKUP;
 		f = new File(JugadorBO.PATH_BASE + "factorx");
-		files = f.list();
-
-		for (int i = 0; i < files.length; i++) {
-			files[i] = JugadorBO.PATH_BASE + "factorx/" + files[i];
+		sourceFiles = f.listFiles();
+		if (sourceFiles == null) {
+			throw new RuntimeException("No se puede listar el directorio de Factor X: " + f.getAbsolutePath());
 		}
+		filesList = new ArrayList<String>();
+		for (File sourceFile : sourceFiles) {
+			if (sourceFile.isFile()) {
+				filesList.add(sourceFile.getAbsolutePath());
+			}
+		}
+		files = filesList.toArray(new String[filesList.size()]);
 
 		try {
 			Zip.comprimir(files, zipFile);

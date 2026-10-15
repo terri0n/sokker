@@ -90,11 +90,21 @@ public class ServletContextListener implements javax.servlet.ServletContextListe
 	    			try {
 	    				Thread.sleep(milis);
 	    				
-	    				borrar_backups_y_logs_antiguos();
-	    				actualizar_seleccionadores();
-	    				actualizar_factor_x();
-//		    			buscar_jugadores();
-	    				tareas_miercoles();	// Backups
+	    				try {
+	    					// Ejecutar primero el backup para que un fallo de otra tarea diaria no lo omita.
+	    					tareas_miercoles();
+	    					borrar_backups_y_logs_antiguos();
+	    					actualizar_seleccionadores();
+	    					actualizar_factor_x();
+	    				} catch (RuntimeException e) {
+	    					// Una excepción no debe matar el trabajador: volverá a intentarlo en la siguiente ejecución.
+	    					e.printStackTrace();
+	    					try {
+	    						SERVLET_ASISTENTE._log_linea("_CONTEXT_LISTENER", "Error en tareas programadas: " + e);
+	    					} catch (IOException logError) {
+	    						logError.printStackTrace();
+	    					}
+	    				}
 	    			} catch (InterruptedException e) {
 	    				seguir = false;
 	    			}
