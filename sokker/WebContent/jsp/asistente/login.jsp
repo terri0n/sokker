@@ -312,7 +312,7 @@
 					</div>
 				</div>
 
-				<div class="boton_menu" onclick="javascript:location.href='${pageContext.request.contextPath}/app/SokkerAsistente.apk'">
+				<div class="boton_menu" onclick="javascript:window.open('https://play.google.com/store/apps/details?id=com.raqueto.sokkerasistente', '_blank', 'noopener')">
 					<span class="material-icons md-48">android</span>
 					<div class="peque" style="margin-top: -6px;">
 						Android APP
