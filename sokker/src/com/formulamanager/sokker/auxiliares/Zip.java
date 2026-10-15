@@ -7,6 +7,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -51,40 +53,53 @@ public class Zip {
 		}
 	}
 
+	/**
+	 * Comprime archivos regulares en un ZIP temporal. Si falla la generación,
+	 * conserva la copia anterior en lugar de dejar un ZIP parcial.
+	 */
 	public static void comprimir(String[] files, String zipFile) throws Exception {
-		FileOutputStream fos = new FileOutputStream(zipFile);
-		ZipOutputStream zos = new ZipOutputStream(fos);
-		
+		File destino = new File(zipFile).getAbsoluteFile();
+		File temporal = File.createTempFile("backup-", ".tmp", destino.getParentFile());
+		boolean completado = false;
+
 		try {
-			for (int i = 0; i < files.length; i++) {
-				File archivo  = new File(files[i]);
-				if (!archivo.isDirectory()) {
-					FileInputStream fis = new FileInputStream(files[i]);
-					try {
-						// create byte buffer
-						byte[] buffer = new byte[1024];
-		
-						ZipEntry zipEntry = new ZipEntry(archivo.getName());
-						zipEntry.setMethod(ZipEntry.DEFLATED);
-						zos.putNextEntry(zipEntry);
-						
-						int length;
-						while ((length = fis.read(buffer)) > 0) {
-							zos.write(buffer, 0, length);
+			try (FileOutputStream fos = new FileOutputStream(temporal);
+				 ZipOutputStream zos = new ZipOutputStream(fos)) {
+				if (files != null) {
+					byte[] buffer = new byte[8192];
+					for (String ruta : files) {
+						if (ruta == null) {
+							continue;
 						}
-		
-					} catch (IOException ioe) {
-						System.out.println("IOException :" + ioe);
-					} finally {
-						// close the InputStream
-						fis.close();
-						zos.closeEntry();
+						File archivo = new File(ruta);
+						if (!archivo.isFile() || !archivo.canRead()) {
+							System.err.println("Backup: se omite archivo inexistente o ilegible: " + ruta);
+							continue;
+						}
+
+						try (FileInputStream fis = new FileInputStream(archivo)) {
+							zos.putNextEntry(new ZipEntry(archivo.getName()));
+							int longitud;
+							while ((longitud = fis.read(buffer)) != -1) {
+								zos.write(buffer, 0, longitud);
+							}
+							zos.closeEntry();
+						}
 					}
 				}
 			}
+
+			try {
+				Files.move(temporal.toPath(), destino.toPath(),
+						StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+			} catch (java.nio.file.AtomicMoveNotSupportedException e) {
+				Files.move(temporal.toPath(), destino.toPath(), StandardCopyOption.REPLACE_EXISTING);
+			}
+			completado = true;
 		} finally {
-			// close the ZipOutputStream
-			zos.close();
+			if (!completado && temporal.exists() && !temporal.delete()) {
+				temporal.deleteOnExit();
+			}
 		}
 	}
 }

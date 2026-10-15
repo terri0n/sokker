@@ -1727,66 +1727,62 @@ System.out.println("Limpiando selección " + tid);
 	/**
 	 * NOTA: /home debe pertenecer a "tomcat"
 	 */
+	/**
+	 * NOTA: /home debe pertenecer a "tomcat"
+	 */
 	public static void crear_backups() {
-System.out.print("Creando backups...");
+		System.out.print("Creando backups...");
 
-		// ASISTENTE
-		
-		String zipFile = JugadorBO.PATH_BASE + ASISTENTE_BACKUP;
-		File f = new File(SystemUtil.getVar(SystemUtil.PATH));
-		File[] sourceFiles = f.listFiles();
-		if (sourceFiles == null) {
-			throw new RuntimeException("No se puede listar el directorio de datos del asistente: " + f.getAbsolutePath());
-		}
-		List<String> filesList = new ArrayList<String>();
-		String backupPath;
+		File directorioAsistente = new File(SystemUtil.getVar(SystemUtil.PATH));
+		File destinoAsistente = new File(JugadorBO.PATH_BASE + ASISTENTE_BACKUP);
+		String[] files = listar_archivos_backup(directorioAsistente, destinoAsistente);
 		try {
-			backupPath = new File(zipFile).getCanonicalPath();
-		} catch (IOException e) {
-			throw new RuntimeException("No se puede resolver la ruta del backup del asistente: " + zipFile, e);
+			Zip.comprimir(files, destinoAsistente.getPath());
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException("No se pudo crear el backup del asistente", e);
 		}
-		for (File sourceFile : sourceFiles) {
+
+		File directorioFactorX = new File(JugadorBO.PATH_BASE, "factorx");
+		File destinoFactorX = new File(JugadorBO.PATH_BASE + FACTORX_BACKUP);
+		files = listar_archivos_backup(directorioFactorX, destinoFactorX);
+		try {
+			Zip.comprimir(files, destinoFactorX.getPath());
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException("No se pudo crear el backup de Factor X", e);
+		}
+		System.out.println("OK");
+	}
+
+	/**
+	 * Devuelve rutas absolutas de archivos regulares, excluyendo explícitamente
+	 * el ZIP de destino para evitar que una copia se incluya a sí misma.
+	 */
+	private static String[] listar_archivos_backup(File directorio, File destino) {
+		File[] entradas = directorio.listFiles();
+		if (entradas == null) {
+			throw new IllegalStateException("No se puede listar el directorio de backup: " + directorio);
+		}
+
+		String rutaDestino;
+		try {
+			rutaDestino = destino.getCanonicalPath();
+		} catch (IOException e) {
+			throw new IllegalStateException("No se puede resolver la ruta del backup: " + destino, e);
+		}
+
+		List<String> archivos = new ArrayList<String>();
+		for (File archivo : entradas) {
 			try {
-				// No incluir el propio ZIP de salida: se truncaría al crearlo y podría corromper el backup.
-				if (!sourceFile.getCanonicalPath().equals(backupPath) && sourceFile.isFile()) {
-					filesList.add(sourceFile.getAbsolutePath());
+				if (archivo.isFile() && !archivo.getCanonicalPath().equals(rutaDestino)) {
+					archivos.add(archivo.getAbsolutePath());
 				}
 			} catch (IOException e) {
-				throw new RuntimeException("No se puede resolver el fichero de backup: " + sourceFile, e);
+				throw new IllegalStateException("No se puede resolver el fichero de backup: " + archivo, e);
 			}
 		}
-		String[] files = filesList.toArray(new String[filesList.size()]);
-
-		try {
-			Zip.comprimir(files, zipFile);
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		}
-
-		// FACTOR X
-
-		zipFile = JugadorBO.PATH_BASE + FACTORX_BACKUP;
-		f = new File(JugadorBO.PATH_BASE + "factorx");
-		sourceFiles = f.listFiles();
-		if (sourceFiles == null) {
-			throw new RuntimeException("No se puede listar el directorio de Factor X: " + f.getAbsolutePath());
-		}
-		filesList = new ArrayList<String>();
-		for (File sourceFile : sourceFiles) {
-			if (sourceFile.isFile()) {
-				filesList.add(sourceFile.getAbsolutePath());
-			}
-		}
-		files = filesList.toArray(new String[filesList.size()]);
-
-		try {
-			Zip.comprimir(files, zipFile);
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		}
-System.out.println("OK");
+		return archivos.toArray(new String[archivos.size()]);
 	}
 
 	public static int getJornadaMod(int jornada) {

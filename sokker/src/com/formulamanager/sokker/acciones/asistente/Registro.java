@@ -53,7 +53,13 @@ public class Registro extends SERVLET_ASISTENTE {
 		if (!Util.getBoolean(request, "confirmed")) {
 			throw new RuntimeException("Login not confirmed");
 		} else {
-			String login = request.getParameter("login").replace("\\", "").replace("/", "").replace(",", "").trim().toLowerCase();
+			String login = request.getParameter("login");
+			login = login == null ? "" : login.trim().toLowerCase(java.util.Locale.ROOT);
+			// El login forma parte del nombre de un fichero: no eliminar caracteres
+			// silenciosamente porque eso puede cambiar la identidad elegida.
+			if (!login.matches("[a-z0-9][a-z0-9._-]{0,49}") || login.endsWith(".") || login.endsWith("-")) {
+				throw new LoginException("Invalid username. Use 1-50 characters: a-z, 0-9, dot, underscore or hyphen; it must start with a letter or number.");
+			}
 			String ilogin = request.getParameter("ilogin");
 			String ipassword = request.getParameter("ipassword");
 			
