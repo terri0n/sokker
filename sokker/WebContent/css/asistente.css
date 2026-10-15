@@ -484,7 +484,7 @@ ins.adsbygoogle iframe {
  */
 .ad-layout {
 	display: grid;
-	grid-template-columns: minmax(0, 250px) minmax(0, 840px) minmax(0, 250px);
+	grid-template-columns: minmax(0, 250px) minmax(0, 1fr) minmax(0, 250px);
 	width: 100%;
 	max-width: 1340px;
 	margin: 0 auto;
