@@ -1727,43 +1727,51 @@ System.out.println("Limpiando selección " + tid);
 	/**
 	 * NOTA: /home debe pertenecer a "tomcat"
 	 */
+	/**
+	 * NOTA: /home debe pertenecer a "tomcat"
+	 */
 	public static void crear_backups() {
-System.out.print("Creando backups...");
+		System.out.print("Creando backups...");
 
-		// ASISTENTE
-		
-		String zipFile = JugadorBO.PATH_BASE + ASISTENTE_BACKUP;
-		File f = new File(SystemUtil.getVar(SystemUtil.PATH));
-		String[] files = f.list();
-
-		for (int i = 0; i < files.length; i++) {
-			files[i] = SystemUtil.getVar(SystemUtil.PATH) + files[i];
-		}
-
+		String[] files = listar_archivos_backup(new File(SystemUtil.getVar(SystemUtil.PATH)));
 		try {
-			Zip.comprimir(files, zipFile);
+			Zip.comprimir(files, JugadorBO.PATH_BASE + ASISTENTE_BACKUP);
 		} catch (Exception e) {
 			e.printStackTrace();
-			throw new RuntimeException(e);
+			throw new RuntimeException("No se pudo crear el backup del asistente", e);
 		}
 
-		// FACTOR X
-		
-		zipFile = JugadorBO.PATH_BASE + FACTORX_BACKUP;
-		f = new File(JugadorBO.PATH_BASE + "factorx");
-		files = f.list();
-
-		for (int i = 0; i < files.length; i++) {
-			files[i] = JugadorBO.PATH_BASE + "factorx/" + files[i];
-		}
-
+		files = listar_archivos_backup(new File(JugadorBO.PATH_BASE, "factorx"));
 		try {
-			Zip.comprimir(files, zipFile);
+			Zip.comprimir(files, JugadorBO.PATH_BASE + FACTORX_BACKUP);
 		} catch (Exception e) {
 			e.printStackTrace();
-			throw new RuntimeException(e);
+			throw new RuntimeException("No se pudo crear el backup de Factor X", e);
 		}
-System.out.println("OK");
+		System.out.println("OK");
+	}
+
+	/**
+	 * Devuelve rutas absolutas de los archivos regulares del directorio.
+	 */
+	private static String[] listar_archivos_backup(File directorio) {
+		String[] nombres = directorio.list();
+		if (nombres == null) {
+			throw new IllegalStateException("No se puede listar el directorio de backup: " + directorio);
+		}
+
+		List<String> archivos = new ArrayList<String>();
+		for (String nombre : nombres) {
+			File archivo = new File(directorio, nombre);
+			if (archivo.isFile()) {
+				archivos.add(archivo.getAbsolutePath());
+			} else if (!archivo.exists()) {
+				// Puede ocurrir con nombres antiguos que no sean representables
+				// con la codificación de nombres del sistema.
+				System.err.println("Backup: no se puede resolver el archivo: " + archivo.getPath());
+			}
+		}
+		return archivos.toArray(new String[archivos.size()]);
 	}
 
 	public static int getJornadaMod(int jornada) {
