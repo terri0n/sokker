@@ -466,34 +466,35 @@ label[for='actualizacion_automatica'] + .help + br {
 	display: none;
 }
 
-/* Keep AdSense creatives inside their reserved sidebar/content column. */
+/* AdSense debe adaptarse al espacio reservado por el layout, sin recortar la creatividad. */
 ins.adsbygoogle {
 	box-sizing: border-box;
 	width: 100%;
 	max-width: 100%;
-	overflow: hidden;
 }
 
 ins.adsbygoogle iframe {
 	max-width: 100%;
 }
 
-/* Desktop layout: reserve two 250px ad columns beside the main content. */
+/*
+ * Las columnas publicitarias, cuando se usan, pertenecen al flujo del layout:
+ * nunca se superponen al contenido ni se recortan para ocultar un ancho incorrecto.
+ * El contenedor padre es quien determina el espacio disponible para AdSense.
+ */
 .ad-sidebar {
-	position: absolute;
-	top: 0;
+	position: static;
+	box-sizing: border-box;
 	width: 250px;
-	height: 800px;
-	overflow: hidden;
+	max-width: 100%;
+	min-width: 0;
+	height: auto;
+	overflow: visible;
 }
 
-.ad-sidebar-left {
-	left: 0;
-}
-
+.ad-sidebar-left,
 .ad-sidebar-right {
-	right: 0;
-	text-align: right;
+	text-align: center;
 }
 
 @media only screen and (max-width: 800px) {
