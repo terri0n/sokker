@@ -484,7 +484,8 @@ ins.adsbygoogle iframe {
  */
 .ad-layout {
 	display: grid;
-	grid-template-columns: minmax(0, 250px) minmax(0, 1fr) minmax(0, 250px);
+	grid-template-columns: 250px minmax(0, 840px) 250px;
+	grid-template-areas: "left main right";
 	width: 100%;
 	max-width: 1340px;
 	margin: 0 auto;
@@ -501,12 +502,18 @@ ins.adsbygoogle iframe {
 	overflow: visible;
 }
 
-.ad-sidebar-left,
+.ad-sidebar-left {
+	grid-area: left;
+	text-align: center;
+}
+
 .ad-sidebar-right {
+	grid-area: right;
 	text-align: center;
 }
 
 .ad-main {
+	grid-area: main;
 	box-sizing: border-box;
 	width: 100%;
 	min-width: 0;
@@ -515,6 +522,7 @@ ins.adsbygoogle iframe {
 @media only screen and (max-width: 800px) {
 	.ad-layout {
 		grid-template-columns: minmax(0, 1fr);
+		grid-template-areas: "main";
 	}
 
 	.ad-sidebar {
