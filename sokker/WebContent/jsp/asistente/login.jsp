@@ -315,7 +315,7 @@
 				<div class="boton_menu" role="link" tabindex="0" onclick="window.open('https://play.google.com/store/apps/details?id=com.raqueto.sokkerasistente', '_blank', 'noopener')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.open('https://play.google.com/store/apps/details?id=com.raqueto.sokkerasistente', '_blank', 'noopener')}">
 					<svg class="md-48" style="width:48px;height:48px;vertical-align:middle;display:inline-block;" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 						<!-- Google Play mark: official four-part geometry, recolored with one hue. -->
-						<path fill="#FFFFFF" fill-opacity="0.89" d="M3.5 2.5C3.2 2.7 3 3.1 3 3.7v16.6c0 .6.2 1 .5 1.2l.1.1L13 12v-.2L3.6 2.5h-.1z"/>
+						<path fill="#FFFFFF" fill-opacity="0.85" d="M3.5 2.5C3.2 2.7 3 3.1 3 3.7v16.6c0 .6.2 1 .5 1.2l.1.1L13 12v-.2L3.6 2.5h-.1z"/>
 						<path fill="#FFFFFF" fill-opacity="0.89" d="M16.2 15.2L13 12v-.2l3.2-3.2.1.1 3.8 2.2c1.1.6 1.1 1.6 0 2.2l-3.8 2.2-.1-.1z"/>
 						<path fill="#FFFFFF" fill-opacity="0.39" d="M16.3 15.1L13 12 3.5 21.5c.4.4 1 .5 1.6.2l11.2-6.6z"/>
 						<path fill="#FFFFFF" fill-opacity="1" d="M16.3 8.9L5.1 2.3c-.6-.4-1.2-.2-1.6.2L13 12l3.3-3.1z"/>
