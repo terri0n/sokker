@@ -469,5 +469,11 @@ label[for='actualizacion_automatica'] + .help + br {
 /* Keep AdSense creatives inside their reserved sidebar/content column. */
 ins.adsbygoogle {
 	box-sizing: border-box;
+	width: 100%;
+	max-width: 100%;
+	overflow: hidden;
+}
+
+ins.adsbygoogle iframe {
 	max-width: 100%;
 }
