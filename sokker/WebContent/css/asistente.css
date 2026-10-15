@@ -477,3 +477,29 @@ ins.adsbygoogle {
 ins.adsbygoogle iframe {
 	max-width: 100%;
 }
+
+/* Side ads must never cover interactive content on narrow viewports. */
+.ad-sidebar {
+	display: none;
+	position: absolute;
+	top: 0;
+	width: 250px;
+	max-width: calc((100vw - 840px) / 2);
+	height: 800px;
+	overflow: hidden;
+}
+
+@media only screen and (min-width: 1340px) {
+	.ad-sidebar {
+		display: block;
+	}
+
+	.ad-sidebar-left {
+		left: 0;
+	}
+
+	.ad-sidebar-right {
+		right: 0;
+		text-align: right;
+	}
+}
