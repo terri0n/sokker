@@ -53,8 +53,8 @@ public class Registro extends SERVLET_ASISTENTE {
 		if (!Util.getBoolean(request, "confirmed")) {
 			throw new RuntimeException("Login not confirmed");
 		} else {
-			String login = request.getParameter("login");
-			login = login == null ? "" : login.trim().toLowerCase(java.util.Locale.ROOT);
+			String req_login = request.getParameter("login");
+			final String login = req_login == null ? "" : req_login.trim().toLowerCase(java.util.Locale.ROOT);
 			// El login forma parte del nombre de un fichero: no eliminar caracteres
 			// silenciosamente porque eso puede cambiar la identidad elegida.
 			if (!login.matches("[a-z0-9][a-z0-9._-]{0,49}") || login.endsWith(".") || login.endsWith("-")) {
