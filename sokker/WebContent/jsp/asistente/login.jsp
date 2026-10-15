@@ -71,7 +71,7 @@
 	<link rel="icon" href="favicon.ico" type="image/x-icon" />
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/desplegable.css">
-	<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/asistente.css?5">
+	<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/asistente.css?6">
 
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<meta http-equiv=”Content-Language” content=”${sessionScope['javax.servlet.jsp.jstl.fmt.locale.session'].language}”/>
@@ -194,7 +194,7 @@
 		</c:forEach>
 	</tags:desplegable>
 
-	<div style="position: absolute; width:250px;height:800px;" class="solo_pc">
+	<div class="ad-sidebar ad-sidebar-left solo_pc">
 		<!-- Display-columna -->
 		<ins class="adsbygoogle"
 		     style="display:block"
@@ -205,7 +205,7 @@
 		     (adsbygoogle = window.adsbygoogle || []).push({});
 		</script>
 	</div>
-	<div style="position: absolute; right: 0px; width:250px;height:800px;text-align: right;" class="solo_pc">
+	<div class="ad-sidebar ad-sidebar-right solo_pc">
 		<!-- Display-columna -->
 		<ins class="adsbygoogle"
 		     style="display:block"
