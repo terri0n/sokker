@@ -313,8 +313,11 @@
 				</div>
 
 				<div class="boton_menu" role="link" tabindex="0" onclick="window.open('https://play.google.com/store/apps/details?id=com.raqueto.sokkerasistente', '_blank', 'noopener')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.open('https://play.google.com/store/apps/details?id=com.raqueto.sokkerasistente', '_blank', 'noopener')}">
-					<svg class="md-48" style="width:48px;height:48px;vertical-align:middle;fill:currentColor;" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-						<path d="M10 5.5c0-.9 1-1.4 1.8-.9L40 22.8c.9.6.9 1.8 0 2.4L11.8 43.4c-.8.5-1.8 0-1.8-.9z"/>
+					<svg class="md-48" style="width:48px;height:48px;vertical-align:middle;display:inline-block;" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+						<path fill="#FFFFFF" d="M8 4 L43 24 L22 24 Z"/>
+						<path fill="#D7F0FF" d="M43 24 L8 44 L22 24 Z"/>
+						<path fill="#A9DDF8" d="M8 4 L22 24 L8 24 Z"/>
+						<path fill="#EAF8FF" d="M8 24 L22 24 L8 44 Z"/>
 					</svg>
 					<div class="peque" style="margin-top: -6px;">
 						Google Play
