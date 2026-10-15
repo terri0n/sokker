@@ -194,6 +194,7 @@
 		</c:forEach>
 	</tags:desplegable>
 
+	<div class="ad-layout">
 	<div class="ad-sidebar ad-sidebar-left solo_pc">
 		<!-- Display-columna -->
 		<ins class="adsbygoogle"
@@ -217,7 +218,7 @@
 		</script>
 	</div>
 	
-	<div style="vertical-align: top; padding: 1px; text-align: center; margin: auto; max-width: 840px;">
+	<div class="ad-main" style="vertical-align: top; padding: 1px; text-align: center; margin: auto; max-width: 840px;">
 		<div id="menu" style="display: inline-block; padding: 10px;">
 			<%----------%>
 			<%-- LOGO --%>
@@ -354,6 +355,7 @@
 			     (adsbygoogle = window.adsbygoogle || []).push({});
 			</script>
 		</div>
+	</div>
 	</div>
 </body>
 </html>
