@@ -194,7 +194,7 @@
 		</c:forEach>
 	</tags:desplegable>
 
-	<div style="position: absolute; width:250px;height:800px;" class="solo_pc">
+	<div class="ad-sidebar ad-sidebar-left solo_pc">
 		<!-- Display-columna -->
 		<ins class="adsbygoogle"
 		     style="display:block"
@@ -205,7 +205,7 @@
 		     (adsbygoogle = window.adsbygoogle || []).push({});
 		</script>
 	</div>
-	<div style="position: absolute; right: 0px; width:250px;height:800px;text-align: right;" class="solo_pc">
+	<div class="ad-sidebar ad-sidebar-right solo_pc">
 		<!-- Display-columna -->
 		<ins class="adsbygoogle"
 		     style="display:block"
