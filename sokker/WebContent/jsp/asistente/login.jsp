@@ -313,12 +313,7 @@
 				</div>
 
 				<div class="boton_menu" role="link" tabindex="0" onclick="window.open('https://play.google.com/store/apps/details?id=com.raqueto.sokkerasistente', '_blank', 'noopener')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.open('https://play.google.com/store/apps/details?id=com.raqueto.sokkerasistente', '_blank', 'noopener')}">
-					<svg class="md-48" style="width:48px;height:48px;vertical-align:middle;display:inline-block;" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-						<path fill="#FFFFFF" d="M8 4 L43 24 L22 24 Z"/>
-						<path fill="#D7F0FF" d="M43 24 L8 44 L22 24 Z"/>
-						<path fill="#A9DDF8" d="M8 4 L22 24 L8 24 Z"/>
-						<path fill="#EAF8FF" d="M8 24 L22 24 L8 44 Z"/>
-					</svg>
+					<img class="md-48" src="https://www.android.com/images/brand/google_play_logo_450.png" alt="" aria-hidden="true" style="width:48px;height:48px;object-fit:contain;vertical-align:middle;display:inline-block;filter:brightness(0) invert(1);" />
 					<div class="peque" style="margin-top: -6px;">
 						Google Play
 					</div>
