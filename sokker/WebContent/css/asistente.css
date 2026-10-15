@@ -466,37 +466,57 @@ label[for='actualizacion_automatica'] + .help + br {
 	display: none;
 }
 
-/* Keep AdSense creatives inside their reserved sidebar/content column. */
+/* AdSense ocupa únicamente el ancho reservado por su columna. */
 ins.adsbygoogle {
 	box-sizing: border-box;
 	width: 100%;
 	max-width: 100%;
-	overflow: hidden;
 }
 
 ins.adsbygoogle iframe {
 	max-width: 100%;
 }
 
-/* Desktop layout: reserve two 250px ad columns beside the main content. */
+/*
+ * Layout de escritorio: las dos columnas de 250px forman parte del ancho
+ * disponible; el contenido central utiliza el espacio restante, hasta 840px.
+ * No se posicionan las columnas por encima del contenido.
+ */
+.ad-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 250px) minmax(0, 1fr) minmax(0, 250px);
+	width: 100%;
+	max-width: 1340px;
+	margin: 0 auto;
+	align-items: start;
+}
+
 .ad-sidebar {
-	position: absolute;
-	top: 0;
+	position: static;
+	box-sizing: border-box;
 	width: 250px;
-	height: 800px;
-	overflow: hidden;
+	max-width: 100%;
+	min-width: 0;
+	min-height: 1px;
+	overflow: visible;
 }
 
-.ad-sidebar-left {
-	left: 0;
-}
-
+.ad-sidebar-left,
 .ad-sidebar-right {
-	right: 0;
-	text-align: right;
+	text-align: center;
+}
+
+.ad-main {
+	box-sizing: border-box;
+	width: 100%;
+	min-width: 0;
 }
 
 @media only screen and (max-width: 800px) {
+	.ad-layout {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
 	.ad-sidebar {
 		display: none;
 	}

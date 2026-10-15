@@ -71,7 +71,7 @@
 	<link rel="icon" href="favicon.ico" type="image/x-icon" />
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/desplegable.css">
-	<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/asistente.css?6">
+	<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/asistente.css?7">
 
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<meta http-equiv=”Content-Language” content=”${sessionScope['javax.servlet.jsp.jstl.fmt.locale.session'].language}”/>
@@ -194,6 +194,7 @@
 		</c:forEach>
 	</tags:desplegable>
 
+	<div class="ad-layout">
 	<div class="ad-sidebar ad-sidebar-left solo_pc">
 		<!-- Display-columna -->
 		<ins class="adsbygoogle"
@@ -217,7 +218,7 @@
 		</script>
 	</div>
 	
-	<div style="vertical-align: top; padding: 1px; text-align: center; margin: auto; max-width: 840px;">
+	<div class="ad-main" style="vertical-align: top; padding: 1px; text-align: center; margin: auto; max-width: 840px;">
 		<div id="menu" style="display: inline-block; padding: 10px;">
 			<%----------%>
 			<%-- LOGO --%>
@@ -354,6 +355,7 @@
 			     (adsbygoogle = window.adsbygoogle || []).push({});
 			</script>
 		</div>
+	</div>
 	</div>
 </body>
 </html>
