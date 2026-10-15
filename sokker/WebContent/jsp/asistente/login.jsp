@@ -334,7 +334,7 @@
 
 				<div class="boton_menu" onclick="javascript:location.href='${pageContext.request.contextPath}/'">
 					<span class="material-icons md-48">arrow_circle_left</span>
-					<div class="peque" style="margin-top: -6px;">
+					<div class="peque" style="margin-top: -0.19em;">
 						<fmt:message key="common.back" />
 					</div>
 				</div>
