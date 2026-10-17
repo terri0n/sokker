@@ -321,7 +321,7 @@
 						<path fill="#FFFFFF" fill-opacity="0.39" d="M16.3 15.1L13 12 3.5 21.5c.4.4 1 .5 1.6.2l11.2-6.6z"/>
 						<path fill="#FFFFFF" fill-opacity="1" d="M16.3 8.9L5.1 2.3c-.6-.4-1.2-.2-1.6.2L13 12l3.3-3.1z"/>
 					</svg>
-					<div class="peque" style="margin-top: -6px;">
+					<div class="peque" style="margin-top: -0.195em;">
 						Google Play
 					</div>
 				</div>
