@@ -1800,15 +1800,18 @@ System.out.println("Limpiando selección " + tid);
 	private static List<File> listar_partes_backup(String directorio, String nombreBase) {
 		File base = new File(directorio, nombreBase);
 		List<File> archivos = new ArrayList<File>();
-		if (base.isFile()) {
-			archivos.add(base);
-		}
-		for (int i = 2; ; i++) {
+
+		// Las copias nuevas están numeradas desde _1. Conservamos compatibilidad
+		// con el nombre antiguo sin sufijo solo si no hay partes numeradas.
+		for (int i = 1; ; i++) {
 			File parte = obtener_archivo_parte_backup(base, i);
 			if (!parte.isFile()) {
 				break;
 			}
 			archivos.add(parte);
+		}
+		if (archivos.isEmpty() && base.isFile()) {
+			archivos.add(base);
 		}
 		return archivos;
 	}
