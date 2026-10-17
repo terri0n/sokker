@@ -22,7 +22,7 @@ import javax.mail.internet.MimeMultipart;
 import javax.mail.util.ByteArrayDataSource;
 
 public class EmailSenderService {
-    private static final String SMTP = "smtp.mailgun.org";
+    private static final String SMTP = "smtp.gmail.com";
     private static final Properties properties = new Properties();
     private static Session session;
 
@@ -30,7 +30,7 @@ public class EmailSenderService {
         properties.put("mail.smtp.host", SMTP);
         properties.put("mail.smtp.starttls.enable", "true");
         properties.put("mail.smtp.port", 587);
-        properties.put("mail.smtp.user", SystemUtil.getVar("mailgun_login"));
+        properties.put("mail.smtp.user", SystemUtil.getVar("email_user"));
         properties.put("mail.smtp.auth", "true");
         properties.put("mail.debug", "false");
         properties.put("mail.smtps.localhost", "localhost");
@@ -91,7 +91,7 @@ public class EmailSenderService {
         }
 
         Transport transport = session.getTransport("smtp");
-        transport.connect(SMTP, (String) properties.get("mail.smtp.user"), SystemUtil.getVar("mailgun_password"));
+        transport.connect(SMTP, (String) properties.get("mail.smtp.user"), SystemUtil.getVar("email_password"));
         transport.sendMessage(message, message.getAllRecipients());
         transport.close();
     }
