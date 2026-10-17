@@ -1762,38 +1762,98 @@ System.out.println("Limpiando selección " + tid);
 	private static void crear_partes_backup(File directorio, String nombreBase) throws Exception {
 		File destinoBase = new File(JugadorBO.PATH_BASE, nombreBase);
 		String[] archivos = listar_archivos_backup(directorio, destinoBase);
-		List<String> grupo = new ArrayList<String>();
 		int numeroParte = 1;
-		File prueba = File.createTempFile("backup-prueba-", ".zip", destinoBase.getAbsoluteFile().getParentFile());
-
+		BackupZipPart parte = null;
 		try {
 			for (String ruta : archivos) {
-				grupo.add(ruta);
-				Zip.comprimir(grupo.toArray(new String[grupo.size()]), prueba.getPath());
-
-				if (prueba.length() > TAMANO_MAXIMO_PARTE_BACKUP && grupo.size() > 1) {
-					String ultimo = grupo.remove(grupo.size() - 1);
-					File destino = obtener_archivo_parte_backup(destinoBase, numeroParte++);
-					Zip.comprimir(grupo.toArray(new String[grupo.size()]), destino.getPath());
-					System.out.println("Backup " + destino.getName() + ": " + destino.length() + " bytes");
-
-					grupo.clear();
-					grupo.add(ultimo);
-					Zip.comprimir(grupo.toArray(new String[grupo.size()]), prueba.getPath());
+				File archivo = new File(ruta);
+				if (!archivo.isFile() || !archivo.canRead()) {
+					System.err.println("Backup: se omite archivo inexistente o ilegible: " + ruta);
+					continue;
+				}
+				if (parte == null) {
+					parte = new BackupZipPart(obtener_archivo_parte_backup(destinoBase, numeroParte++));
+				}
+				parte.agregar(archivo);
+				// El tamaño se mide sobre el ZIP ya escrito. Se cierra después de
+				// completar la entrada para no recomprimir los archivos anteriores.
+				if (parte.tamano() >= TAMANO_MAXIMO_PARTE_BACKUP) {
+					parte.finalizar();
+					System.out.println("Backup " + parte.destino.getName() + ": " + parte.destino.length() + " bytes");
+					parte = null;
 				}
 			}
-
-			if (!grupo.isEmpty() || numeroParte == 1) {
-				File destino = obtener_archivo_parte_backup(destinoBase, numeroParte++);
-				Zip.comprimir(grupo.toArray(new String[grupo.size()]), destino.getPath());
-				System.out.println("Backup " + destino.getName() + ": " + destino.length() + " bytes");
+			if (parte != null) {
+				parte.finalizar();
+				System.out.println("Backup " + parte.destino.getName() + ": " + parte.destino.length() + " bytes");
+				parte = null;
+			} else if (numeroParte == 1) {
+				parte = new BackupZipPart(obtener_archivo_parte_backup(destinoBase, numeroParte++));
+				parte.finalizar();
+				System.out.println("Backup " + parte.destino.getName() + ": " + parte.destino.length() + " bytes");
+				parte = null;
 			}
 		} finally {
-			if (prueba.exists() && !prueba.delete()) {
-				prueba.deleteOnExit();
+			if (parte != null) {
+				parte.descartar();
 			}
 		}
 		eliminar_partes_backup_obsoletas(destinoBase, numeroParte - 1);
+	}
+
+	/** Escribe cada entrada una sola vez en una parte temporal y la publica al cerrarla. */
+	private static final class BackupZipPart {
+		private final File destino;
+		private final File temporal;
+		private java.util.zip.ZipOutputStream salida;
+		private boolean finalizada;
+
+		private BackupZipPart(File destino) throws IOException {
+			this.destino = destino;
+			this.temporal = File.createTempFile("backup-", ".tmp", destino.getAbsoluteFile().getParentFile());
+			this.salida = new java.util.zip.ZipOutputStream(new java.io.BufferedOutputStream(new java.io.FileOutputStream(temporal), 65536));
+		}
+
+		private void agregar(File archivo) throws IOException {
+			byte[] buffer = new byte[65536];
+			salida.putNextEntry(new java.util.zip.ZipEntry(archivo.getName()));
+			try (FileInputStream entrada = new FileInputStream(archivo)) {
+				int longitud;
+				while ((longitud = entrada.read(buffer)) != -1) {
+					salida.write(buffer, 0, longitud);
+				}
+			}
+			salida.closeEntry();
+		}
+
+		private long tamano() throws IOException {
+			salida.flush();
+			return temporal.length();
+		}
+
+		private void finalizar() throws IOException {
+			if (finalizada) return;
+			salida.close();
+			salida = null;
+			try {
+				java.nio.file.Files.move(temporal.toPath(), destino.toPath(),
+						java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+						java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+			} catch (java.nio.file.AtomicMoveNotSupportedException e) {
+				java.nio.file.Files.move(temporal.toPath(), destino.toPath(),
+						java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+			}
+			finalizada = true;
+		}
+
+		private void descartar() {
+			try {
+				if (salida != null) salida.close();
+			} catch (IOException e) {
+				// Se conserva la excepción original del proceso de backup.
+			}
+			if (temporal.exists() && !temporal.delete()) temporal.deleteOnExit();
+		}
 	}
 
 	private static File obtener_archivo_parte_backup(File archivoBase, int numero) {
