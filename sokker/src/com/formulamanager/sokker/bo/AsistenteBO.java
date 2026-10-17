@@ -1756,37 +1756,44 @@ System.out.println("Limpiando selección " + tid);
 	}
 
 	/**
-	 * Agrupa archivos completos en ZIP de hasta 20 MiB de datos de origen.
-	 * Un archivo individual mayor que el límite se mantiene íntegro en una parte.
+	 * Acumula archivos en cada ZIP hasta alcanzar 20 MiB de tamaño comprimido.
+	 * Un archivo individual que supere el límite se mantiene íntegro en una parte.
 	 */
 	private static void crear_partes_backup(File directorio, String nombreBase) throws Exception {
 		File destinoBase = new File(JugadorBO.PATH_BASE, nombreBase);
 		String[] archivos = listar_archivos_backup(directorio, destinoBase);
-		List<List<String>> grupos = new ArrayList<List<String>>();
 		List<String> grupo = new ArrayList<String>();
-		long tamanoGrupo = 0L;
+		int numeroParte = 1;
+		File prueba = File.createTempFile("backup-prueba-", ".zip", destinoBase.getAbsoluteFile().getParentFile());
 
-		for (String ruta : archivos) {
-			File archivo = new File(ruta);
-			long tamano = archivo.length();
-			if (!grupo.isEmpty() && tamanoGrupo + tamano > TAMANO_MAXIMO_PARTE_BACKUP) {
-				grupos.add(grupo);
-				grupo = new ArrayList<String>();
-				tamanoGrupo = 0L;
+		try {
+			for (String ruta : archivos) {
+				grupo.add(ruta);
+				Zip.comprimir(grupo.toArray(new String[grupo.size()]), prueba.getPath());
+
+				if (prueba.length() > TAMANO_MAXIMO_PARTE_BACKUP && grupo.size() > 1) {
+					String ultimo = grupo.remove(grupo.size() - 1);
+					File destino = obtener_archivo_parte_backup(destinoBase, numeroParte++);
+					Zip.comprimir(grupo.toArray(new String[grupo.size()]), destino.getPath());
+					System.out.println("Backup " + destino.getName() + ": " + destino.length() + " bytes");
+
+					grupo.clear();
+					grupo.add(ultimo);
+					Zip.comprimir(grupo.toArray(new String[grupo.size()]), prueba.getPath());
+				}
 			}
-			grupo.add(ruta);
-			tamanoGrupo += tamano;
-		}
-		if (!grupo.isEmpty() || grupos.isEmpty()) {
-			grupos.add(grupo);
-		}
 
-		for (int i = 0; i < grupos.size(); i++) {
-			File destino = obtener_archivo_parte_backup(destinoBase, i + 1);
-			Zip.comprimir(grupos.get(i).toArray(new String[grupos.get(i).size()]), destino.getPath());
-			System.out.println("Backup " + destino.getName() + ": " + destino.length() + " bytes");
+			if (!grupo.isEmpty() || numeroParte == 1) {
+				File destino = obtener_archivo_parte_backup(destinoBase, numeroParte++);
+				Zip.comprimir(grupo.toArray(new String[grupo.size()]), destino.getPath());
+				System.out.println("Backup " + destino.getName() + ": " + destino.length() + " bytes");
+			}
+		} finally {
+			if (prueba.exists() && !prueba.delete()) {
+				prueba.deleteOnExit();
+			}
 		}
-		eliminar_partes_backup_obsoletas(destinoBase, grupos.size());
+		eliminar_partes_backup_obsoletas(destinoBase, numeroParte - 1);
 	}
 
 	private static File obtener_archivo_parte_backup(File archivoBase, int numero) {
