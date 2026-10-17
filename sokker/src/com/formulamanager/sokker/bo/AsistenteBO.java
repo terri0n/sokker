@@ -1790,9 +1790,6 @@ System.out.println("Limpiando selección " + tid);
 	}
 
 	private static File obtener_archivo_parte_backup(File archivoBase, int numero) {
-		if (numero == 1) {
-			return archivoBase;
-		}
 		String nombre = archivoBase.getName();
 		int punto = nombre.lastIndexOf('.');
 		String parte = punto < 0 ? nombre + "_" + numero
@@ -1843,6 +1840,28 @@ System.out.println("Limpiando selección " + tid);
 		}
 	}
 	/**
+	 * Evita volver a incluir partes de backups anteriores al generar el siguiente.
+	 */
+	private static boolean es_parte_backup_generada(String nombre, String nombreBase) {
+		int punto = nombreBase.lastIndexOf('.');
+		String prefijo = punto < 0 ? nombreBase + "_" : nombreBase.substring(0, punto) + "_";
+		String extension = punto < 0 ? "" : nombreBase.substring(punto);
+		if (!nombre.startsWith(prefijo) || !nombre.endsWith(extension)) {
+			return false;
+		}
+		String numero = nombre.substring(prefijo.length(), nombre.length() - extension.length());
+		if (numero.isEmpty()) {
+			return false;
+		}
+		for (int i = 0; i < numero.length(); i++) {
+			if (!Character.isDigit(numero.charAt(i))) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
 	 * Devuelve rutas absolutas de archivos regulares, excluyendo explícitamente
 	 * el ZIP de destino para evitar que una copia se incluya a sí misma.
 	 */
@@ -1862,7 +1881,8 @@ System.out.println("Limpiando selección " + tid);
 		List<String> archivos = new ArrayList<String>();
 		for (File archivo : entradas) {
 			try {
-				if (archivo.isFile() && !archivo.getCanonicalPath().equals(rutaDestino)) {
+				if (archivo.isFile() && !archivo.getCanonicalPath().equals(rutaDestino)
+						&& !es_parte_backup_generada(archivo.getName(), destino.getName())) {
 					archivos.add(archivo.getAbsolutePath());
 				}
 			} catch (IOException e) {
