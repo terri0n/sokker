@@ -478,16 +478,16 @@ ins.adsbygoogle iframe {
 }
 
 /*
- * Layout de escritorio: las columnas publicitarias reservan 160px cada una.
+ * Layout de escritorio: las columnas publicitarias reservan 250px cada una.
  * El contenido central mantiene hasta 840px y las columnas forman parte del
  * ancho normal del layout, sin superponerse al contenido.
  */
 .ad-layout {
 	display: grid;
-	grid-template-columns: minmax(0, 160px) minmax(0, 840px) minmax(0, 160px);
+	grid-template-columns: minmax(0, 250px) minmax(0, 840px) minmax(0, 250px);
 	grid-template-areas: "left main right";
 	width: 100%;
-	max-width: 1160px;
+	max-width: 1340px;
 	margin: 0 auto;
 	align-items: start;
 }
@@ -495,7 +495,7 @@ ins.adsbygoogle iframe {
 .ad-sidebar {
 	position: static;
 	box-sizing: border-box;
-	width: 160px;
+	width: 250px;
 	max-width: 100%;
 	min-width: 0;
 	min-height: 1px;
