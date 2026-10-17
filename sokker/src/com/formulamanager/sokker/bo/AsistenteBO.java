@@ -1643,28 +1643,30 @@ System.out.println(p.asXml());
 	}
 
 	public static void enviar_backups() {
-System.out.print("Enviando email...");
-		HashMap<String, String> destinatarios = new HashMap<>();
-		destinatarios.put("Terrion", "tejedor@gmail.com");
-		
-		HashMap<String, byte[]> listaArchivos = new HashMap<>();
+		System.out.print("Enviando email...");
 		try {
-			listaArchivos.put(ASISTENTE_BACKUP, FileUtil.leerFichero(JugadorBO.PATH_BASE + ASISTENTE_BACKUP));
-			listaArchivos.put(FACTORX_BACKUP, FileUtil.leerFichero(JugadorBO.PATH_BASE + FACTORX_BACKUP));
-
-			String asunto = "Sokker Asistente BACKUP " + Util.dateToString(new Date());
-			EmailSenderService.sendEmail("tejedor@gmail.com", asunto, "", listaArchivos);
+			List<File> archivos = new ArrayList<File>();
+			archivos.addAll(listar_partes_backup(JugadorBO.PATH_BASE, ASISTENTE_BACKUP));
+			archivos.addAll(listar_partes_backup(JugadorBO.PATH_BASE, FACTORX_BACKUP));
+			String asuntoBase = "Sokker Asistente BACKUP " + Util.dateToString(new Date());
+			for (int i = 0; i < archivos.size(); i++) {
+				File archivo = archivos.get(i);
+				HashMap<String, byte[]> adjunto = new HashMap<String, byte[]>();
+				adjunto.put(archivo.getName(), FileUtil.leerFichero(archivo.getAbsolutePath()));
+				EmailSenderService.sendEmail("tejedor@gmail.com",
+						asuntoBase + " (" + (i + 1) + "/" + archivos.size() + ")", "", adjunto);
+				System.out.println("Enviado backup " + archivo.getName());
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			try {
-				SERVLET_ASISTENTE._log_linea("_ENVIAR_BACKUPS", e.getMessage() + e.getLocalizedMessage() + e.toString());
+				SERVLET_ASISTENTE._log_linea("_ENVIAR_BACKUPS", e.getMessage() + " " + e.toString());
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
 		}
-System.out.println("OK");
+		System.out.println("OK");
 	}
-
     public static void tareas_NTs(WebClient navegador, int jornada_actual) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
     	Set<Integer> selecciones = AsistenteBO.buscar_selecciones();
 	
@@ -1730,29 +1732,136 @@ System.out.println("Limpiando selección " + tid);
 	/**
 	 * NOTA: /home debe pertenecer a "tomcat"
 	 */
+	private static final long TAMANO_MAXIMO_PARTE_BACKUP = 20L * 1024L * 1024L;
+
 	public static void crear_backups() {
 		System.out.print("Creando backups...");
 
 		File directorioAsistente = new File(SystemUtil.getVar(SystemUtil.PATH));
-		File destinoAsistente = new File(JugadorBO.PATH_BASE + ASISTENTE_BACKUP);
-		String[] files = listar_archivos_backup(directorioAsistente, destinoAsistente);
 		try {
-			Zip.comprimir(files, destinoAsistente.getPath());
+			crear_partes_backup(directorioAsistente, ASISTENTE_BACKUP);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RuntimeException("No se pudo crear el backup del asistente", e);
 		}
 
 		File directorioFactorX = new File(JugadorBO.PATH_BASE, "factorx");
-		File destinoFactorX = new File(JugadorBO.PATH_BASE + FACTORX_BACKUP);
-		files = listar_archivos_backup(directorioFactorX, destinoFactorX);
 		try {
-			Zip.comprimir(files, destinoFactorX.getPath());
+			crear_partes_backup(directorioFactorX, FACTORX_BACKUP);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RuntimeException("No se pudo crear el backup de Factor X", e);
 		}
 		System.out.println("OK");
+	}
+
+	/**
+	 * Agrupa archivos completos en ZIP de hasta 20 MiB de datos de origen.
+	 * Un archivo individual mayor que el límite se mantiene íntegro en una parte.
+	 */
+	private static void crear_partes_backup(File directorio, String nombreBase) throws Exception {
+		File destinoBase = new File(JugadorBO.PATH_BASE, nombreBase);
+		String[] archivos = listar_archivos_backup(directorio, destinoBase);
+		List<List<String>> grupos = new ArrayList<List<String>>();
+		List<String> grupo = new ArrayList<String>();
+		long tamanoGrupo = 0L;
+
+		for (String ruta : archivos) {
+			File archivo = new File(ruta);
+			long tamano = archivo.length();
+			if (!grupo.isEmpty() && tamanoGrupo + tamano > TAMANO_MAXIMO_PARTE_BACKUP) {
+				grupos.add(grupo);
+				grupo = new ArrayList<String>();
+				tamanoGrupo = 0L;
+			}
+			grupo.add(ruta);
+			tamanoGrupo += tamano;
+		}
+		if (!grupo.isEmpty() || grupos.isEmpty()) {
+			grupos.add(grupo);
+		}
+
+		for (int i = 0; i < grupos.size(); i++) {
+			File destino = obtener_archivo_parte_backup(destinoBase, i + 1);
+			Zip.comprimir(grupos.get(i).toArray(new String[grupos.get(i).size()]), destino.getPath());
+			System.out.println("Backup " + destino.getName() + ": " + destino.length() + " bytes");
+		}
+		eliminar_partes_backup_obsoletas(destinoBase, grupos.size());
+	}
+
+	private static File obtener_archivo_parte_backup(File archivoBase, int numero) {
+		String nombre = archivoBase.getName();
+		int punto = nombre.lastIndexOf('.');
+		String parte = punto < 0 ? nombre + "_" + numero
+				: nombre.substring(0, punto) + "_" + numero + nombre.substring(punto);
+		return new File(archivoBase.getParentFile(), parte);
+	}
+
+	private static List<File> listar_partes_backup(String directorio, String nombreBase) {
+		File base = new File(directorio, nombreBase);
+		List<File> archivos = new ArrayList<File>();
+
+		// Las copias nuevas están numeradas desde _1. Conservamos compatibilidad
+		// con el nombre antiguo sin sufijo solo si no hay partes numeradas.
+		for (int i = 1; ; i++) {
+			File parte = obtener_archivo_parte_backup(base, i);
+			if (!parte.isFile()) {
+				break;
+			}
+			archivos.add(parte);
+		}
+		if (archivos.isEmpty() && base.isFile()) {
+			archivos.add(base);
+		}
+		return archivos;
+	}
+
+	private static void eliminar_partes_backup_obsoletas(File archivoBase, int partesActuales) throws IOException {
+		File directorio = archivoBase.getParentFile();
+		String nombre = archivoBase.getName();
+		int punto = nombre.lastIndexOf('.');
+		String prefijo = punto < 0 ? nombre + "_" : nombre.substring(0, punto) + "_";
+		String extension = punto < 0 ? "" : nombre.substring(punto);
+		File[] existentes = directorio.listFiles();
+		if (existentes == null) {
+			throw new IOException("No se pueden listar las partes antiguas del backup: " + directorio);
+		}
+		for (File existente : existentes) {
+			String n = existente.getName();
+			if (!existente.isFile() || !n.startsWith(prefijo) || !n.endsWith(extension)) {
+				continue;
+			}
+			String numero = n.substring(prefijo.length(), n.length() - extension.length());
+			try {
+				int indice = Integer.parseInt(numero);
+				if (indice > partesActuales && !existente.delete()) {
+					throw new IOException("No se puede eliminar una parte obsoleta del backup: " + existente);
+				}
+			} catch (NumberFormatException ignorado) {
+				// No es una parte numerada generada por este método.
+			}
+		}
+	}
+	/**
+	 * Evita volver a incluir partes de backups anteriores al generar el siguiente.
+	 */
+	private static boolean es_parte_backup_generada(String nombre, String nombreBase) {
+		int punto = nombreBase.lastIndexOf('.');
+		String prefijo = punto < 0 ? nombreBase + "_" : nombreBase.substring(0, punto) + "_";
+		String extension = punto < 0 ? "" : nombreBase.substring(punto);
+		if (!nombre.startsWith(prefijo) || !nombre.endsWith(extension)) {
+			return false;
+		}
+		String numero = nombre.substring(prefijo.length(), nombre.length() - extension.length());
+		if (numero.isEmpty()) {
+			return false;
+		}
+		for (int i = 0; i < numero.length(); i++) {
+			if (!Character.isDigit(numero.charAt(i))) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
@@ -1775,7 +1884,8 @@ System.out.println("Limpiando selección " + tid);
 		List<String> archivos = new ArrayList<String>();
 		for (File archivo : entradas) {
 			try {
-				if (archivo.isFile() && !archivo.getCanonicalPath().equals(rutaDestino)) {
+				if (archivo.isFile() && !archivo.getCanonicalPath().equals(rutaDestino)
+						&& !es_parte_backup_generada(archivo.getName(), destino.getName())) {
 					archivos.add(archivo.getAbsolutePath());
 				}
 			} catch (IOException e) {
