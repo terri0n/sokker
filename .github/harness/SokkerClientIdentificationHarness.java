@@ -33,6 +33,15 @@ public final class SokkerClientIdentificationHarness {
 
         // Automatic update is retired; its UI markup must not reappear.
         String assistantMain = read(Paths.get("sokker/WebContent/jsp/asistente/asistente.jsp"));
+        int updateSubmitStart = assistantMain.indexOf("function actualizar_submit()");
+        int updateSubmitEnd = assistantMain.indexOf("function comprobar_filtro", updateSubmitStart);
+        if (updateSubmitStart < 0 || updateSubmitEnd < 0) {
+            throw new AssertionError("assistant update submit handler must remain present");
+        }
+        String updateSubmit = assistantMain.substring(updateSubmitStart, updateSubmitEnd);
+        forbid(updateSubmit, "sokkerPost(", "team update must authenticate with the server instead of a browser CORS request");
+        require(updateSubmit, "$('#confirmed').val('1')", "team update must mark supplied credentials for server-side authentication");
+        require(updateSubmit, "mostrar_mensaje", "team update must keep the loading indicator");
         forbid(assistantMain, "actualizacion_automatica", "assistant main page must not render the retired automatic update option");
         forbid(assistantMain, "menu.automatic_update", "assistant main page must not render the retired automatic update label");
         forbid(assistantMain, "config.info_automatic_update", "assistant main page must not render the retired automatic update help");
