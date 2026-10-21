@@ -831,27 +831,18 @@
         }
 	
 		function actualizar_submit() {
-			if ($('#confirmed').val() == '1' || !$("#ilogin").val() && '${sessionScope.usuario.def_tid < MAX_ID_SELECCION}' == 'true') {
-				mostrar_mensaje('<fmt:message key="common.updating" />');
-				return true;
-			} else {
-				$('#boton_actualizar').attr("disabled", true);
-				let data = 'ilogin=' + encodeURIComponent($("#ilogin").val()) + '&ipassword=' + encodeURIComponent($("#ipassword").val());
-				sokkerPost('https://sokker.org/start.php?session=xml&' + data, data).done(
-			        function(data) {
-						$('#boton_actualizar').attr("disabled", false);
-			        	if (data.startsWith('OK')) {
-							$('#confirmed').val('1');
-							$('#boton_actualizar').click();
-			            } else {
-			            	alert('<fmt:message key="messages.login_error" var="var"/>${fn:replace(var, "'", "\\'")}' + ": " + data);
-			            }
-			        } 
-			    ).fail(function(xhr, textStatus, errorThrown) {
-			    	alert('<fmt:message key="messages.cors" />');
-			    });
-			 	return false;
+			if ($('#confirmed').val() != '1') {
+				// Las credenciales proporcionadas se validan en el servidor al iniciar
+				// la sesión de Sokker. No hacer una petición cross-origin desde el navegador.
+				if (!$("#ilogin").val() && '${sessionScope.usuario.def_tid < MAX_ID_SELECCION}' == 'true') {
+					// Para equipos normales se mantienen las credenciales configuradas en el servidor.
+				} else {
+					$('#confirmed').val('1');
+				}
 			}
+			mostrar_mensaje('<fmt:message key="common.updating" />');
+			$('#boton_actualizar').prop("disabled", true);
+			return true;
 		}
 		
 		function comprobar_filtro(j, nombre) {
@@ -1086,7 +1077,7 @@ request.setAttribute("j", new Jugador());
 							<fmt:message key="login.sokker_password" />: <input type="password" id="ipassword" name="ipassword" size="10" <c:if test='${sessionScope.usuario.def_tid > MAX_ID_SELECCION}'>required="required"</c:if> /><br/>
 
 							
-							<input type="submit" id='boton_actualizar' value="<fmt:message key="common.update" />" onclick="return actualizar_submit();" />
+							<input type="submit" id='boton_actualizar' value="<fmt:message key="common.update" />" />
 							<c:if test="${actualizado}">
 								<span class="material-icons verde vertical" title="<fmt:message key="messages.updated" />">done</span>
 							</c:if>
