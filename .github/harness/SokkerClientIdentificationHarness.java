@@ -42,6 +42,9 @@ public final class SokkerClientIdentificationHarness {
         forbid(updateSubmit, "sokkerPost(", "team update must authenticate with the server instead of a browser CORS request");
         require(updateSubmit, "$('#confirmed').val('1')", "team update must mark supplied credentials for server-side authentication");
         require(updateSubmit, "mostrar_mensaje", "team update must keep the loading indicator");
+        String updateServlet = read(Paths.get("sokker/src/com/formulamanager/sokker/acciones/asistente/Actualizar.java"));
+        require(updateServlet, "catch (LoginExceptionExt e)", "invalid credentials must be handled locally without the global IP penalty");
+        require(updateServlet, "URLEncoder.encode(e.getMessage(), \"UTF-8\")", "server-side login errors must be returned to the update page");
         forbid(assistantMain, "actualizacion_automatica", "assistant main page must not render the retired automatic update option");
         forbid(assistantMain, "menu.automatic_update", "assistant main page must not render the retired automatic update label");
         forbid(assistantMain, "config.info_automatic_update", "assistant main page must not render the retired automatic update help");
