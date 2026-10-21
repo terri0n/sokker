@@ -15,6 +15,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.formulamanager.sokker.auxiliares.Navegador;
+import com.formulamanager.sokker.auxiliares.LoginExceptionExt;
 import com.formulamanager.sokker.auxiliares.SERVLET_ASISTENTE;
 import com.formulamanager.sokker.auxiliares.SystemUtil;
 import com.formulamanager.sokker.auxiliares.Util;
@@ -57,6 +58,7 @@ public class Actualizar extends SERVLET_ASISTENTE {
 				String ilogin = tid_actualizacion < NtdbBO.MAX_ID_SELECCION && !Util.getBoolean(request, "confirmed") ? SystemUtil.getVar(SystemUtil.LOGIN) : request.getParameter("ilogin");
 				String ipassword = tid_actualizacion < NtdbBO.MAX_ID_SELECCION && !Util.getBoolean(request, "confirmed") ? SystemUtil.getVar(SystemUtil.PASSWORD) : request.getParameter("ipassword");
 	
+				try {
 				new Navegador(false, ilogin, ipassword, request) {
 					@Override
 					protected void execute(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {
@@ -95,6 +97,11 @@ public class Actualizar extends SERVLET_ASISTENTE {
 						}
 					}
 				};
+				} catch (LoginExceptionExt e) {
+					// La validación ahora ocurre en el servidor; no penalizar la IP
+					// por un error de credenciales que antes se detectaba en el navegador.
+					mensaje[0] = "?error=2&mensaje=" + URLEncoder.encode(e.getMessage(), "UTF-8");
+				}
 			}
 		}
 
