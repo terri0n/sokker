@@ -194,7 +194,13 @@
 		</c:forEach>
 	</tags:desplegable>
 
-<div style="vertical-align: top; padding: 1px; text-align: center; margin: auto; max-width: 840px;">
+<div class="ad-layout">
+	<div class="ad-sidebar ad-sidebar-left solo_pc">
+		<ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7610610063984650" data-ad-slot="1565843826" data-ad-format="auto"></ins>
+		<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+	</div>
+	<div class="ad-main">
+		<div style="vertical-align: top; padding: 1px; text-align: center; margin: auto; max-width: 840px;">
 		<div id="menu" style="display: inline-block; padding: 10px;">
 			<%----------%>
 			<%-- LOGO --%>
@@ -332,5 +338,10 @@
 			</script>
 		</div>
 	</div>
+	<div class="ad-sidebar ad-sidebar-right solo_pc">
+		<ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7610610063984650" data-ad-slot="1565843826" data-ad-format="auto"></ins>
+		<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+	</div>
+</div>
 </body>
 </html>
