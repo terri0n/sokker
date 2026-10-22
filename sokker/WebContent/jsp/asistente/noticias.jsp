@@ -27,6 +27,51 @@
 	
 	<div style="text-align: justify; max-height: 300px; overflow: auto;">
 		<div class="bloque">
+			<span class="fecha peque">2025-11-06</span>
+			<b>New language <img src="${pageContext.request.contextPath}/img/banderas/SK.png" /> added.</b>
+			<p>Slovak is the latest language added to SA. Many thanks to Divoch for his great work!</p>
+		</div>
+
+		<div class="bloque">
+			<span class="fecha peque">2025-10-28</span>
+			<b>Bot teams icon and bulk player color change</b>
+			<p>National teams now show a <span class="borde">&#x1F4BB;</span> if their team is a bot.</p>
+			<p>Also, you can now change players' colors in bulk via the actions menu.</p>
+		</div>
+
+		<div class="bloque">
+			<span class="fecha peque">2025-07-04</span>
+			<b>App crash and NT players icon</b>
+			<p>Some users are reporting that the app crashes when they open it since a few days ago. They also report that the app is usually fixed by rebooting their phones or by reinstalling it.</p>
+			<p>On the other hand, all NT players are showing the <span class='estrella'>&#x2605;</span> icon again. A new algorithm made it possible without affecting the performance!</p>
+		</div>
+
+		<div class="bloque">
+			<span class="fecha peque">2025-06-14</span>
+			<b>Android App updated</b>
+			<p>A recent Android update caused the app to stop working. It has now been recompiled using the latest available libraries to enhance its security.</p>
+		</div>
+
+		<div class="bloque">
+			<span class="fecha peque">2025-05-23</span>
+			<b>Transfer-listed and NT icons</b>
+			<p>Players on sale will show again the <span class="material-icons borde" style="color: lightgreen; text-indent: 0px; vertical-align: bottom">attach_money</span> icon.</p>
+			<p>On the other hand, NT players will show the <span class='estrella'>&#x2605;</span> icon only if they have played any minutes for their NT in the last week.</p>
+		</div>
+
+		<div class="bloque">
+			<span class="fecha peque">2025-04-16</span>
+			<b>7 days injury</b>
+			<p>7 days injured players will be marked as 8 days if the injury is severe, so that it is clear that the player can't train.</p>
+		</div>
+
+		<div class="bloque">
+			<span class="fecha peque">2024-12-04</span>
+			<b>Multiple player export</b>
+			<p>Now you can select multiple players to export their skills at once.</p>
+		</div>
+
+		<div class="bloque">
 			<span class="fecha peque">2024-03-17</span>
 			<b>Change in the API for non-plus users</b>
 			<p>Due to a change in the API for non-plus users, these users won't be able to get past weeks training from now on. <i>Sokker Asistente</i> has been adapted to this fact which was causing an error in the last days.</p>
