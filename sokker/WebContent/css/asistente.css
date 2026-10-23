@@ -484,7 +484,9 @@ ins.adsbygoogle iframe {
  */
 .ad-layout {
 	display: grid;
-	grid-template-columns: minmax(0, 250px) minmax(0, 840px) minmax(0, 250px);
+	/* Las columnas laterales tienen ancho reservado fijo: AdSense no puede
+	 * encogerlas ni alterar la geometría del contenido central. */
+	grid-template-columns: 250px minmax(0, 840px) 250px;
 	grid-template-areas: "left main right";
 	width: 100%;
 	max-width: 1340px;
@@ -493,12 +495,22 @@ ins.adsbygoogle iframe {
 }
 
 .ad-sidebar {
-	position: static;
+	position: relative;
 	box-sizing: border-box;
 	width: 250px;
-	max-width: 100%;
-	min-width: 0;
-	min-height: 1px;
+	min-width: 250px;
+	max-width: 250px;
+	height: 100vh;
+	min-height: 100vh;
+	overflow: hidden;
+	contain: layout paint;
+}
+
+/* El bloque de AdSense nunca puede ampliar la columna reservada. */
+.ad-sidebar ins.adsbygoogle {
+	box-sizing: border-box;
+	width: 250px !important;
+	max-width: 250px !important;
 	overflow: hidden;
 }
 
@@ -521,8 +533,9 @@ ins.adsbygoogle iframe {
 
 @media only screen and (max-width: 1339px) {
 	.ad-layout {
-		grid-template-columns: minmax(0, 1fr);
-		grid-template-areas: "main";
+		display: block;
+		width: 100%;
+		max-width: 840px;
 	}
 
 	.ad-sidebar {
