@@ -186,7 +186,7 @@
 	<%------------%>
 	<%-- IDIOMA --%>
 	<%------------%>
-	<tags:desplegable onchange="idioma_change()" value="${fn:toUpperCase(sessionScope['javax.servlet.jsp.jstl.fmt.locale.session'].language)}" style="position: fixed; top: 0px; right: 0px; z-index: 3;" class_="dropdown_opacity">
+	<tags:desplegable onchange="idioma_change()" value="${fn:toUpperCase(sessionScope['javax.servlet.jsp.jstl.fmt.locale.session'].language)}" style="position: fixed; top: 0px; right: 260px; z-index: 3;" class_="dropdown_opacity">
 		<c:forEach var="lang" items="<%= new String[] { \"EN\", \"ES\", \"FR\", \"IT\" } %>">
 			<li onClick="dropdown_click(this)" data-toggle="${lang}" title="<%= Util.initCap(new Locale(((String)pageContext.getAttribute("lang"))).getDisplayLanguage()) %>">
 				<img src="${pageContext.request.contextPath}/img/banderas/${lang == 'EN' ? 'GB' : lang}.png" class="margin-right"/>
