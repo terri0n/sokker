@@ -527,8 +527,10 @@ ins.adsbygoogle iframe {
 .ad-main {
 	grid-area: main;
 	box-sizing: border-box;
-	width: 100%;
+	width: fit-content;
+	max-width: 840px;
 	min-width: 0;
+	justify-self: center;
 }
 
 @media only screen and (max-width: 1239px) {
