@@ -22,7 +22,7 @@
 	
 </style>
 
-<div style="display: inline-block; width: 100%; max-width: 700px; box-sizing: border-box; margin-top: 10px;">
+<div style="display: inline-block; max-width: 500px; margin-top: 10px;">
 	<div class="cabecera" style="font-size: 1.5em;">LATEST NEWS</div>
 	
 	<div style="text-align: justify; max-height: 300px; overflow: auto;">
