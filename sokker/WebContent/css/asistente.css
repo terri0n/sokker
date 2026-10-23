@@ -499,7 +499,7 @@ ins.adsbygoogle iframe {
 	max-width: 100%;
 	min-width: 0;
 	min-height: 1px;
-	overflow: visible;
+	overflow: hidden;
 }
 
 .ad-sidebar-left {
@@ -519,7 +519,7 @@ ins.adsbygoogle iframe {
 	min-width: 0;
 }
 
-@media only screen and (max-width: 800px) {
+@media only screen and (max-width: 1339px) {
 	.ad-layout {
 		grid-template-columns: minmax(0, 1fr);
 		grid-template-areas: "main";
