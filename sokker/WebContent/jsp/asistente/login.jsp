@@ -194,7 +194,7 @@
 		</c:forEach>
 	</tags:desplegable>
 
-<div style="position: absolute; width:250px;height:800px;" class="solo_pc">
+<div style="position: absolute; top:0; left:0; width:250px; height:800px; overflow:hidden;" class="solo_pc">
 		<ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7610610063984650" data-ad-slot="1565843826" data-ad-format="auto"></ins>
 		<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
 	</div>
@@ -336,7 +336,7 @@
 			</script>
 		</div>
 	</div>
-	<div style="position: absolute; right: 0px; width:250px;height:800px;text-align: right;" class="solo_pc">
+	<div style="position: absolute; top:0; right:0; width:250px; height:800px; overflow:hidden; text-align:right;" class="solo_pc">
 		<ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7610610063984650" data-ad-slot="1565843826" data-ad-format="auto"></ins>
 		<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
 	</div>
