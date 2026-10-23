@@ -478,7 +478,7 @@ ins.adsbygoogle iframe {
 }
 
 /*
- * Layout de escritorio: las columnas publicitarias reservan 250px cada una.
+ * Layout de escritorio: las columnas publicitarias reservan 200px cada una.
  * El contenido central mantiene hasta 840px y las columnas forman parte del
  * ancho normal del layout, sin superponerse al contenido.
  */
@@ -486,10 +486,10 @@ ins.adsbygoogle iframe {
 	display: grid;
 	/* Las columnas laterales tienen ancho reservado fijo: AdSense no puede
 	 * encogerlas ni alterar la geometría del contenido central. */
-	grid-template-columns: 250px minmax(0, 840px) 250px;
+	grid-template-columns: 200px minmax(0, 840px) 200px;
 	grid-template-areas: "left main right";
 	width: 100%;
-	max-width: 1340px;
+	max-width: 1240px;
 	margin: 0 auto;
 	align-items: start;
 }
@@ -497,9 +497,9 @@ ins.adsbygoogle iframe {
 .ad-sidebar {
 	position: relative;
 	box-sizing: border-box;
-	width: 250px;
-	min-width: 250px;
-	max-width: 250px;
+	width: 200px;
+	min-width: 200px;
+	max-width: 200px;
 	height: 100vh;
 	min-height: 100vh;
 	overflow: hidden;
@@ -509,8 +509,8 @@ ins.adsbygoogle iframe {
 /* El bloque de AdSense nunca puede ampliar la columna reservada. */
 .ad-sidebar ins.adsbygoogle {
 	box-sizing: border-box;
-	width: 250px !important;
-	max-width: 250px !important;
+	width: 200px !important;
+	max-width: 200px !important;
 	overflow: hidden;
 }
 
@@ -531,7 +531,7 @@ ins.adsbygoogle iframe {
 	min-width: 0;
 }
 
-@media only screen and (max-width: 1339px) {
+@media only screen and (max-width: 1239px) {
 	.ad-layout {
 		display: block;
 		width: 100%;
