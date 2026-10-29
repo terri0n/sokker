@@ -1,6 +1,5 @@
 package com.raqueto.sokkerasistente;
 
-import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -8,6 +7,8 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Build;
 import android.os.Bundle;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 import android.util.Log;
 import android.view.View;
 import android.webkit.JsResult;
@@ -30,6 +31,7 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
     private static final String HOME_URL = "https://raqueto.com/sokker/asistente";
     private WebView myWebView;
+    private OnBackInvokedCallback backCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,17 +40,7 @@ public class MainActivity extends AppCompatActivity {
 
         myWebView = findViewById(R.id.webview);
 
-        // Android moderno (targetSdk 36): interceptar el gesto/acción atrás con AndroidX.
-        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                if (myWebView != null && myWebView.canGoBack()) {
-                    myWebView.goBack();
-                } else if (myWebView != null) {
-                    myWebView.loadUrl(HOME_URL);
-                }
-            }
-        });
+        registerBackHandler();
         myWebView.getSettings().setJavaScriptEnabled(true);
         myWebView.getSettings().setDomStorageEnabled(true);
 
@@ -199,6 +191,38 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+    }
+
+
+    // Mismo mecanismo nativo que ChessGoal para Android 13+.
+    private void registerBackHandler() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            backCallback = this::handleBackNavigation;
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                    OnBackInvokedDispatcher.PRIORITY_DEFAULT, backCallback);
+        }
+    }
+
+    private void handleBackNavigation() {
+        if (myWebView != null && myWebView.canGoBack()) {
+            myWebView.goBack();
+        } else if (myWebView != null) {
+            myWebView.loadUrl(HOME_URL);
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        // Fallback para versiones de Android anteriores a API 33.
+        handleBackNavigation();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && backCallback != null) {
+            getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backCallback);
+        }
+        super.onDestroy();
     }
 
 }
