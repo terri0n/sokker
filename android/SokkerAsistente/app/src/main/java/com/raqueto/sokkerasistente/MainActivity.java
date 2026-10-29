@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String HOME_URL = "https://raqueto.com/sokker/asistente";
     private WebView myWebView;
 
     @Override
@@ -95,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
         }.run();
 
 
-        myWebView.loadUrl("https://raqueto.com/sokker/asistente");
+        myWebView.loadUrl(HOME_URL);
 
         myWebView.setWebViewClient(new WebViewClient() {
             // Abrir enlaces en el webview
@@ -187,13 +188,14 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    // Hacer q el botón de volver vuelva en el navegador
+    // Volver en el historial del WebView sin cerrar nunca la actividad.
     @Override
     public void onBackPressed() {
-        if(myWebView.canGoBack()) {
+        if (myWebView.canGoBack()) {
             myWebView.goBack();
         } else {
-            super.onBackPressed();
+            // Si el historial está vacío, regresar a la página principal en vez de cerrar la app.
+            myWebView.loadUrl(HOME_URL);
         }
     }
 }
