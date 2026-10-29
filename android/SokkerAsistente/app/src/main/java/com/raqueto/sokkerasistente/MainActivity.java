@@ -1,5 +1,6 @@
 package com.raqueto.sokkerasistente;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -36,6 +37,18 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         myWebView = findViewById(R.id.webview);
+
+        // Android moderno (targetSdk 36): interceptar el gesto/acción atrás con AndroidX.
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (myWebView != null && myWebView.canGoBack()) {
+                    myWebView.goBack();
+                } else if (myWebView != null) {
+                    myWebView.loadUrl(HOME_URL);
+                }
+            }
+        });
         myWebView.getSettings().setJavaScriptEnabled(true);
         myWebView.getSettings().setDomStorageEnabled(true);
 
@@ -188,14 +201,4 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    // Volver en el historial del WebView sin cerrar nunca la actividad.
-    @Override
-    public void onBackPressed() {
-        if (myWebView.canGoBack()) {
-            myWebView.goBack();
-        } else {
-            // Si el historial está vacío, regresar a la página principal en vez de cerrar la app.
-            myWebView.loadUrl(HOME_URL);
-        }
-    }
 }
