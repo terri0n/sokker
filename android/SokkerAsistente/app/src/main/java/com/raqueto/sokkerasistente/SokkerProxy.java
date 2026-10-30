@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.util.Locale;
 import java.net.URISyntaxException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -58,6 +59,60 @@ final class SokkerProxy {
         }
 
         return "ilogin=" + query.get("ilogin") + "&ipassword=" + query.get("ipassword");
+    }
+
+    /**
+     * Solo permite caché HTTP para recursos estáticos públicos.
+     * Cualquier petición autenticada o con cookies queda fuera, igual que
+     * todas las rutas dinámicas/API y cualquier método distinto de GET.
+     */
+    static boolean isCacheableStaticGet(String method, String url, Map<String, String> requestHeaders) {
+        if (!"GET".equalsIgnoreCase(method) || !isSokkerUrl(url)
+                || hasRequestHeader(requestHeaders, "Cookie")
+                || hasRequestHeader(requestHeaders, "Authorization")
+                || hasRequestHeader(requestHeaders, "Proxy-Authorization")) {
+            return false;
+        }
+
+        URI uri = parseUri(url);
+        if (uri == null || uri.getPath() == null) {
+            return false;
+        }
+
+        String path = uri.getPath().toLowerCase(Locale.ROOT);
+        int lastSlash = path.lastIndexOf('/');
+        int lastDot = path.lastIndexOf('.');
+        if (lastDot <= lastSlash || lastDot == path.length() - 1) {
+            return false;
+        }
+
+        String extension = path.substring(lastDot + 1);
+        return "css".equals(extension)
+                || "js".equals(extension)
+                || "png".equals(extension)
+                || "jpg".equals(extension)
+                || "jpeg".equals(extension)
+                || "gif".equals(extension)
+                || "webp".equals(extension)
+                || "svg".equals(extension)
+                || "ico".equals(extension)
+                || "woff".equals(extension)
+                || "woff2".equals(extension)
+                || "ttf".equals(extension)
+                || "otf".equals(extension);
+    }
+
+    private static boolean hasRequestHeader(Map<String, String> headers, String name) {
+        if (headers == null) {
+            return false;
+        }
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            if (entry.getKey() != null && name.equalsIgnoreCase(entry.getKey())
+                    && entry.getValue() != null && !entry.getValue().trim().isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static boolean isCorsPreflight(String method, String url, Map<String, String> requestHeaders) {
