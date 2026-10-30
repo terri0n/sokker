@@ -4,6 +4,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.AlertDialog;
+import android.net.http.HttpResponseCache;
 import android.content.DialogInterface;
 import android.os.Build;
 import android.os.Bundle;
@@ -20,6 +21,8 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -33,10 +36,13 @@ public class MainActivity extends AppCompatActivity {
     private WebView myWebView;
     private OnBackInvokedCallback backCallback;
 
+    private static final long SOKKER_HTTP_CACHE_SIZE = 20L * 1024L * 1024L;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        installHttpResponseCache();
 
         myWebView = findViewById(R.id.webview);
 
@@ -159,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
                         conn.setRequestProperty(header.getKey(), header.getValue());
                     }
                     conn.setDoInput(true);
-                    conn.setUseCaches(false);
+                    conn.setUseCaches(SokkerProxy.isCacheableStaticGet(method, url, requestHeaders));
 
                     if (SokkerProxy.isLegacyXmlSessionLogin(method, url)) {
                         String body = SokkerProxy.buildLegacyLoginBody(url);
@@ -193,6 +199,29 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+
+
+    /**
+     * Instala una caché HTTP privada para las conexiones URLConnection del proxy.
+     * El tamaño es un límite de caché, no una política de caducidad: el servidor
+     * sigue decidiendo mediante Cache-Control, Expires, ETag y Last-Modified.
+     */
+    private void installHttpResponseCache() {
+        if (HttpResponseCache.getInstalled() != null) {
+            return;
+        }
+
+        try {
+            File cacheDirectory = new File(getCacheDir(), "sokker-http");
+            if (!cacheDirectory.exists() && !cacheDirectory.mkdirs()) {
+                Log.w("SokkerAsistente", "No se pudo crear el directorio de caché HTTP");
+                return;
+            }
+            HttpResponseCache.install(cacheDirectory, SOKKER_HTTP_CACHE_SIZE);
+        } catch (IOException e) {
+            Log.w("SokkerAsistente", "No se pudo instalar la caché HTTP", e);
+        }
+    }
 
     // Mismo mecanismo nativo que ChessGoal para Android 13+.
     private void registerBackHandler() {
