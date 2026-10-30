@@ -18,7 +18,7 @@ android {
 
     defaultConfig {
         applicationId "com.raqueto.sokkerasistente"
-        minSdk 21
+        minSdk 24
         targetSdk 36
         versionCode ciVersionCode ? ciVersionCode.toInteger() : 13
         versionName ciVersionName ? ciVersionName : "1.13"
