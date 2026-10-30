@@ -121,6 +121,43 @@ public class SokkerProxyTest {
     }
 
     @Test
+    public void onlyUnauthenticatedGetRequestsForStaticAssetsAreCacheable() {
+        assertTrue(SokkerProxy.isCacheableStaticGet(
+                "GET", "https://sokker.org/img/team/logo.png", null));
+        assertTrue(SokkerProxy.isCacheableStaticGet(
+                "GET", "https://sokker.org/css/main.css?v=12", new LinkedHashMap<>()));
+        assertTrue(SokkerProxy.isCacheableStaticGet(
+                "GET", "https://sokker.org/fonts/icons.woff2", null));
+
+        assertFalse(SokkerProxy.isCacheableStaticGet(
+                "POST", "https://sokker.org/img/team/logo.png", null));
+        assertFalse(SokkerProxy.isCacheableStaticGet(
+                "GET", "https://sokker.org/api/current", null));
+        assertFalse(SokkerProxy.isCacheableStaticGet(
+                "GET", "https://sokker.org/start.php?session=xml", null));
+        assertFalse(SokkerProxy.isCacheableStaticGet(
+                "GET", "https://sokker.org.evil.example/img/logo.png", null));
+    }
+
+    @Test
+    public void authenticatedStaticAssetRequestsAreNeverCacheable() {
+        Map<String, String> cookie = new LinkedHashMap<>();
+        cookie.put("cookie", "sid=secret");
+        assertFalse(SokkerProxy.isCacheableStaticGet(
+                "GET", "https://sokker.org/img/logo.png", cookie));
+
+        Map<String, String> authorization = new LinkedHashMap<>();
+        authorization.put("Authorization", "Bearer secret");
+        assertFalse(SokkerProxy.isCacheableStaticGet(
+                "GET", "https://sokker.org/img/logo.png", authorization));
+
+        Map<String, String> proxyAuthorization = new LinkedHashMap<>();
+        proxyAuthorization.put("Proxy-Authorization", "Basic secret");
+        assertFalse(SokkerProxy.isCacheableStaticGet(
+                "GET", "https://sokker.org/img/logo.png", proxyAuthorization));
+    }
+
+    @Test
     public void corsPreflightRequiresSokkerOptionsAndRequestedMethod() {
         Map<String, String> headers = new LinkedHashMap<>();
         headers.put("Origin", "https://raqueto.com");
