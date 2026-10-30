@@ -4,9 +4,12 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.AlertDialog;
+import android.net.http.HttpResponseCache;
 import android.content.DialogInterface;
 import android.os.Build;
 import android.os.Bundle;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 import android.util.Log;
 import android.view.View;
 import android.webkit.JsResult;
@@ -18,6 +21,8 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -29,13 +34,19 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
     private static final String HOME_URL = "https://raqueto.com/sokker/asistente";
     private WebView myWebView;
+    private OnBackInvokedCallback backCallback;
+
+    private static final long SOKKER_HTTP_CACHE_SIZE = 20L * 1024L * 1024L;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        installHttpResponseCache();
 
         myWebView = findViewById(R.id.webview);
+
+        registerBackHandler();
         myWebView.getSettings().setJavaScriptEnabled(true);
         myWebView.getSettings().setDomStorageEnabled(true);
 
@@ -154,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
                         conn.setRequestProperty(header.getKey(), header.getValue());
                     }
                     conn.setDoInput(true);
-                    conn.setUseCaches(false);
+                    conn.setUseCaches(SokkerProxy.isCacheableStaticGet(method, url, requestHeaders));
 
                     if (SokkerProxy.isLegacyXmlSessionLogin(method, url)) {
                         String body = SokkerProxy.buildLegacyLoginBody(url);
@@ -188,14 +199,59 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    // Volver en el historial del WebView sin cerrar nunca la actividad.
-    @Override
-    public void onBackPressed() {
-        if (myWebView.canGoBack()) {
+
+
+    /**
+     * Instala una caché HTTP privada para las conexiones URLConnection del proxy.
+     * El tamaño es un límite de caché, no una política de caducidad: el servidor
+     * sigue decidiendo mediante Cache-Control, Expires, ETag y Last-Modified.
+     */
+    private void installHttpResponseCache() {
+        if (HttpResponseCache.getInstalled() != null) {
+            return;
+        }
+
+        try {
+            File cacheDirectory = new File(getCacheDir(), "sokker-http");
+            if (!cacheDirectory.exists() && !cacheDirectory.mkdirs()) {
+                Log.w("SokkerAsistente", "No se pudo crear el directorio de caché HTTP");
+                return;
+            }
+            HttpResponseCache.install(cacheDirectory, SOKKER_HTTP_CACHE_SIZE);
+        } catch (IOException e) {
+            Log.w("SokkerAsistente", "No se pudo instalar la caché HTTP", e);
+        }
+    }
+
+    // Mismo mecanismo nativo que ChessGoal para Android 13+.
+    private void registerBackHandler() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            backCallback = this::handleBackNavigation;
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                    OnBackInvokedDispatcher.PRIORITY_DEFAULT, backCallback);
+        }
+    }
+
+    private void handleBackNavigation() {
+        if (myWebView != null && myWebView.canGoBack()) {
             myWebView.goBack();
-        } else {
-            // Si el historial está vacío, regresar a la página principal en vez de cerrar la app.
+        } else if (myWebView != null) {
             myWebView.loadUrl(HOME_URL);
         }
     }
+
+    @Override
+    public void onBackPressed() {
+        // Fallback para versiones de Android anteriores a API 33.
+        handleBackNavigation();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && backCallback != null) {
+            getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backCallback);
+        }
+        super.onDestroy();
+    }
+
 }
