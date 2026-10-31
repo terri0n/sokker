@@ -914,10 +914,13 @@
 			var $button = $('#save-tactic');
 			$button.prop('disabled', true);
 			$.ajax({
-				url: '/api/tactic/' + encodeURIComponent(tacticId),
+				url: 'https://sokker.org/api/tactic/' + encodeURIComponent(tacticId),
 				type: 'PUT',
 				contentType: 'application/json; charset=utf-8',
 				dataType: 'json',
+				xhrFields: {
+					withCredentials: true
+				},
 				data: JSON.stringify({
 					name: tacticName,
 					config: config
