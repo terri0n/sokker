@@ -14,11 +14,9 @@
  	<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
 	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7610610063984650" crossorigin="anonymous"></script>
 	<style>
-		/* AdSense: oculta el anclaje automático en escritorio, sin afectar a los bloques manuales. */
-		@media screen and (min-width: 801px) {
-			.adsbygoogle-noablate {
-				display: none !important;
-			}
+		/* Oculta las anclas automáticas en todos los tamaños; conserva los anuncios manuales. */
+		.adsbygoogle-noablate {
+			display: none !important;
 		}
 	</style>
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">

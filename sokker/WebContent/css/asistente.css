@@ -544,3 +544,9 @@ ins.adsbygoogle iframe {
 		display: none;
 	}
 }
+
+
+/* Oculta los anuncios ancla automáticos de AdSense; los bloques manuales siguen visibles. */
+.adsbygoogle-noablate {
+	display: none !important;
+}
