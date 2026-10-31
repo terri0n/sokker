@@ -295,25 +295,25 @@
 				</div>
 				<br /><br />
 
-<form method="get" action="https://sokker.org/tactedit.php">
+<div id="tactic-editor">
 				<div class="tactics">
 					<c:forEach items="${tacticas}" varStatus="s" var="t">
 						<c:if test="${not empty t[1]}">
 							<label for="tact_${s.count}">
-								<input type="radio" id="tact_${s.count}" name="id" onclick="tactic_click($(this))" value="${t[0]}" data-tact="${t[2]}" />${t[1]}
+								<input type="radio" id="tact_${s.count}" name="id" onclick="tactic_click($(this))" value="${t[0]}" data-tact="${t[2]}" data-name="<c:out value='${t[1]}' />" />${t[1]}
 							</label>
 						</c:if>
 						<br />
 					</c:forEach>
 					<label for="manual">
-						<input type="radio" name="id" id="manual" checked onclick="$(this).attr('data-tact').val($('#tact').val());" />
-						<input type="text" size="4" placeholder="TactID" onclick="$('#manual').prop('checked', true);" onchange="$('#manual').val($(this).val())" />
+						<input type="radio" name="id" id="manual" value="" checked />
+						<input type="text" id="manual_tactic_id" size="4" placeholder="TactID" onclick="$('#manual').prop('checked', true);" oninput="$('#manual').val($(this).val())" />
 					</label>
 					<button title="Open" onclick="open_click(); return false;"><span class="material-icons">folder_open</span></button>
 				</div>
 				
 				<br />					
-				<button title="Save" type="submit"><span class="material-icons">save</span> Save</button>
+				<button title="Save" type="button" id="save-tactic" onclick="save_tactic();"><span class="material-icons">save</span> Save</button>
 			</div>		
 			
 			<div style="display: inline-block;">
@@ -336,8 +336,7 @@
 					</div>
 				</div>
 
-				<div>
-					<input type="hidden" name="save" value="1" />
+				<div>
 					<button title="Mirror" onclick="mirror_click(); return false;"><span class="material-icons md-24" >flip</span></button>
 					<button title="Swap" onclick="swap_click(); return false;"><span class="material-icons md-24">flip_camera_android</span></button>
 					<button title="Mix" onclick="mix_click($(this), event); return false;"><span class="material-icons md-24">shuffle</span></button>
@@ -888,6 +887,60 @@
 			} else {
 			    alert('No players copied');
 			}
+		}
+
+		function save_tactic() {
+			var $selected = $('input[name="id"]:checked');
+			var tacticId = ($selected.val() || '').trim();
+			var config = $('#tact').val().trim();
+			var tacticName = ($selected.attr('data-name') || '').trim();
+
+			if (!/^[0-9]+$/.test(tacticId)) {
+				alert('Select a valid tactic first');
+				return;
+			}
+			if (!config) {
+				alert('There is no tactic to save');
+				return;
+			}
+			if (!tacticName) {
+				tacticName = prompt('Tactic name');
+				if (tacticName === null || !tacticName.trim()) {
+					return;
+				}
+				tacticName = tacticName.trim();
+			}
+
+			var $button = $('#save-tactic');
+			$button.prop('disabled', true);
+			$.ajax({
+				url: 'https://sokker.org/api/tactic/' + encodeURIComponent(tacticId),
+				type: 'PUT',
+				contentType: 'application/json; charset=utf-8',
+				dataType: 'json',
+				xhrFields: {
+					withCredentials: true
+				},
+				data: JSON.stringify({
+					name: tacticName,
+					config: config
+				}),
+				timeout: 15000
+			}).done(function() {
+				alert('Tactic saved successfully');
+			}).fail(function(xhr, textStatus) {
+				var message = 'Unable to save the tactic';
+				if (xhr && xhr.status) {
+					message += ' (HTTP ' + xhr.status + ')';
+				} else if (textStatus === 'timeout') {
+					message += ': request timed out';
+				} else {
+					message += ': check your Sokker session';
+				}
+				alert(message);
+			}).always(function() {
+				$button.prop('disabled', false);
+			});
 		}
 
 		function form_submit() {
