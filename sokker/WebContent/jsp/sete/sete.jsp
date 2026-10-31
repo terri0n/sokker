@@ -914,18 +914,15 @@
 			var $button = $('#save-tactic');
 			$button.prop('disabled', true);
 			$.ajax({
-				url: 'https://sokker.org/api/tactic/' + encodeURIComponent(tacticId),
-				type: 'PUT',
-				contentType: 'application/json; charset=utf-8',
+				url: '${pageContext.request.contextPath}/sete/save-tactic',
+				type: 'POST',
 				dataType: 'json',
-				xhrFields: {
-					withCredentials: true
-				},
-				data: JSON.stringify({
+				data: {
+					id: tacticId,
 					name: tacticName,
 					config: config
-				}),
-				timeout: 15000
+				},
+				timeout: 20000
 			}).done(function() {
 				alert('Tactic saved successfully');
 			}).fail(function(xhr, textStatus) {
