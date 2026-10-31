@@ -70,7 +70,7 @@
 	<meta property="og:url" content="https://raqueto.com${pageContext.request.contextPath}/asistente">
 	<link rel="icon" href="favicon.ico" type="image/x-icon" />
 	<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/desplegable.css">
-	<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/asistente.css?4">
+	<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/asistente.css?10">
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<meta http-equiv=”Content-Language” content=”${sessionScope['javax.servlet.jsp.jstl.fmt.locale.session'].language}”/>
 	<title><fmt:message key="common.sokker_asistente" /> - NTDB interface</title>
