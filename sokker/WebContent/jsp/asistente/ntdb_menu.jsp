@@ -67,7 +67,7 @@
 	<script type="text/javascript" src="${pageContext.request.contextPath}/js/util.js"></script>
 	<link rel="icon" href="favicon.ico" type="image/x-icon" />
 	<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/desplegable.css">
-	<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/asistente.css?4">
+	<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/asistente.css?10">
 	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7610610063984650" crossorigin="anonymous"></script>
 
 	<meta http-equiv="Content-Type" content="text/html; UTF-8">
