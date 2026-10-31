@@ -81,6 +81,7 @@ public class SETE extends HttpServlet {
 						}
 						
 						request.getSession().setAttribute("login", ilogin);
+						request.getSession().setAttribute("seteCookieManager", navegador.getCookieManager());
 					}
 				};
 
