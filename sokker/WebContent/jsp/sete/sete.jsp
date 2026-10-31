@@ -914,16 +914,14 @@
 			var $button = $('#save-tactic');
 			$button.prop('disabled', true);
 			$.ajax({
-				url: 'https://sokker.org/api/tactic/' + encodeURIComponent(tacticId),
+				url: '/api/tactic/' + encodeURIComponent(tacticId),
 				type: 'PUT',
 				contentType: 'application/json; charset=utf-8',
+				dataType: 'json',
 				data: JSON.stringify({
 					name: tacticName,
 					config: config
 				}),
-				xhrFields: {
-					withCredentials: true
-				},
 				timeout: 15000
 			}).done(function() {
 				alert('Tactic saved successfully');
@@ -934,7 +932,7 @@
 				} else if (textStatus === 'timeout') {
 					message += ': request timed out';
 				} else {
-					message += ': check your Sokker login and CORS extension';
+					message += ': check your Sokker session';
 				}
 				alert(message);
 			}).always(function() {
