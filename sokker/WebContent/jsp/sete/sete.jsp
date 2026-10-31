@@ -306,7 +306,7 @@
 						<br />
 					</c:forEach>
 					<label for="manual">
-						<input type="radio" name="id" id="manual" checked onclick="$(this).attr('data-tact').val($('#tact').val());" />
+						<input type="radio" name="id" id="manual" value="" checked />
 						<input type="text" id="manual_tactic_id" size="4" placeholder="TactID" onclick="$('#manual').prop('checked', true);" oninput="$('#manual').val($(this).val())" />
 					</label>
 					<button title="Open" onclick="open_click(); return false;"><span class="material-icons">folder_open</span></button>
