@@ -31,10 +31,11 @@ public final class SokkerClientIdentificationHarness {
         requireUtilAndSokkerPost("sokker/WebContent/jsp/sete/sete.jsp", "SETE");
         String setePage = read(Paths.get("sokker/WebContent/jsp/sete/sete.jsp"));
         require(setePage, "type: 'PUT'", "SETE tactic saving must use HTTP PUT");
-        require(setePage, "https://sokker.org/api/tactic/", "SETE tactic saving must use the JSON API");
+        require(setePage, "/api/tactic/", "SETE tactic saving must use the JSON API");
         require(setePage, "name: tacticName", "SETE must send the tactic name");
         require(setePage, "config: config", "SETE must send the tactic configuration");
-        require(setePage, "withCredentials: true", "SETE must send the authenticated Sokker session");
+        forbid(setePage, "withCredentials", "SETE must use its existing same-origin browser session");
+        forbid(setePage, "CORS extension", "SETE saving must not depend on a CORS extension");
         forbid(setePage, "tactedit.php", "SETE must not use the retired PHP tactic-save endpoint");
         requireUtilOnly("sokker/WebContent/jsp/sete/oldsete.jsp", "legacy SETE");
 
