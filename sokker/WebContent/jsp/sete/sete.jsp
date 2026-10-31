@@ -138,6 +138,11 @@
 			font-weight: bolder;
 		}
 		
+		#tactic-editor {
+			display: inline-block;
+			vertical-align: top;
+		}
+
 		.tactics {
 			height: 446px;
 			overflow-y: scroll;
