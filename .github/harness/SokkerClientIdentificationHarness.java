@@ -30,13 +30,20 @@ public final class SokkerClientIdentificationHarness {
         requireUtilOnly("sokker/WebContent/jsp/asistente/ntdb_menu.jsp", "assistant NTDB menu");
         requireUtilAndSokkerPost("sokker/WebContent/jsp/sete/sete.jsp", "SETE");
         String setePage = read(Paths.get("sokker/WebContent/jsp/sete/sete.jsp"));
-        require(setePage, "type: 'PUT'", "SETE tactic saving must use HTTP PUT");
-        require(setePage, "https://sokker.org/api/tactic/", "SETE tactic saving must use the Sokker JSON API");
-        require(setePage, "name: tacticName", "SETE must send the tactic name");
-        require(setePage, "config: config", "SETE must send the tactic configuration");
-        require(setePage, "withCredentials: true", "SETE must send the existing authenticated browser session");
-        forbid(setePage, "CORS extension", "SETE saving must not depend on a CORS extension");
+        require(setePage, "/sete/save-tactic", "SETE tactic saving must use its same-origin server endpoint");
+        require(setePage, "type: 'POST'", "SETE browser must POST tactic data to its own server");
+        forbid(setePage, "https://sokker.org/api/tactic/", "SETE browser must not call Sokker's API cross-origin");
+        forbid(setePage, "withCredentials: true", "SETE browser save must not depend on cross-origin cookies");
         forbid(setePage, "tactedit.php", "SETE must not use the retired PHP tactic-save endpoint");
+
+        String saveServlet = read(Paths.get("sokker/src/com/formulamanager/sokker/acciones/sete/SaveTactic.java"));
+        require(saveServlet, "HttpMethod.PUT", "SETE server endpoint must use PUT to Sokker");
+        require(saveServlet, "/api/tactic/", "SETE server endpoint must call the Sokker JSON API");
+        require(saveServlet, "\"name\":\"", "SETE server endpoint must send the tactic name as JSON");
+        require(saveServlet, "\"config\":\"", "SETE server endpoint must send the tactic config as JSON");
+        require(saveServlet, "seteCookieManager", "SETE server endpoint must reuse the authenticated Sokker session");
+        require(read(Paths.get("sokker/src/com/formulamanager/sokker/acciones/sete/SETE.java")),
+                "seteCookieManager", "SETE login must retain its Sokker session cookies for saving");
         requireUtilOnly("sokker/WebContent/jsp/sete/oldsete.jsp", "legacy SETE");
 
         // Automatic update is retired; its UI markup must not reappear.
