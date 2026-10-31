@@ -895,7 +895,7 @@
 			var config = $('#tact').val().trim();
 			var tacticName = ($selected.attr('data-name') || '').trim();
 
-			if (!/^\\d+$/.test(tacticId)) {
+			if (!/^[0-9]+$/.test(tacticId)) {
 				alert('Select a valid tactic first');
 				return;
 			}
