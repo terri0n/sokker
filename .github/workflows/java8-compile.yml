@@ -6,6 +6,11 @@ on:
       - main
       - 'fix/**'
       - 'feature/**'
+  pull_request:
+    branches:
+      - main
+      - 'fix/**'
+      - 'feature/**'
   workflow_dispatch:
 
 jobs:
