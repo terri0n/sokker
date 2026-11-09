@@ -83,7 +83,9 @@ jobs:
             -uriroot sokker/WebContent \
             -d /tmp/sokker-jsp-classes \
             -compile \
-            -jspFiles /WEB-INF/jsp/asistente/entrenamiento.jsp,/jsp/asistente/asistente.jsp
+            -failOnError \
+            /WEB-INF/jsp/asistente/entrenamiento.jsp \
+            /jsp/asistente/asistente.jsp
 
       - name: Verify compatibility harnesses
         shell: bash
