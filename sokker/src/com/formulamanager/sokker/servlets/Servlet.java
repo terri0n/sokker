@@ -118,6 +118,47 @@ public class Servlet extends SERVLET_ASISTENTE {
 		return jugadores.size() + "";
 	}
 	
+	/**
+	 * Devuelve bajo demanda el historial de entrenamiento de un único jugador.
+	 * El PID se resuelve exclusivamente dentro del fichero del equipo de la sesión.
+	 */
+	public String entrenamiento(HttpServletRequest request, HttpServletResponse response, Usuario usuario) {
+		response.setContentType("text/html;charset=UTF-8");
+		int pid;
+		try {
+			pid = Integer.parseInt(request.getParameter("pid"));
+		} catch (Exception e) {
+			try { response.sendError(HttpServletResponse.SC_BAD_REQUEST); } catch (IOException ignorado) {}
+			return null;
+		}
+
+		if (usuario.getDef_tid() <= NtdbBO.MAX_ID_SELECCION) {
+			try { response.sendError(HttpServletResponse.SC_FORBIDDEN); } catch (IOException ignorado) {}
+			return null;
+		}
+
+		boolean historico = Util.getInt(request.getSession(), "historico") > 0;
+		try {
+			Jugador jugador = AsistenteBO.leer_jugador(usuario.getDef_tid(), usuario.getDef_equipo(), historico, usuario, pid);
+			if (jugador == null) {
+				response.sendError(HttpServletResponse.SC_NOT_FOUND);
+				return null;
+			}
+			jugador.calcular_entrenamiento2();
+			jugador.calcular_talento2();
+			request.setAttribute("j", jugador);
+			request.getRequestDispatcher("/WEB-INF/jsp/asistente/entrenamiento.jsp").include(request, response);
+		} catch (ServletException | IOException | RuntimeException e) {
+			e.printStackTrace();
+			try {
+				if (!response.isCommitted()) {
+					response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				}
+			} catch (IOException ignorado) {}
+		}
+		return null;
+	}
+
 	public String datos_grafica(HttpServletRequest request, HttpServletResponse response, Usuario usuario) {
 		response.setContentType("application/json;charset=UTF-8");
 

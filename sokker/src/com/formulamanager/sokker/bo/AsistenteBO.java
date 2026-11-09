@@ -152,6 +152,39 @@ public class AsistenteBO extends JugadorBO {
 		return jugadores;
 	}
 
+	/**
+	 * Lee únicamente el registro de un jugador del fichero del equipo.
+	 * No reconstruye el resto de jugadores ni modifica el fichero properties.
+	 */
+	public static Jugador leer_jugador(Integer tid, String equipo, boolean historico, Usuario usuario, Integer pid) throws IOException {
+		String ruta = SystemUtil.getVar(SystemUtil.PATH) + tid + (historico ? "_historico" : "") + ".properties";
+		File file = new File(ruta);
+		if (!file.isFile()) {
+			return null;
+		}
+
+		Properties prop = new Properties();
+		try (InputStream input = new FileInputStream(file)) {
+			// Mantiene la misma semántica de Properties.load que la lectura completa.
+			prop.load(input);
+		}
+
+		String clave = String.valueOf(pid);
+		if (!PlayerPropertiesCompat.isManagedPlayerKey(clave)) {
+			return null;
+		}
+		String linea = prop.getProperty(clave);
+		if (linea == null) {
+			return null;
+		}
+
+		Jugador jugador = new Jugador(pid, Arrays.asList(linea.split(",")), true, null, null, usuario, null, null);
+		if (equipo != null) {
+			jugador.setEquipo(equipo);
+		}
+		return jugador;
+	}
+
 	public static boolean existe_jugador(Integer pid, WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 		XmlPage pagina = navegador.getPage(AsistenteBO.SOKKER_URL + "/xml/player-" + pid + ".xml");
 	
