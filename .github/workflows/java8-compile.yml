@@ -83,7 +83,8 @@ jobs:
             -uriroot sokker/WebContent \
             -d /tmp/sokker-jsp-classes \
             -compile \
-            -failOnError \
+            -failFast \
+            -die1 \
             /WEB-INF/jsp/asistente/entrenamiento.jsp \
             /jsp/asistente/asistente.jsp
 
