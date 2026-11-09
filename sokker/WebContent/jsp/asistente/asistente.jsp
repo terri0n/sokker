@@ -225,6 +225,12 @@
 						if ($('#span' + pid).html() == '▼') {
 							$('#span' + pid).html('▶');
 						}
+						// No abandonar el modo entrenamiento si hay otro jugador desplegado o cargándose.
+						if ($('tbody[id^=tbody]:visible').length == 0 && $('span[id^=span]').filter(function() {
+							return $(this).html() == '▼';
+						}).length == 0) {
+							desplegar_menu_click();
+						}
 					}).always(function() {
 						tbody.removeData('loading');
 					});
