@@ -165,6 +165,7 @@ public class AsistenteBO extends JugadorBO {
 
 		Properties prop = new Properties();
 		try (InputStream input = new FileInputStream(file)) {
+			// Mantiene la misma semántica de Properties.load que la lectura completa.
 			prop.load(input);
 		}
 
