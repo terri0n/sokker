@@ -194,7 +194,7 @@ public class UsuarioBO {
 	 * Carga la relación de scouts de un usuario. Es independiente de la lectura
 	 * de sus datos básicos para poder diferir este trabajo hasta que sea necesario.
 	 */
-	public static void cargar_scouts(Usuario usuario) {
+	public static void cargar_scouts(Usuario usuario) throws IOException {
 		if (usuario == null || usuario.isScouts_cargados()) {
 			return;
 		}
