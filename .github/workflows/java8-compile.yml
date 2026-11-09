@@ -77,12 +77,13 @@ jobs:
             </dependencies>
           </project>
           POM
-          mvn -q -f /tmp/jasper-pom.xml dependency:build-classpath -Dmdep.outputFile=/tmp/jasper-classpath.txt
-          test -n "$(cat /tmp/jasper-classpath.txt)"
-          grep -q "tomcat-jasper" /tmp/jasper-classpath.txt
+          mvn -q -f /tmp/jasper-pom.xml dependency:copy-dependencies -DoutputDirectory=/tmp/jasper-libs
+          JASPER_JAR="$(find /tmp/jasper-libs -name 'tomcat-jasper-*.jar' -print -quit)"
+          test -n "$JASPER_JAR"
+          jar tf "$JASPER_JAR" | grep -Fxq 'org/apache/jasper/JspC.class'
           SERVLET="$HOME/.m2/repository/javax/servlet/javax.servlet-api/4.0.1/javax.servlet-api-4.0.1.jar"
           JSP="$HOME/.m2/repository/javax/servlet/jsp/javax.servlet.jsp-api/2.3.3/javax.servlet.jsp-api-2.3.3.jar"
-          CP="sokker/WebContent/WEB-INF/lib/*:/tmp/sokker-classes:${SERVLET}:${JSP}:$(cat /tmp/jasper-classpath.txt)"
+          CP="sokker/WebContent/WEB-INF/lib/*:/tmp/sokker-classes:${SERVLET}:${JSP}:/tmp/jasper-libs/*"
           mkdir -p /tmp/sokker-jsp-classes
           java -cp "$CP" org.apache.jasper.JspC \
             -uriroot sokker/WebContent \
