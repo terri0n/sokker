@@ -58,6 +58,36 @@ jobs:
           CP="sokker/WebContent/WEB-INF/lib/*:${MAVEN_CP}:${SERVLET}:${JSP}"
           find /tmp/sokker-src -name '*.java' -print0 | xargs -0 javac -source 8 -target 8 -encoding UTF-8 -cp "$CP" -d /tmp/sokker-classes
 
+      - name: Compile affected JSPs with Tomcat Jasper
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/jasper-pom.xml <<'POM'
+          <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+            <modelVersion>4.0.0</modelVersion>
+            <groupId>validation</groupId>
+            <artifactId>jsp-validation</artifactId>
+            <version>1.0</version>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-jasper</artifactId>
+                <version>9.0.98</version>
+              </dependency>
+            </dependencies>
+          </project>
+          POM
+          mvn -q -f /tmp/jasper-pom.xml dependency:build-classpath -Dmdep.outputFile=/tmp/jasper-classpath.txt
+          SERVLET="$HOME/.m2/repository/javax/servlet/javax.servlet-api/4.0.1/javax.servlet-api-4.0.1.jar"
+          JSP="$HOME/.m2/repository/javax/servlet/jsp/javax.servlet.jsp-api/2.3.3/javax.servlet.jsp-api-2.3.3.jar"
+          CP="sokker/WebContent/WEB-INF/lib/*:/tmp/sokker-classes:${SERVLET}:${JSP}:$(cat /tmp/jasper-classpath.txt)"
+          mkdir -p /tmp/sokker-jsp-classes
+          java -cp "$CP" org.apache.jasper.JspC \
+            -uriroot sokker/WebContent \
+            -d /tmp/sokker-jsp-classes \
+            -compile \
+            -jspFiles /WEB-INF/jsp/asistente/entrenamiento.jsp,/jsp/asistente/asistente.jsp
+
       - name: Verify compatibility harnesses
         shell: bash
         run: |
