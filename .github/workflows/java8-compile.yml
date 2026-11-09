@@ -6,6 +6,7 @@ on:
       - main
       - 'fix/**'
       - 'feature/**'
+      - 'perf/**'
   workflow_dispatch:
 
 jobs:
