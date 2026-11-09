@@ -148,7 +148,7 @@ public class Servlet extends SERVLET_ASISTENTE {
 			jugador.calcular_talento2();
 			request.setAttribute("j", jugador);
 			request.getRequestDispatcher("/WEB-INF/jsp/asistente/entrenamiento.jsp").include(request, response);
-		} catch (IOException e) {
+		} catch (ServletException | IOException e) {
 			try { response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); } catch (IOException ignorado) {}
 		}
 		return null;
