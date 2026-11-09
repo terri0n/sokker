@@ -913,19 +913,50 @@ if (nuevo.getLesion() > 0) {
 	 * @param usuario
 	 * @param *jornada_actual
 	 */
-	public static void setActualizado(HttpServletRequest request, Usuario usuario, Integer jornada_actual) {
-		try {
-			Integer[] jornada = { jornada_actual };
-			if (jornada[0] == null) {
-				new Navegador(true, request) {
-					@Override
-					protected void execute(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException {
-						jornada[0] = obtener_jornada(navegador);
-					}
-				};
+	private static final long CACHE_JORNADA_ACTUAL_MS = 5L * 60L * 1000L;
+	private static volatile Integer jornada_actual_cache;
+	private static volatile long jornada_actual_cache_timestamp;
+
+	private static Integer obtener_jornada_actual_cacheada(HttpServletRequest request) throws Exception {
+		long ahora = System.currentTimeMillis();
+		Integer jornada = jornada_actual_cache;
+		if (jornada != null && ahora - jornada_actual_cache_timestamp < CACHE_JORNADA_ACTUAL_MS) {
+			return jornada;
+		}
+
+		// Evita que varias peticiones simultáneas abran sesiones Sokker para consultar la misma jornada.
+		synchronized (AsistenteBO.class) {
+			ahora = System.currentTimeMillis();
+			jornada = jornada_actual_cache;
+			if (jornada != null && ahora - jornada_actual_cache_timestamp < CACHE_JORNADA_ACTUAL_MS) {
+				return jornada;
 			}
 
-			request.setAttribute("actualizado", jornada[0].equals(usuario.getDef_jornada()));
+			final Integer[] jornada_obtenida = { null };
+			// La autenticación JSON y la autenticación XML son independientes.
+			new Navegador(true, request) {
+				@Override
+				protected void execute(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException {
+					jornada_obtenida[0] = obtener_jornada(navegador);
+				}
+			};
+
+			if (jornada_obtenida[0] != null) {
+				jornada_actual_cache = jornada_obtenida[0];
+				jornada_actual_cache_timestamp = System.currentTimeMillis();
+			}
+			return jornada_obtenida[0];
+		}
+	}
+
+	public static void setActualizado(HttpServletRequest request, Usuario usuario, Integer jornada_actual) {
+		try {
+			if (jornada_actual == null) {
+				jornada_actual = obtener_jornada_actual_cacheada(request);
+			}
+			if (jornada_actual != null) {
+				request.setAttribute("actualizado", jornada_actual.equals(usuario.getDef_jornada()));
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
