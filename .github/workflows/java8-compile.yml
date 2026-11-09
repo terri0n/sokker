@@ -88,6 +88,37 @@ jobs:
             /WEB-INF/jsp/asistente/entrenamiento.jsp \
             /jsp/asistente/asistente.jsp
 
+      - name: Assemble and verify WAR
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/sokker-war
+          mkdir -p /tmp/sokker-war/WEB-INF/classes
+          cp -a sokker/WebContent/. /tmp/sokker-war/
+          cp -a /tmp/sokker-classes/. /tmp/sokker-war/WEB-INF/classes/
+          test -f /tmp/sokker-war/WEB-INF/web.xml
+          test -f /tmp/sokker-war/WEB-INF/classes/com/formulamanager/sokker/bo/AsistenteBO.class
+          test -f /tmp/sokker-war/WEB-INF/classes/com/formulamanager/sokker/acciones/asistente/Cambiar_color.class
+          test -d /tmp/sokker-war/WEB-INF/lib
+          test "$(find /tmp/sokker-war/WEB-INF/lib -type f -name '*.jar' | wc -l)" -gt 0
+          jar cf /tmp/sokker.war -C /tmp/sokker-war .
+          jar tf /tmp/sokker.war > /tmp/sokker-war-entries.txt
+          grep -Fxq 'WEB-INF/web.xml' /tmp/sokker-war-entries.txt
+          grep -Fxq 'WEB-INF/classes/com/formulamanager/sokker/bo/AsistenteBO.class' /tmp/sokker-war-entries.txt
+          grep -Fxq 'WEB-INF/classes/com/formulamanager/sokker/acciones/asistente/Cambiar_color.class' /tmp/sokker-war-entries.txt
+          test -s /tmp/sokker.war
+
+      - name: Verify team ID classification uses shared threshold
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'public static int MAX_ID_SELECCION = 800;' sokker/src/com/formulamanager/sokker/bo/NtdbBO.java
+          if grep -R -nE '(tid|def_tid|getDef_tid\(\))[[:space:]]*[<>][[:space:]]*1000' sokker/src sokker/WebContent; then
+            echo 'Found hardcoded 1000 team-ID classification threshold' >&2
+            exit 1
+          fi
+
+
       - name: Verify compatibility harnesses
         shell: bash
         run: |
@@ -149,32 +180,3 @@ jobs:
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" ColorAssignmentHarness
           timeout 5s java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" ServletContextLifecycleHarness
 
-      - name: Verify team ID classification uses shared threshold
-        shell: bash
-        run: |
-          set -euo pipefail
-          grep -Fq 'public static int MAX_ID_SELECCION = 800;' sokker/src/com/formulamanager/sokker/bo/NtdbBO.java
-          if grep -R -nE '(tid|def_tid|getDef_tid\(\))[[:space:]]*[<>][[:space:]]*1000' sokker/src sokker/WebContent; then
-            echo 'Found hardcoded 1000 team-ID classification threshold' >&2
-            exit 1
-          fi
-
-      - name: Assemble and verify WAR
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf /tmp/sokker-war
-          mkdir -p /tmp/sokker-war/WEB-INF/classes
-          cp -a sokker/WebContent/. /tmp/sokker-war/
-          cp -a /tmp/sokker-classes/. /tmp/sokker-war/WEB-INF/classes/
-          test -f /tmp/sokker-war/WEB-INF/web.xml
-          test -f /tmp/sokker-war/WEB-INF/classes/com/formulamanager/sokker/bo/AsistenteBO.class
-          test -f /tmp/sokker-war/WEB-INF/classes/com/formulamanager/sokker/acciones/asistente/Cambiar_color.class
-          test -d /tmp/sokker-war/WEB-INF/lib
-          test "$(find /tmp/sokker-war/WEB-INF/lib -type f -name '*.jar' | wc -l)" -gt 0
-          jar cf /tmp/sokker.war -C /tmp/sokker-war .
-          jar tf /tmp/sokker.war > /tmp/sokker-war-entries.txt
-          grep -Fxq 'WEB-INF/web.xml' /tmp/sokker-war-entries.txt
-          grep -Fxq 'WEB-INF/classes/com/formulamanager/sokker/bo/AsistenteBO.class' /tmp/sokker-war-entries.txt
-          grep -Fxq 'WEB-INF/classes/com/formulamanager/sokker/acciones/asistente/Cambiar_color.class' /tmp/sokker-war-entries.txt
-          test -s /tmp/sokker.war
