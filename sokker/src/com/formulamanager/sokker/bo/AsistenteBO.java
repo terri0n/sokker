@@ -933,8 +933,8 @@ if (nuevo.getLesion() > 0) {
 			}
 
 			final Integer[] jornada_obtenida = { null };
-			// Solo se consulta /api/current; no hace falta abrir una sesión XML.
-			new Navegador(false, request) {
+			// La autenticación JSON y la autenticación XML son independientes.
+			new Navegador(true, request) {
 				@Override
 				protected void execute(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException {
 					jornada_obtenida[0] = obtener_jornada(navegador);
