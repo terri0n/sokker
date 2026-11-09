@@ -276,7 +276,7 @@
 				<div style="display: inline-block; color: white; margin: 2px;" title="<%= HttpSessionListener.getActiveSessions() %> <fmt:message key="login.connected" />">
 					<span class="material-icons md-48">groups</span>
 					<div class="peque" style="margin-top: -6px;">
-						<%= UsuarioBO.obtener_usuarios().length %> <fmt:message key="login.users" />
+						<%= UsuarioBO.contar_usuarios() %> <fmt:message key="login.users" />
 					</div>
 				</div>
 				

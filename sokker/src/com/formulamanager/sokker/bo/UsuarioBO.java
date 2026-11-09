@@ -15,6 +15,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import com.formulamanager.sokker.auxiliares.SERVLET_ASISTENTE;
 import com.formulamanager.sokker.auxiliares.SystemUtil;
@@ -326,6 +330,28 @@ public class UsuarioBO {
 		} catch (Exception e) {
 			return new String[] {"Error reading users"};
 		}
+	}
+
+	/**
+	 * Cuenta los ficheros de usuario sin crear un array con todos sus nombres
+	 * ni cargar/deserializar sus propiedades. Se conserva el criterio de
+	 * {@link #obtener_usuarios()}: los nombres de usuario comienzan por "_".
+	 */
+	public static int contar_usuarios() {
+		int total = 0;
+		Path directorio = Paths.get(SystemUtil.getVar("path"));
+
+		try (DirectoryStream<Path> archivos = Files.newDirectoryStream(directorio)) {
+			for (Path archivo : archivos) {
+				if (archivo.getFileName().toString().startsWith("_") && Files.isRegularFile(archivo)) {
+					total++;
+				}
+			}
+		} catch (IOException e) {
+			return 0;
+		}
+
+		return total;
 	}
 	
 	public static String[] obtener_ultimos_usuarios(int dias) {
