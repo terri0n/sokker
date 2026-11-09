@@ -64,7 +64,7 @@ public class CambiarEquipo extends SERVLET_ASISTENTE {
 				}
 			} else {
 				// Cambiar entre equipo y NT scout; cargar la relación solo si se utiliza.
-				if (usuario.getScout_de().isEmpty()) {
+				if (!usuario.isScouts_cargados()) {
 					UsuarioBO.cargar_scouts(usuario);
 				}
 				Usuario nt_coach = usuario.getScout_de().get(coach);
