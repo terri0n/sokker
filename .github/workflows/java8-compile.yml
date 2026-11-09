@@ -66,10 +66,12 @@ jobs:
           curl -fsSL "https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz" -o /tmp/tomcat.tar.gz
           tar -xzf /tmp/tomcat.tar.gz -C /tmp
           mvn -q dependency:get -Dartifact=org.apache.ant:ant:1.10.14
-          TOMCAT_LIB="/tmp/apache-tomcat-${TOMCAT_VERSION}/lib"
+          TOMCAT_HOME="/tmp/apache-tomcat-${TOMCAT_VERSION}"
+          TOMCAT_LIB="${TOMCAT_HOME}/lib"
           ANT="$HOME/.m2/repository/org/apache/ant/ant/1.10.14/ant-1.10.14.jar"
-          CP="sokker/WebContent/WEB-INF/lib/*:/tmp/sokker-classes:${TOMCAT_LIB}/*:${ANT}"
+          CP="sokker/WebContent/WEB-INF/lib/*:/tmp/sokker-classes:${TOMCAT_LIB}/*:${TOMCAT_HOME}/bin/tomcat-juli.jar:${ANT}"
           test -f "${TOMCAT_LIB}/jasper.jar"
+          test -f "${TOMCAT_HOME}/bin/tomcat-juli.jar"
           test -f "${ANT}"
           mkdir -p /tmp/sokker-jsp-classes
           java -cp "$CP" org.apache.jasper.JspC \
