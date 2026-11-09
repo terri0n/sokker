@@ -101,6 +101,8 @@ public class Usuario {
 	// Config scouts
 	private String scouts;
 	private HashMap<String, Usuario> scout_de = new HashMap<String, Usuario>();
+	// Indica si la relación se ha leído, incluso cuando el usuario no tiene scouts.
+	private volatile boolean scouts_cargados;
 	
 	private String notas;
 	private String actualizacion_automatica;	// Guarda la contraseña sin cifrar para realizar las actualizaciones automáticamente
@@ -1047,6 +1049,15 @@ public class Usuario {
 
 	public void setScout_de(HashMap<String, Usuario> scout_de) {
 		this.scout_de = scout_de;
+		this.scouts_cargados = true;
+	}
+
+	public boolean isScouts_cargados() {
+		return scouts_cargados;
+	}
+
+	public void setScouts_cargados(boolean scouts_cargados) {
+		this.scouts_cargados = scouts_cargados;
 	}
 
 	public String getNotas() {
