@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -72,7 +74,12 @@ public class Asistente extends SERVLET_ASISTENTE {
 				AsistenteBO.calcular(lista_jugadores, usuario);
 
 				if (tid > NtdbBO.MAX_ID_SELECCION) {
-					List<Juvenil> lista_juveniles_historico = AsistenteBO.leer_juveniles(tid, true, usuario);
+					// Solo reconstruimos el historial de juveniles que corresponde a jugadores actuales.
+					Set<String> nombres_jugadores = new HashSet<>();
+					for (Jugador jugador : lista_jugadores) {
+						nombres_jugadores.add(jugador.getNombre());
+					}
+					List<Juvenil> lista_juveniles_historico = AsistenteBO.leer_juveniles(tid, true, usuario, nombres_jugadores);
 				
 					// Asociamos los juveniles a los jugadores
 					HashMap<String, Juvenil> hm_juveniles = new HashMap<>();
