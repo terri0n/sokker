@@ -1049,7 +1049,7 @@ public class Usuario {
 
 	public void setScout_de(HashMap<String, Usuario> scout_de) {
 		this.scout_de = scout_de;
-		this.scouts_cargados = true;
+		this.scouts_cargados = scout_de != null;
 	}
 
 	public boolean isScouts_cargados() {
