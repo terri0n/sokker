@@ -164,20 +164,9 @@ public class UsuarioBO {
 				}
 			}
 
-			// Leemos los scouts del archivo de scouts
+			// Los datos de scouts se cargan bajo demanda para no ralentizar la autenticación.
 			if (leer_scouts) {
-				HashMap<String, String> map = Util.leer_hashmap("NTDB");
-				usuario.setScouts(map.get(usuario.getLogin()));
-				
-				for (Entry<String, String> entry : map.entrySet()) {
-					String scouts = "," + entry.getValue() + ",";
-					if (scouts.contains("," + usuario.getLogin() + ",")) {
-						Usuario u = UsuarioBO.leer_usuario(entry.getKey(), false);
-						if (u != null && u.getTid_nt() != null) {
-							usuario.getScout_de().put(entry.getKey(), u);
-						}
-					}
-				}
+				cargar_scouts(usuario);
 			}
 			
 			return usuario;
@@ -199,6 +188,29 @@ public class UsuarioBO {
 		}
 		
 		return null;
+	}
+
+	/**
+	 * Carga la relación de scouts de un usuario. Es independiente de la lectura
+	 * de sus datos básicos para poder diferir este trabajo hasta que sea necesario.
+	 */
+	public static void cargar_scouts(Usuario usuario) {
+		if (usuario == null) {
+			return;
+		}
+
+		HashMap<String, String> map = Util.leer_hashmap("NTDB");
+		usuario.setScouts(map.get(usuario.getLogin()));
+
+		for (Entry<String, String> entry : map.entrySet()) {
+			String scouts = "," + entry.getValue() + ",";
+			if (scouts.contains("," + usuario.getLogin() + ",")) {
+				Usuario u = UsuarioBO.leer_usuario(entry.getKey(), false);
+				if (u != null && u.getTid_nt() != null) {
+					usuario.getScout_de().put(entry.getKey(), u);
+				}
+			}
+		}
 	}
 
 	private static String conservar_valores_usuario_desconocidos(String anterior, String serializado) {
