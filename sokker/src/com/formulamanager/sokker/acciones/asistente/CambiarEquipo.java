@@ -63,7 +63,10 @@ public class CambiarEquipo extends SERVLET_ASISTENTE {
 					usuario.setEquipo_nt(NtdbBO.paises[pais - 1] + (usuario.getTid_nt() < NtdbBO.DIF_NT_U21 ? " NT" : " U21"));
 				}
 			} else {
-				// Cambiar entre equipo y NT scout
+				// Cambiar entre equipo y NT scout; cargar la relación solo si se utiliza.
+				if (usuario.getScout_de().isEmpty()) {
+					UsuarioBO.cargar_scouts(usuario);
+				}
 				Usuario nt_coach = usuario.getScout_de().get(coach);
 				if (nt_coach != null) {
 					usuario.setDef_tid(nt_coach.getTid_nt());
