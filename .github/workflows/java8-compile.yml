@@ -80,7 +80,8 @@ jobs:
           mvn -q -f /tmp/jasper-pom.xml dependency:copy-dependencies -DoutputDirectory=/tmp/jasper-libs
           JASPER_JAR="$(find /tmp/jasper-libs -name 'tomcat-jasper-*.jar' -print -quit)"
           test -n "$JASPER_JAR"
-          jar tf "$JASPER_JAR" | grep -Fxq 'org/apache/jasper/JspC.class'
+          jar tf "$JASPER_JAR" > /tmp/jasper-entries.txt
+          grep -Fxq 'org/apache/jasper/JspC.class' /tmp/jasper-entries.txt
           SERVLET="$HOME/.m2/repository/javax/servlet/javax.servlet-api/4.0.1/javax.servlet-api-4.0.1.jar"
           JSP="$HOME/.m2/repository/javax/servlet/jsp/javax.servlet.jsp-api/2.3.3/javax.servlet.jsp-api-2.3.3.jar"
           CP="sokker/WebContent/WEB-INF/lib/*:/tmp/sokker-classes:${SERVLET}:${JSP}:/tmp/jasper-libs/*"
