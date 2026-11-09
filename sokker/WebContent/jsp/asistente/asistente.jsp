@@ -239,7 +239,10 @@
 				tbody.toggle(desplegar);
 			}
 
-			if ($('tbody[id^=tbody]:visible').length == 0 && !desplegar) {
+			var hayDesplegados = $('span[id^=span]').filter(function() {
+				return $(this).html() == '▼';
+			}).length > 0;
+			if (!hayDesplegados && $('tbody[id^=tbody]:visible').length == 0) {
 			    desplegar_menu_click();
 			} else {
 				$('.noentr').hide();
