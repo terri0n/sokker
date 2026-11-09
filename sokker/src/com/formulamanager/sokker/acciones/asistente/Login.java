@@ -52,7 +52,8 @@ public class Login extends SERVLET_ASISTENTE {
             _log_linea("_BLOQUEO", "Acceso denegado: " + ip + " " + alogin);
             error = "?mensaje=user_disabled";
         } else {
-            Usuario usuario = UsuarioBO.leer_usuario(alogin, true);
+            // La autenticación solo necesita los datos propios; las relaciones de scouts se cargan al usarlas.
+            Usuario usuario = UsuarioBO.leer_usuario(alogin, false);
 
             if (usuario != null && usuario.getPassword().equals(Util.getMD5(apassword))) {
                 response.addCookie(new Cookie("alogin", URLEncoder.encode(alogin, "UTF-8")));
