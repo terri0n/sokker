@@ -209,10 +209,31 @@
 			var desplegar = span.html() == '▶';
 			span.html(desplegar ? '▼' : '▶');
 
-			var tbody = $('tbody[id^="tbody' + pid + '"]');
-			tbody.toggle();
+			var tbody = $('#tbody' + pid);
+			if (desplegar && tbody.attr('data-loaded') != 'true') {
+				if (!tbody.data('loading')) {
+					tbody.data('loading', true);
+					$.ajax({
+						url: "${pageContext.request.contextPath}/servlet/entrenamiento?pid=" + encodeURIComponent(pid),
+						dataType: "html"
+					}).done(function(html) {
+						tbody.html(html).attr('data-loaded', 'true');
+						if ($('#span' + pid).html() == '▼') {
+							tbody.show();
+						}
+					}).fail(function() {
+						if ($('#span' + pid).html() == '▼') {
+							$('#span' + pid).html('▶');
+						}
+					}).always(function() {
+						tbody.removeData('loading');
+					});
+				}
+			} else {
+				tbody.toggle(desplegar);
+			}
 
-			if ($('tbody[id^=tbody]:visible').length == 0) {
+			if ($('tbody[id^=tbody]:visible').length == 0 && !desplegar) {
 			    desplegar_menu_click();
 			} else {
 				$('.noentr').hide();
