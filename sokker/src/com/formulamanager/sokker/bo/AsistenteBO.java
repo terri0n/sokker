@@ -829,6 +829,14 @@ if (nuevo.getLesion() > 0) {
 	}
 
 	public static List<Juvenil> leer_juveniles(int tid, boolean historico, Usuario usuario) {
+		return leer_juveniles(tid, historico, usuario, null);
+	}
+
+	/**
+	 * Lee el historial completo o solo los juveniles cuyos nombres se necesitan.
+	 * El filtro evita reconstruir cadenas históricas de jugadores que ya no están en la plantilla.
+	 */
+	public static List<Juvenil> leer_juveniles(int tid, boolean historico, Usuario usuario, Set<String> nombres) {
 		List<Juvenil> juveniles = new ArrayList<Juvenil>();
 		Properties prop = new Properties();
 		InputStream input = null;
@@ -852,6 +860,12 @@ if (nuevo.getLesion() > 0) {
 					continue;
 				}
 				String linea = prop.getProperty(key);
+				if (nombres != null) {
+					int separador = linea.indexOf(',');
+					if (separador >= 0 && !nombres.contains(linea.substring(0, separador))) {
+						continue;
+					}
+				}
 				Juvenil j = new Juvenil(Integer.valueOf(key), Arrays.asList(linea.split(",")), true, null, usuario);
 				juveniles.add(j);
 		    }
