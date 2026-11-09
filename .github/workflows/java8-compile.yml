@@ -70,14 +70,16 @@ jobs:
             <version>1.0</version>
             <dependencies>
               <dependency>
-                <groupId>org.apache.tomcat.embed</groupId>
-                <artifactId>tomcat-embed-jasper</artifactId>
+                <groupId>org.apache.tomcat</groupId>
+                <artifactId>tomcat-jasper</artifactId>
                 <version>9.0.98</version>
               </dependency>
             </dependencies>
           </project>
           POM
           mvn -q -f /tmp/jasper-pom.xml dependency:build-classpath -Dmdep.outputFile=/tmp/jasper-classpath.txt
+          test -n "$(cat /tmp/jasper-classpath.txt)"
+          grep -q "tomcat-jasper" /tmp/jasper-classpath.txt
           SERVLET="$HOME/.m2/repository/javax/servlet/javax.servlet-api/4.0.1/javax.servlet-api-4.0.1.jar"
           JSP="$HOME/.m2/repository/javax/servlet/jsp/javax.servlet.jsp-api/2.3.3/javax.servlet.jsp-api-2.3.3.jar"
           CP="sokker/WebContent/WEB-INF/lib/*:/tmp/sokker-classes:${SERVLET}:${JSP}:$(cat /tmp/jasper-classpath.txt)"
