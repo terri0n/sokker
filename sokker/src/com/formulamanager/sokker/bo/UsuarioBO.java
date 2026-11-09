@@ -195,21 +195,32 @@ public class UsuarioBO {
 	 * de sus datos básicos para poder diferir este trabajo hasta que sea necesario.
 	 */
 	public static void cargar_scouts(Usuario usuario) {
-		if (usuario == null) {
+		if (usuario == null || usuario.isScouts_cargados()) {
 			return;
 		}
 
-		HashMap<String, String> map = Util.leer_hashmap("NTDB");
-		usuario.setScouts(map.get(usuario.getLogin()));
+		// Evita lecturas duplicadas de NTDB y publicar relaciones parciales
+		// cuando una sesión recibe peticiones concurrentes.
+		synchronized (usuario) {
+			if (usuario.isScouts_cargados()) {
+				return;
+			}
 
-		for (Entry<String, String> entry : map.entrySet()) {
-			String scouts = "," + entry.getValue() + ",";
-			if (scouts.contains("," + usuario.getLogin() + ",")) {
-				Usuario u = UsuarioBO.leer_usuario(entry.getKey(), false);
-				if (u != null && u.getTid_nt() != null) {
-					usuario.getScout_de().put(entry.getKey(), u);
+			HashMap<String, String> map = Util.leer_hashmap("NTDB");
+			usuario.setScouts(map.get(usuario.getLogin()));
+			usuario.getScout_de().clear();
+
+			for (Entry<String, String> entry : map.entrySet()) {
+				String scouts = "," + entry.getValue() + ",";
+				if (scouts.contains("," + usuario.getLogin() + ",")) {
+					Usuario u = UsuarioBO.leer_usuario(entry.getKey(), false);
+					if (u != null && u.getTid_nt() != null) {
+						usuario.getScout_de().put(entry.getKey(), u);
+					}
 				}
 			}
+			// Un mapa vacío también es un resultado válido: no se relee en cada cambio.
+			usuario.setScouts_cargados(true);
 		}
 	}
 
