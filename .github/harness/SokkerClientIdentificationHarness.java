@@ -39,8 +39,8 @@ public final class SokkerClientIdentificationHarness {
         String saveServlet = read(Paths.get("sokker/src/com/formulamanager/sokker/acciones/sete/SaveTactic.java"));
         require(saveServlet, "HttpMethod.PUT", "SETE server endpoint must use PUT to Sokker");
         require(saveServlet, "/api/tactic/", "SETE server endpoint must call the Sokker JSON API");
-        require(saveServlet, "\"name\":\"", "SETE server endpoint must send the tactic name as JSON");
-        require(saveServlet, "\"config\":\"", "SETE server endpoint must send the tactic config as JSON");
+        require(saveServlet, "\\\"name\\\":\\\"", "SETE server endpoint must send the tactic name as JSON");
+        require(saveServlet, "\\\"config\\\":\\\"", "SETE server endpoint must send the tactic config as JSON");
         require(saveServlet, "seteCookieManager", "SETE server endpoint must reuse the authenticated Sokker session");
         require(read(Paths.get("sokker/src/com/formulamanager/sokker/acciones/sete/SETE.java")),
                 "seteCookieManager", "SETE login must retain its Sokker session cookies for saving");
