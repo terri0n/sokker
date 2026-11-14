@@ -90,7 +90,9 @@ public class ActualizarConfiguracion extends SERVLET_ASISTENTE {
 		Integer sumskills_mid_anotacion = Util.getInteger(request, "sumskills_mid_anotacion");
 		Integer sumskills_att_anotacion = Util.getInteger(request, "sumskills_att_anotacion");
 		
-		String scouts = Util.getString(request, "scouts");
+		// No usar Util.getString(): convierte el valor vacío en null y no permite
+		// distinguir entre borrar expresamente la lista y no enviar el campo.
+		String scouts = request.getParameter("scouts");
 		if (scouts != null) {
 			scouts = scouts.toLowerCase();
 		}
@@ -156,17 +158,24 @@ _log(request, numeros+","+factor_edad+","+factor_edad_rapidez+","+factor_habilid
 			if (sumskills_mid_anotacion != null) usuario.setSumskills_mid_anotacion(sumskills_mid_anotacion);
 			if (sumskills_att_anotacion != null) usuario.setSumskills_att_anotacion(sumskills_att_anotacion);
 			
-			if (usuario.getDef_tid() <= NtdbBO.MAX_ID_SELECCION) {
+			boolean configuracion_scouts_enviada = usuario.getDef_tid() != null
+					&& usuario.getDef_tid() <= NtdbBO.MAX_ID_SELECCION
+					&& scouts != null;
+			if (configuracion_scouts_enviada) {
 				usuario.setScouts(scouts);
 			}
 			
 			UsuarioBO.grabar_usuario(usuario);
 
-			// Guardamos los scouts en el archivo de scouts
-			synchronized (NtdbBO.class) {
-				HashMap<String, String> map = Util.leer_hashmap("NTDB");
-				map.put(usuario.getLogin(), scouts);
-				Util.guardar_hashmap(map, "NTDB");
+			// Solo actualizar la relación cuando el formulario corresponde a una NT
+			// y realmente ha enviado el campo. Si no existe, conservar el valor previo:
+			// la configuración de un equipo de club no debe borrar sus scouts NT.
+			if (configuracion_scouts_enviada) {
+				synchronized (NtdbBO.class) {
+					HashMap<String, String> map = Util.leer_hashmap("NTDB");
+					map.put(usuario.getLogin(), scouts);
+					Util.guardar_hashmap(map, "NTDB");
+				}
 			}
 		}
 		
