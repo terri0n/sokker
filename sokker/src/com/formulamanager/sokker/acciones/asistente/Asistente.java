@@ -18,6 +18,7 @@ import com.formulamanager.sokker.auxiliares.SERVLET_ASISTENTE;
 import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.bo.AsistenteBO;
 import com.formulamanager.sokker.bo.NtdbBO;
+import com.formulamanager.sokker.bo.UsuarioBO;
 import com.formulamanager.sokker.entity.Jugador;
 import com.formulamanager.sokker.entity.Juvenil;
 import com.formulamanager.sokker.entity.Usuario;
@@ -48,6 +49,11 @@ public class Asistente extends SERVLET_ASISTENTE {
 			
 			// Leer jugadores
 			Usuario usuario = getUsuario(request);
+			// La relación de scouts se carga bajo demanda, pero el menú principal la necesita
+			// para mostrar los enlaces de cambio a las selecciones que el usuario asesora.
+			if (usuario.getDef_tid() > NtdbBO.MAX_ID_SELECCION) {
+				UsuarioBO.cargar_scouts(usuario);
+			}
 			Integer tid = usuario.getDef_tid();
 			AsistenteBO.setActualizado(request, usuario, null);
 
