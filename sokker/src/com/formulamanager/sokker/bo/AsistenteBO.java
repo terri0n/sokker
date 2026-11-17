@@ -153,15 +153,8 @@ public class AsistenteBO extends JugadorBO {
 	public static Jugador leer_jugador(Integer tid, String equipo, boolean historico, Usuario usuario, Integer pid) throws IOException {
 		String ruta = SystemUtil.getVar(SystemUtil.PATH) + tid + (historico ? "_historico" : "") + ".properties";
 		File file = new File(ruta);
-		if (!file.isFile()) {
-			return null;
-		}
-
-		Properties prop = new Properties();
-		try (InputStream input = new FileInputStream(file)) {
-			// Mantiene la misma semántica de Properties.load que la lectura completa.
-			prop.load(input);
-		}
+		Properties prop = Util.cargar_properties(file);
+		if (prop == null) return null;
 
 		String clave = String.valueOf(pid);
 		if (!PlayerPropertiesCompat.isManagedPlayerKey(clave)) {
@@ -1019,8 +1012,8 @@ if (nuevo.getLesion() > 0) {
 			try {
 				String usuario = s.split(".properties")[0].substring(1);
 				if (pendientesSet.contains(usuario)) continue;
-				File fUsuario = new File(SystemUtil.getVar(SystemUtil.PATH) + "/" + s);
-				Date fecha = new Date(fUsuario.lastModified());
+				File fUsuario = new File(SystemUtil.getVar(SystemUtil.PATH), s);
+				Date fecha = new Date(com.formulamanager.sokker.persistence.SqlitePersistence.lastModified(fUsuario));
 				Usuario usr = UsuarioBO.leer_usuario(usuario, false);
 				salida += Util.dateToString(fecha)
 						+ " <a href='javascript:void(0)' onclick=\"location.href='asistente/login_como?usuario=" + URLEncoder.encode(usuario, "UTF-8") + "&reset_intentos=' + $('#reset_intentos').val()\">" + usuario + "</a> ";
@@ -1050,394 +1043,80 @@ if (nuevo.getLesion() > 0) {
 	}
 	
 	public static void codificar_passwords() throws IOException {
-		File f = new File(SystemUtil.getVar(SystemUtil.PATH));
-
-		String[] archivos = f.list(new FilenameFilter() {
-			@Override
-			public boolean accept(File dir, String name) {
-				return name.startsWith("_");
-			}
-		});
-		
-		for (String s : archivos) {
-			String str_usuario = s.split(".properties")[0].substring(1);
-			if (!str_usuario.equals("terrion")) {
-				Usuario usuario = UsuarioBO.leer_usuario(str_usuario, false);
-				
-				usuario.setPassword(Util.getMD5(usuario.getPassword()));
-				UsuarioBO.grabar_usuario(usuario);
+		for (String archivo : UsuarioBO.obtener_usuarios()) {
+			if (!archivo.endsWith(".properties")) continue;
+			String login = archivo.substring(1, archivo.length() - ".properties".length());
+			if (!login.equals("terrion")) {
+				Usuario usuario = UsuarioBO.leer_usuario(login, false);
+				if (usuario != null) {
+					usuario.setPassword(Util.getMD5(usuario.getPassword()));
+					UsuarioBO.grabar_usuario(usuario);
+				}
 			}
 		}
 	}
-	
+
 	public static Set<Integer> buscar_selecciones() {
-		File f = new File(SystemUtil.getVar(SystemUtil.PATH));
 		Set<Integer> selecciones = new HashSet<Integer>();
-
-		String[] archivos = f.list(new FilenameFilter() {
-			@Override
-			public boolean accept(File dir, String name) {
-				try {
-					return Util.stringToInteger(name.split("\\.")[0]) < 1000;
-				} catch (Exception e) {
-					return false;
-				}
+		for (String archivo : obtener_equipos()) {
+			try {
+				int id = Integer.parseInt(archivo.substring(0, archivo.length() - ".properties".length()));
+				if (id < 1000) selecciones.add(id > 400 ? id - 400 : id);
+			} catch (NumberFormatException e) {
+				// Solo los documentos cuyo nombre es un TID representan equipos.
 			}
-		});
-		
-		for (String s : archivos) {
-			Integer id_pais = Integer.valueOf(s.split("\\.")[0]);
-			selecciones.add(id_pais > 400 ? id_pais - 400 : id_pais);
 		}
-
 		return selecciones;
 	}
-	
-/*	public static List<Jugador> buscar_transferencias(WebClient navegador, int tid, int jornada_actual) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {
-		HtmlPage pagina = navegador.getPage(AsistenteBO.SOKKER_URL + "/transfers");
-		HtmlForm form = pagina.getFormByName("searchform");
-		form.getSelectByName("nationality").setSelectedAttribute(tid+"", true);
-		HtmlButton botonFormulario = form.getFirstByXPath("//button[@type='submit']");
-		HtmlPage p = botonFormulario.click();
 
-		// Primero obtengo los PIDs
-		List<Integer> pids = new ArrayList<Integer>();
-		List<HtmlDivision> playerCells = (List<HtmlDivision>) p.getByXPath("//div[@id='playerCell']");
-		for (HtmlDivision playerCell : playerCells) {
-			HtmlAnchor a = (HtmlAnchor)playerCell.getFirstByXPath("div//a[contains(@href,'player/PID/')]");
-			Integer pid = Integer.valueOf(a.getHrefAttribute().split("/")[2]);
-			pids.add(pid);
-		}
-
-		// TODO: pasar de p�gina
-
-		List<Jugador> jugadores = new ArrayList<Jugador>();
-
-		// Y luego leo el jugador entero
-		// NOTA: En la lista de transferencias no aparece la forma
-		for (Integer pid : pids) {
-			jugadores.add(AsistenteDAO.obtener_jugador(pid, true, jornada_actual, false, null, navegador));
-		}
-
-		return jugadores;
-	}
-*/	
-	
-	public static void enviar_skmail(WebClient navegador, String destinatario, String asunto, String texto) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
-		try {
-			StringWebResponse response = new StringWebResponse(getFormSkmail(destinatario, asunto, texto), new URL("file:///."));
-			HtmlPage form = HTMLParser.parseHtml(response, navegador.getCurrentWindow());
-
-			HtmlSubmitInput botonFormulario = form.getFormByName("form").getFirstByXPath("//input[@type='submit']");
-			HtmlPage p = botonFormulario.click();
-//System.out.println(p.asXml());
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	private static String getFormSkmail(String destinatario, String asunto, String texto) {
-		return "<form name='form' action='" + AsistenteBO.SOKKER_URL + "/mailbox/sent.php' method='post'>"
-					+ "<input type='hidden' name='typeto' value='login'/>"
-					+ "<input type='text' name='send_to' value='" + destinatario + "'/>"
-					+ "<input type='hidden' name='mailtype' value='sokker'/>"
-					+ "<input type='text' name='title' id='title' value='" + asunto + "' />"
-					+ "<textarea name='text'>" + texto + "</textarea>"
-					+ "<input type='submit' />"
-				+ "</form>";
-	}
-	
-	public static void leer_entrenadores(Usuario usuario, int jornada_anterior, WebClient navegador) {
-		if (usuario.getDef_tid() > NtdbBO.MAX_ID_SELECCION) {
-			try {
-				XmlPage pagina = Navegador.getXmlPage(navegador, AsistenteBO.SOKKER_URL + "/xml/trainers.xml");
-				List<Map<String, String>> entrenadores = SokkerLegacyXmlParser.parseElements(
-						pagina.getWebResponse().getContentAsString(), "trainer");
-				
-				List<BigDecimal> nivel_asistentes = new ArrayList<>();
-				
-				for (Map<String, String> entrenador : entrenadores) {
-					int job = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "job").trim());
-					if (job < 1 || job > TIPO_ENTRENADOR.values().length) {
-						throw new IOException("Tipo de entrenador desconocido: " + job);
-					}
-					TIPO_ENTRENADOR tipo = TIPO_ENTRENADOR.values()[job - 1];
-					int condicion = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillStamina").trim());
-					int rapidez = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillPace").trim());
-					int tecnica = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillTechnique").trim());
-					int pases = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillPassing").trim());
-					int porteria = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillKeeper").trim());
-					int defensa = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillDefending").trim());
-					int creacion = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillPlaymaking").trim());
-					int anotacion = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillScoring").trim());
-					int media = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillCoach").trim());
-					
-					Jugador j = new Jugador(new Integer[] { condicion, rapidez, tecnica, pases, porteria, defensa, creacion, anotacion, media });
-					
-					switch (tipo) {
-						case PRINCIPAL:
-							usuario.getEntrenador_principal().put(usuario.getDef_jornada(), j);
-							break;
-						case ASISTENTE:
-							nivel_asistentes.add(j.getNivel_entrenador());
-							break;
-						case JUVENILES:
-							usuario.getNivel_juveniles().put(usuario.getDef_jornada(), j.getNivel_entrenador());
-							break;
-						case OTRO:
-					}
-				}
-				
-				usuario.getNivel_asistentes().put(usuario.getDef_jornada(), nivel_asistentes.size() == 0 ? BigDecimal.ZERO : Util.sumar_bd(nivel_asistentes).divide(new BigDecimal(3), MathContext.DECIMAL32));
-				
-				// Actualizamos las jornadas anteriores desde la �ltima actualizaci�n si no estaban establecidas
-				for (int i = jornada_anterior; i < usuario.getDef_jornada(); i++) {
-					if (usuario.getEntrenador_principal().get(i) == null) {
-						usuario.getEntrenador_principal().put(i, usuario.getEntrenador_principal().get(usuario.getDef_jornada()));
-						usuario.getNivel_asistentes().put(i, usuario.getNivel_asistentes().get(usuario.getDef_jornada()));
-						usuario.getNivel_juveniles().put(i, usuario.getNivel_juveniles().get(usuario.getDef_jornada()));
-					}
-				}
-			} catch (Exception e) {
-				throw new RuntimeException("Error al leer entrenadores", e);
-			}
-		}
-	}
-
-	public static void calcular_juveniles(List<Juvenil> juveniles) {
-		for (Juvenil j : juveniles) {
-			j.calcular_niveles();
-		}
-	}
-
-	// funcion y = ax+b
-	
-	// posici�n[0] = pendiente de la recta (a)
-	// posici�n[1] = t�rmino independiente (b)
-	// posici�n[2] = correlaci�n (grado de uni�n de -1 a 1)
-    public static double[] calcRectaRegresionYsobreX(int[] lasX, int[] lasY) {
-        double[] retVal = new double[3];
-        double mediaX = calcMedia(lasX);
-        double mediaY = calcMedia(lasY);
-        double varianzaX = (calcMediaDeLosCuadrados(lasX) - Math.pow(mediaX, 2));
-        double varianzaY = (calcMediaDeLosCuadrados(lasY) - Math.pow(mediaY, 2));
-        double covarianza = calcMediaDeLosProductos(lasX, lasY) - (mediaX * mediaY);
-        double diviCovaX = covarianza / varianzaX;
-
-        retVal[0] = diviCovaX;                     
-        // aqui devuelve la pendiente de la recta
-        retVal[1] = -(diviCovaX * mediaX) + mediaY;   
-        // aqui devuelve el parametro independiente
-        if ((Math.sqrt(varianzaX) * Math.sqrt(varianzaY))==0){
-            retVal[2]=1;
-        } else {
-            retVal[2] = covarianza / (Math.sqrt(varianzaX) * Math.sqrt(varianzaY)); // esto es la correlacion r
-        }
-        return retVal;
-    }
-
-    // funcion x= ay + b
-    public static double[] calcRectaRegresionXsobreY(int[] lasX, int[] lasY) {
-        double[] retVal = new double[3];
-        double mediaX = calcMedia(lasX);
-        double mediaY = calcMedia(lasY);
-        double varianzaX = (calcMediaDeLosCuadrados(lasX) - Math.pow(mediaX, 2));
-        double varianzaY = (calcMediaDeLosCuadrados(lasY) - Math.pow(mediaY, 2));
-        double covarianza = calcMediaDeLosProductos(lasX, lasY) - (mediaX * mediaY);
-        double diviCovaY = covarianza / varianzaY;
-
-        retVal[0] = diviCovaY;                     
-        // aqui devuelve la pendiente de la recta
-        retVal[1] = -(diviCovaY * mediaY) + mediaX;   
-        // aqui devuelve el parametro independiente
-        retVal[2] = covarianza / (Math.sqrt(varianzaX) * Math.sqrt(varianzaY)); // esta es la correlacion r
-        return retVal;
-    }
-
-    public static double calcMedia(int[] valores) {
-        double retVal = 0;
-        for (int i = 0; i < valores.length; i++) {
-            retVal += valores[i];
-        }
-        return retVal / valores.length;
-    }
-
-    public static double calcMediaDeLosCuadrados(int[] valores) {
-        double retVal = 0;
-        for (int i = 0; i < valores.length; i++) {
-            retVal += Math.pow(valores[i], 2);
-        }
-        return retVal / valores.length;
-    }
-
-    public static double calcMediaDeLosProductos(int[] valores1, int[] valores2) {
-        double retVal = 0;
-        for (int i = 0; i < valores1.length; i++) {
-            retVal += valores1[i] * valores2[i];
-        }
-        return retVal / valores1.length;
-    }
-
-    /**
-     * https://es.wikipedia.org/wiki/Regresi�n_lineal
-     * y = b * x + a
-     * @param juveniles
-     * @return new Float[] {b, a}
-     */
-    public static float[] regresion_lineal(List<Juvenil> juveniles) {
-    	int cantidad = juveniles.size();
-    	int x = 0;
-    	int y = 0;
-    	int xy = 0;
-    	int xx = 0;
-    	
-    	for (int i = 0; i < cantidad; i++) {
-    		int x_ = juveniles.get(i).getJornada() - juveniles.get(i).getPrimera_jornada();
-    		x += x_;
-			y += Math.abs(juveniles.get(i).getNivel());
-			xy += x_ * Math.abs(juveniles.get(i).getNivel());
-			xx += x_ * x_;
-    	}
-    	
-    	float b = ((cantidad * xy) - (x * y)) / (float)((cantidad * xx) - (x * x));
-    	float a = (y - (b * x)) / (float)cantidad;
-
-    	return new float[] {b, a};
-    }
-
-	public static List<Jugador> filtrar_demarcacion(List<Jugador> jugadores, DEMARCACION_ASISTENTE demarcacion) {
-		List<Jugador> lista = new ArrayList<Jugador>();
-
-		for (Jugador j : jugadores) {
-			if (j.getDemarcacion() == demarcacion) {
-				lista.add(j);
-			}
-		}
-
-		return lista;
-	}
-
-	public static Usuario obtener_usuario_seleccion(int tid) {
-		String[] archivos = UsuarioBO.obtener_usuarios();
-		for (String login : archivos) {
-			Usuario usuario = UsuarioBO.leer_usuario(login.split(".properties")[0].substring(1), false);
-			if (usuario != null && new Integer(tid).equals(usuario.getTid_nt())) {
-				return usuario;
-			}
-		}
-		return null;
-	}
-	
-	
-	public static void actualizar_seleccionadores(WebClient navegador) throws IOException {
-		List<Pais> paises = Pais.obtener_paises(navegador);
-		
-		Map<String, Integer> seleccion_usuario = new HashMap<String, Integer>();
-		Map<Integer, String> nombre_seleccion = new HashMap<Integer, String>();
-
-		// 1. Buscamos los usuarios de cada selección
-		
-		// Hacemos dos pasadas, para U21 y NT
-		for (int i = 0; i <= 400; i += 400) {
-			for (Pais pais : paises) {
-				int teamID = pais.getId() + i;
-				
-				try {
-					XmlPage pagina = navegador.getPage(AsistenteBO.SOKKER_URL + "/xml/team-" + teamID + ".xml");
-					String nombre = ((DomText) pagina.getFirstByXPath("//teamdata/team/name/text()")).asText();
-					String login = ((DomText) pagina.getFirstByXPath("//teamdata/user/login/text()")).asText();
-					seleccion_usuario.put(login.toLowerCase(), teamID);
-					nombre_seleccion.put(teamID, nombre);
-	
-					//System.out.println(login + " -> " + nombre + " (" + teamID + ")");
-				} catch (Exception e) {
-					System.out.println("Error al acceder a " + AsistenteBO.SOKKER_URL + "/xml/team-" + teamID + ".xml");
-					e.printStackTrace();
-				}
-			}
-		}
-		
-		// 2. Actualizamos la selección de cada usuario
-		
-		String[] archivos = UsuarioBO.obtener_usuarios();
-		for (String login : archivos) {
-			Usuario usuario = UsuarioBO.leer_usuario(login.split(".properties")[0].substring(1), false);
-			if (usuario != null) {
-				Integer seleccion = seleccion_usuario.get(usuario.getLogin_sokker().toLowerCase());
-
-				// Si este usuario no es el seleccionador actual, conservamos su
-				// tid_nt y actualizamos los datos del mismo equipo. Puede haber
-				// varios usuarios del asistente apuntando a la misma selección.
-				if (seleccion == null && usuario.getTid_nt() != null && nombre_seleccion.containsKey(usuario.getTid_nt())) {
-					seleccion = usuario.getTid_nt();
-				}
-
-				if (usuario.getTid_nt() == null && seleccion != null || usuario.getTid_nt() != null && !usuario.getTid_nt().equals(seleccion)) {
-					usuario.setTid_nt(seleccion);
-					usuario.setEquipo_nt(seleccion == null ? null : nombre_seleccion.get(seleccion));
-					usuario.setDef_tid(usuario.getTid());
-					UsuarioBO.grabar_usuario(usuario);
-
-					System.out.println("Cambio: " + usuario.getLogin_sokker() + " -> " + usuario.getEquipo_nt());
-				}
-			}
-		}
-	}
-
-	/**
-	 * Devuelve los equipos actualizados la última semana
-	 * @return
-	 */
 	public static String[] obtener_equipos() {
-		File f = new File(SystemUtil.getVar(SystemUtil.PATH));
-
-		String[] archivos = f.list(new FilenameFilter() {
-			@Override
-			public boolean accept(File dir, String name) {
-				File f = new File(SystemUtil.getVar(SystemUtil.PATH) + "/" + name);
-
-				return f.isFile()
-					&& !name.startsWith("_") 
-					&& !name.endsWith("_historico.properties") 
-					&& !name.endsWith("_juveniles.properties")
-					&& !name.equals("IPs.properties")
-					&& !name.equals("NTDB.properties")
-					&& !name.equals("URLs.properties");
+		try {
+			File root = new File(SystemUtil.getVar(SystemUtil.PATH));
+			List<String> paths = com.formulamanager.sokker.persistence.SqlitePersistence.list(root, null, ".properties");
+			List<String> equipos = new ArrayList<String>();
+			if (paths != null) {
+				for (String path : paths) {
+					if (path.indexOf('/') < 0 && path.matches("[0-9]+\\.properties")) equipos.add(path);
+				}
+				return equipos.toArray(new String[equipos.size()]);
 			}
-		});
-		
-		return archivos;
+			File[] files = root.listFiles();
+			if (files != null) for (File file : files) {
+				if (file.isFile() && file.getName().matches("[0-9]+\\.properties")) equipos.add(file.getName());
+			}
+			return equipos.toArray(new String[equipos.size()]);
+		} catch (IOException e) {
+			throw new IllegalStateException("No se pueden listar equipos desde SQLite", e);
+		}
 	}
 
-	/**
-	 * Devuelve los equipos actualizados la última semana
-	 * @return
-	 */
 	public static String[] obtener_ultimos_equipos() {
-		File f = new File(SystemUtil.getVar(SystemUtil.PATH));
-		Calendar c = Calendar.getInstance();
-		c.add(Calendar.DAY_OF_MONTH, -7);
-
-		String[] archivos = f.list(new FilenameFilter() {
-			@Override
-			public boolean accept(File dir, String name) {
-				File f = new File(SystemUtil.getVar(SystemUtil.PATH) + "/" + name);
-
-				return f.isFile()
-					&& c.getTime().before(new Date(f.lastModified()))
-					&& !name.startsWith("_") 
-					&& !name.endsWith("_historico.properties") 
-					&& !name.endsWith("_juveniles.properties")
-					&& !name.equals("IPs.properties")
-					&& !name.equals("NTDB.properties")
-					&& !name.equals("URLs.properties");
+		try {
+			File root = new File(SystemUtil.getVar(SystemUtil.PATH));
+			List<String> paths = com.formulamanager.sokker.persistence.SqlitePersistence.list(root, null, ".properties");
+			List<String> equipos = new ArrayList<String>();
+			Calendar limite = Calendar.getInstance();
+			limite.add(Calendar.DAY_OF_MONTH, -7);
+			if (paths != null) {
+				for (String path : paths) {
+					if (path.indexOf('/') < 0 && path.matches("[0-9]+\\.properties")
+							&& com.formulamanager.sokker.persistence.SqlitePersistence.lastModified(new File(root, path)) > limite.getTimeInMillis()) {
+						equipos.add(path);
+					}
+				}
+				return equipos.toArray(new String[equipos.size()]);
 			}
-		});
-		
-		return archivos;
+			File[] files = root.listFiles();
+			if (files != null) for (File file : files) {
+				if (file.isFile() && file.getName().matches("[0-9]+\\.properties")
+						&& file.lastModified() > limite.getTimeInMillis()) equipos.add(file.getName());
+			}
+			return equipos.toArray(new String[equipos.size()]);
+		} catch (IOException e) {
+			throw new IllegalStateException("No se pueden listar equipos recientes desde SQLite", e);
+		}
 	}
-	
+
 	public static String getDatos_estadistica_forma(boolean todos, boolean jugando) {
 		// Leo todos los equipos y sus jugadores
 		List<Jugador> jugadores = new ArrayList<Jugador>();
