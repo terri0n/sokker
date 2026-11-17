@@ -1,6 +1,6 @@
 <%@page import="com.formulamanager.sokker.auxiliares.Util"%>
 <%@page import="org.apache.commons.lang3.StringUtils"%>
-<%@page import="com.formulamanager.sokker.entity.Jugador"%>
+<%@page import="com.formulamanager.sokker.entity.factorx.JugadorFactorX"%>
 <%@page import="com.formulamanager.sokker.bo.FactorxBO"%>
 <%@page import="java.net.URL"%>
 <%@page import="java.net.URI"%>
@@ -340,7 +340,7 @@
 [family=monospace]Pos Jor. Nombre[color=transparent]........................[/color] Equipo[color=transparent]........................[/color] Ed Dem Pts.[/family]
 [family=monospace]----------------------------------------------------------------------------------[/family]		
 <c:forEach var="j" items="${jugadores}" varStatus="var"
-			>[color=<c:out value="${j.color_demarcacion}" />][family=monospace]<fmt:formatNumber value="${var.count}" minIntegerDigits="2" />. <fmt:formatNumber value="${j.jornadaMod + 1}" minIntegerDigits="2" /> <%= Util.ifnull(((Jugador)pageContext.getAttribute("j")).getIcono_foro(), "[/family][/color][color=transparent][size=16px]...[/size][/color][family=monospace][color=" + ((Jugador)pageContext.getAttribute("j")).getColor_demarcacion() + "]") %>[pid=<c:out value="${j.pid}" />]<%= StringUtils.rightPad(((Jugador)pageContext.getAttribute("j")).getNombre(), 30, ".") %>[/pid] [tid=<c:out value="${j.tid}" />]<%= StringUtils.rightPad(((Jugador)pageContext.getAttribute("j")).getEquipo(), 30, ".") %>[/tid] <fmt:formatNumber value="${j.edad}" minIntegerDigits="2" /> <%= StringUtils.rightPad(((Jugador)pageContext.getAttribute("j")).getDemarcacion().name(), 3, ".") %> <c:out value="${j.puntos}" />[/family][/color]
+			>[color=<c:out value="${j.color_demarcacion}" />][family=monospace]<fmt:formatNumber value="${var.count}" minIntegerDigits="2" />. <fmt:formatNumber value="${j.jornadaMod + 1}" minIntegerDigits="2" /> <%= Util.ifnull(((JugadorFactorX)pageContext.getAttribute("j")).getIcono_foro(), "[/family][/color][color=transparent][size=16px]...[/size][/color][family=monospace][color=" + ((Jugador)pageContext.getAttribute("j")).getColor_demarcacion() + "]") %>[pid=<c:out value="${j.pid}" />]<%= StringUtils.rightPad(((Jugador)pageContext.getAttribute("j")).getNombre(), 30, ".") %>[/pid] [tid=<c:out value="${j.tid}" />]<%= StringUtils.rightPad(((Jugador)pageContext.getAttribute("j")).getEquipo(), 30, ".") %>[/tid] <fmt:formatNumber value="${j.edad}" minIntegerDigits="2" /> <%= StringUtils.rightPad(((Jugador)pageContext.getAttribute("j")).getDemarcacion().name(), 3, ".") %> <c:out value="${j.puntos}" />[/family][/color]
 </c:forEach></textarea>
 					</td>
 				</tr>
