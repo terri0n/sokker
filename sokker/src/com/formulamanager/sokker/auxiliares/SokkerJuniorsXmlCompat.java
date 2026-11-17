@@ -84,21 +84,9 @@ public final class SokkerJuniorsXmlCompat {
     }
 
     private static Map<Integer, Boolean> loadSavedPositions(int tid) throws IOException {
-        Properties properties = new Properties();
         File file = new File(SystemUtil.getVar(SystemUtil.PATH) + tid + "_juveniles.properties");
-        if (!file.exists()) {
-            return Collections.emptyMap();
-        }
-
-        InputStream input = null;
-        try {
-            input = new FileInputStream(file);
-            properties.load(input);
-        } finally {
-            if (input != null) {
-                input.close();
-            }
-        }
+        Properties properties = Util.cargar_properties(file);
+        if (properties == null) return Collections.emptyMap();
         return readSavedPositions(properties);
     }
 
