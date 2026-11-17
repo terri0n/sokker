@@ -15,7 +15,7 @@ import java.sql.Statement;
  * rows; the importer does not retain a second copy of each file's bytes.
  */
 public final class SqliteDatabase {
-    private static final int SCHEMA_VERSION = 4;
+    private static final int SCHEMA_VERSION = 5;
     private final File databaseFile;
     private final boolean playerGroupsEnabled;
 
@@ -166,6 +166,17 @@ public final class SqliteDatabase {
             statement.execute("CREATE TABLE IF NOT EXISTS app_user ("+
                     "user_id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "login TEXT NOT NULL COLLATE NOCASE UNIQUE)");
+            addColumn(connection, "app_user", "serialized_data", "TEXT");
+            addColumn(connection, "app_user", "notes", "TEXT");
+            addColumn(connection, "app_user", "account_deletion_requested_at", "INTEGER");
+            addColumn(connection, "app_user", "updated_at", "INTEGER NOT NULL DEFAULT 0");
+            statement.execute("CREATE TABLE IF NOT EXISTS user_training (" +
+                    "user_id INTEGER NOT NULL REFERENCES app_user(user_id) ON DELETE CASCADE," +
+                    "round_no INTEGER NOT NULL, serialized_data TEXT NOT NULL, PRIMARY KEY(user_id,round_no))");
+            statement.execute("CREATE TABLE IF NOT EXISTS user_property_extension (" +
+                    "user_id INTEGER NOT NULL REFERENCES app_user(user_id) ON DELETE CASCADE," +
+                    "property_key TEXT NOT NULL, property_value TEXT NOT NULL, PRIMARY KEY(user_id,property_key))");
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_app_user_updated ON app_user(updated_at)");
             statement.execute("CREATE TABLE IF NOT EXISTS player_group (" +
                     "group_id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "user_id INTEGER REFERENCES app_user(user_id) ON DELETE CASCADE," +
@@ -214,6 +225,15 @@ public final class SqliteDatabase {
                 insert.addBatch();
             }
             insert.executeBatch();
+        }
+    }
+
+
+    private static void addColumn(Connection connection,String table,String column,String definition) throws SQLException {
+        if(!hasColumn(connection,table,column)) {
+            try(Statement statement=connection.createStatement()) {
+                statement.execute("ALTER TABLE "+table+" ADD COLUMN "+column+" "+definition);
+            }
         }
     }
 
