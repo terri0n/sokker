@@ -14,13 +14,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.formulamanager.sokker.auxiliares.Navegador;
-import com.formulamanager.sokker.bo.JugadorBO;
-import com.formulamanager.sokker.entity.Jugador;
+import com.formulamanager.sokker.bo.FactorxJugadorBO;
+import com.formulamanager.sokker.entity.factorx.JugadorFactorX;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
 
 /**
- * HistÛricos
+ * Hist√≥ricos
  */
 @WebServlet("/factorx/historico")
 public class Historico extends SERVLET_FACTORX {
@@ -45,7 +45,7 @@ public class Historico extends SERVLET_FACTORX {
 				@Override
 				protected void execute(WebClient navegador)	throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException {
 					int edicion_actual = obtener_edicion(navegador);
-					List<Jugador> jugadores = JugadorBO.leer_historico(tipo, edicion_actual);
+					List<JugadorFactorX> jugadores = FactorxJugadorBO.leer_historico(tipo, edicion_actual);
 					
 					Collections.sort(jugadores, tipo_hist.getComparator());
 					
@@ -54,7 +54,7 @@ public class Historico extends SERVLET_FACTORX {
 					}
 					
 					request.setAttribute("jugadores", jugadores);
-					request.setAttribute("historico", "Jugadores con m·s " + tipo_hist.name());
+					request.setAttribute("historico", "Jugadores con m√°s " + tipo_hist.name());
 				}
 			};
 		} catch (FailingHttpStatusCodeException | LoginException | ParseException e) {
