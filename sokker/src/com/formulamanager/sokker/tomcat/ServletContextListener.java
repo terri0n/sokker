@@ -246,9 +246,9 @@ System.out.print("Actualizando Factor X...");
     		new Navegador(false, null) {
     			@Override
     			protected void execute(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
-		    		FactorxBO.actualizar_todos(TIPO_FACTORX.junior, navegador, jornada_actual[0]);
-		    		FactorxBO.actualizar_todos(TIPO_FACTORX.senior, navegador, jornada_actual[0]);
-		    		FactorxBO.actualizar_todos(TIPO_FACTORX.Venezuela, navegador, jornada_actual[0]);
+				for (TIPO_FACTORX tipo : TIPO_FACTORX.values()) {
+					FactorxBO.actualizar_todos(tipo, navegador, jornada_actual[0]);
+				}
     			}
     		};
 		} catch (FailingHttpStatusCodeException | IOException | LoginException | ParseException e) {

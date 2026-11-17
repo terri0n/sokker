@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Servlet implementation class ServletSokker
  */
-@WebServlet({"/factorx/inter", "/factorx/venezuela"})
+@WebServlet("/factorx/venezuela")
 public class Inter extends SERVLET_FACTORX {
 	private static final long serialVersionUID = 1L;
 	
