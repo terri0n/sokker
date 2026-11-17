@@ -14,7 +14,6 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.formulamanager.sokker.acciones.factorx.SERVLET_FACTORX.TIPO_FACTORX;
 import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.bo.AsistenteBO;
 import com.formulamanager.sokker.bo.EquipoBO.TIPO_ENTRENAMIENTO;
@@ -161,9 +160,6 @@ public class Jugador implements Comparable<Jugador> {
 		};
 	}
 
-	public static String puntos_condicion[] = {"0.0", "0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "1.0", "1.2", "1.5"};
-	public static String puntos_rapidez[] = {"0.0", "1.4", "1.7", "1.9", "2.2", "2.4", "2.6", "3.0", "3.4", "3.7", "4.1", "4.6", "5.0", "5.5", "6.0", "7.2", "8.4", "9.6", "11.5"};
-	public static String puntos_otros[] = {"0.0", "1.2", "1.4", "1.6", "1.8", "2.0", "2.2", "2.5", "2.8", "3.1", "3.4", "3.8", "4.2", "4.6", "5.0", "6.0", "7.0", "8.0", "9.5"};
 	public static String valores[] = {"tragic", "hopeless", "unsatisfactory", "poor", "weak", "average", "adequate", "good", "solid", "very good", "excellent", "formidable", "outstanding", "incredible", "brilliant", "magical", "unearthly", "divine", "superdivine", "" };
 	public static String valores_m[] = {"tr�gico", "terrible", "deficiente", "pobre", "d�bil", "regular", "aceptable", "bueno", "s�lido", "muy bueno", "excelente", "formidable", "destacado", "incre�ble", "brillante", "m�gico", "sobrenatural", "divino", "superdivino", "" };
 	public static String valores_f[] = {"tr�gica", "terrible", "deficiente", "pobre", "d�bil", "regular", "aceptable", "buena", "s�lida", "muy buena", "excelente", "formidable", "destacada", "incre�ble", "brillante", "m�gica", "sobrenatural", "divina", "superdivina" };
@@ -232,7 +228,6 @@ public class Jugador implements Comparable<Jugador> {
 	
 	private BigDecimal puntos = BigDecimal.ZERO;
 	private String icono;
-	private String icono_foro;
 	private Integer edicion;
 
 	private Jugador original;
@@ -477,38 +472,6 @@ public class Jugador implements Comparable<Jugador> {
 		return j instanceof Jugador && ((Jugador)j).getPid().equals(pid);
 	}
 	
-	public void calcular_puntos() {
-		if (edad < 21 || jornada < 1080) {
-			puntos = BigDecimal.ZERO;
-		} else {
-			puntos = new BigDecimal(edad - 21);
-		}
-		for (int i = original.condicion; i < condicion; i++) {
-			puntos = puntos.add(new BigDecimal(puntos_condicion[i+1]));
-		}
-		for (int i = original.rapidez; i < rapidez; i++) {
-			puntos = puntos.add(new BigDecimal(puntos_rapidez[i+1]));
-		}
-		for (int i = original.tecnica; i < tecnica; i++) {
-			puntos = puntos.add(new BigDecimal(puntos_otros[i+1]));
-		}
-		for (int i = original.pases; i < pases; i++) {
-			puntos = puntos.add(new BigDecimal(puntos_otros[i+1]));
-		}
-		for (int i = original.porteria; i < porteria; i++) {
-			puntos = puntos.add(new BigDecimal(puntos_otros[i+1]));
-		}
-		for (int i = original.defensa; i < defensa; i++) {
-			puntos = puntos.add(new BigDecimal(puntos_otros[i+1]));
-		}
-		for (int i = original.creacion; i < creacion; i++) {
-			puntos = puntos.add(new BigDecimal(puntos_otros[i+1]));
-		}
-		for (int i = original.anotacion; i < anotacion; i++) {
-			puntos = puntos.add(new BigDecimal(puntos_otros[i+1]));
-		}
-	}
-
 	public Integer max_habilidad() {
 		int max = condicion;
 		max = Math.max(max, rapidez);
@@ -543,112 +506,6 @@ public class Jugador implements Comparable<Jugador> {
 
 	public Integer getJornadaMod() {
 		return AsistenteBO.getJornadaMod(jornada);
-	}
-
-	public boolean validar(TIPO_FACTORX tipo) {
-		if (tipo == TIPO_FACTORX.senior && (edad < 21 || edad > 27)
-				|| tipo != TIPO_FACTORX.senior && (edad < 18 || edad > 20)) {
-			return false;
-		}
-		
-		if (tipo == TIPO_FACTORX.senior) {
-			if (edad <= 22) {
-				// GK
-				if (demarcacion == DEMARCACION_ASISTENTE.GK && porteria + rapidez + pases >= 27 && porteria >= 13) {
-					return true;
-				}
-
-				// DEF
-				if (demarcacion == DEMARCACION_ASISTENTE.DEF && defensa + rapidez >= 22 && pases + tecnica + creacion >= 11) {
-					return true;
-				}
-
-				// MID
-				if (demarcacion == DEMARCACION_ASISTENTE.MID && rapidez + creacion + pases + tecnica + defensa >= 39) {
-					return true;
-				}
-
-				// ATT
-				if (demarcacion == DEMARCACION_ASISTENTE.ATT && rapidez + tecnica + anotacion >= 29) {
-					return true;
-				}
-			} else if (edad <= 24) {
-				// GK
-				if (demarcacion == DEMARCACION_ASISTENTE.GK && porteria + rapidez + pases >= 32 && porteria >= 14) {
-					return true;
-				}
-
-				// DEF
-				if (demarcacion == DEMARCACION_ASISTENTE.DEF && defensa + rapidez >= 25 && pases + tecnica + creacion >= 16) {
-					return true;
-				}
-
-				// MID
-				if (demarcacion == DEMARCACION_ASISTENTE.MID && rapidez + creacion + pases + tecnica + defensa >= 48) {
-					return true;
-				}
-
-				// ATT
-				if (demarcacion == DEMARCACION_ASISTENTE.ATT && rapidez + tecnica + anotacion >= 34) {
-					return true;
-				}
-			} else {
-				// GK
-				if (demarcacion == DEMARCACION_ASISTENTE.GK && porteria + rapidez + pases >= 36 && porteria >= 15) {
-					return true;
-				}
-
-				// DEF
-				if (demarcacion == DEMARCACION_ASISTENTE.DEF && defensa + rapidez >= 28 && pases + tecnica + creacion >= 21) {
-					return true;
-				}
-
-				// MID
-				if (demarcacion == DEMARCACION_ASISTENTE.MID && rapidez + creacion + pases + tecnica + defensa >= 57) {
-					return true;
-				}
-
-				// ATT
-				if (demarcacion == DEMARCACION_ASISTENTE.ATT && rapidez + tecnica + anotacion >= 39) {
-					return true;
-				}
-			}
-		} else {
-			// --- JUNIOR / INTER --- //
-			
-			// GK
-			int min_gk = edad == 18 ? 9 : edad == 19 ? 11 : 12;
-			if (demarcacion == DEMARCACION_ASISTENTE.GK
-					&& porteria >= min_gk
-					&& porteria + rapidez + pases >= 17 + (edad-18)*2) {
-				return true;
-			}
-
-			// DEF
-			int min_def = edad == 18 ? 5 : edad == 19 ? 7 : 8;
-			if (demarcacion == DEMARCACION_ASISTENTE.DEF
-					&& defensa + rapidez >= 13 + (edad-18)*2
-					&& creacion + tecnica + pases >= min_def) {
-				return true;
-			}
-			
-			// MID
-			int min = edad == 18 ? 23 : edad == 19 ? 27 : 30;
-			if (demarcacion == DEMARCACION_ASISTENTE.MID
-					&& (creacion + rapidez + tecnica + pases >= min
-					|| creacion + rapidez + tecnica + defensa >= min
-					|| creacion + rapidez + defensa + pases >= min
-					|| creacion + defensa + tecnica + pases >= min
-					|| defensa + rapidez + tecnica + pases >= min)) {
-				return true;
-			}
-
-			// ATT
-			if (demarcacion == DEMARCACION_ASISTENTE.ATT && anotacion + rapidez + tecnica >= 18 + (edad-18)*3) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	public static String desp(String lang, String name, Integer indice, boolean numeros) {
@@ -718,26 +575,6 @@ public class Jugador implements Comparable<Jugador> {
 		}
 	}
 	
-	public Integer getSubidas() {
-		int subidas = 0;
-
-		subidas += condicion - original.condicion;
-		subidas += rapidez - original.rapidez;
-		subidas += tecnica - original.tecnica;
-		subidas += pases - original.pases;
-
-		subidas += porteria - original.porteria;
-		subidas += defensa - original.defensa;
-		subidas += creacion - original.creacion;
-		subidas += anotacion - original.anotacion;
-		
-		return subidas;
-	}
-
-	public Integer getDifValor() {
-		return (valor == null || original.valor == null) ? 0 : valor - original.valor;
-	}
-
 	public static Comparator<? super Jugador> getComparator() {
 		return new Comparator<Jugador>() {
 			@Override
@@ -755,33 +592,6 @@ public class Jugador implements Comparable<Jugador> {
 		};
 	}
 
-	public static Comparator<Jugador> comparator_valor() {
-		return new Comparator<Jugador>() {
-			@Override
-			public int compare(Jugador o1, Jugador o2) {
-				return - o1.getDifValor().compareTo(o2.getDifValor());
-			}
-		};
-	}
-
-	public static Comparator<Jugador> comparator_subidas() {
-		return new Comparator<Jugador>() {
-			@Override
-			public int compare(Jugador o1, Jugador o2) {
-				return -o1.getSubidas().compareTo(o2.getSubidas());
-			}
-		};
-	}
-
-	public static Comparator<Jugador> comparator_puntos() {
-		return new Comparator<Jugador>() {
-			@Override
-			public int compare(Jugador o1, Jugador o2) {
-				return -o1.getPuntos().compareTo(o2.getPuntos());
-			}
-		};
-	}
-	
 	public String serializar(boolean primero) {
 		List<String> valores = new ArrayList<String>();
 		if (primero) {
@@ -1960,19 +1770,6 @@ public class Jugador implements Comparable<Jugador> {
 		}
 	}
 	
-	public String getColor_demarcacion() {
-		if (demarcacion != null) {
-			switch (demarcacion) {
-				case GK:	return "SkyBlue";
-				case DEF:	return "lightgreen";
-				case MID:	return "orange";
-				case ATT:	return "salmon";
-				default:
-			}
-		}
-		return "silver";
-	}
-
 	public void insertar_inicio(Jugador j) {
 		if (original == null) {
 			original = j;
@@ -2384,14 +2181,6 @@ public class Jugador implements Comparable<Jugador> {
 
 	public void setTalento_max(Double talento_max) {
 		this.talento_max = talento_max;
-	}
-
-	public String getIcono_foro() {
-		return icono_foro;
-	}
-
-	public void setIcono_foro(String icono_foro) {
-		this.icono_foro = icono_foro;
 	}
 
 	public Integer getDisciplina_tactica() {
