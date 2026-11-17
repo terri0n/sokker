@@ -16,9 +16,9 @@ import javax.servlet.http.HttpServletResponse;
 import com.formulamanager.sokker.auxiliares.Navegador;
 import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.bo.FactorxBO;
-import com.formulamanager.sokker.bo.JugadorBO;
-import com.formulamanager.sokker.entity.Jugador;
-import com.formulamanager.sokker.entity.Jugador.DEMARCACION_ASISTENTE;
+import com.formulamanager.sokker.bo.FactorxJugadorBO;
+import com.formulamanager.sokker.entity.factorx.JugadorFactorX;
+import com.formulamanager.sokker.entity.factorx.JugadorFactorX.DEMARCACION;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
 
@@ -49,7 +49,7 @@ public class Anyadir extends SERVLET_FACTORX {
 				throw new RuntimeException("Jugador no encontrado");
 			}
 				
-			DEMARCACION_ASISTENTE demarcacion = DEMARCACION_ASISTENTE.valueOf(request.getParameter("demarcacion"));
+			DEMARCACION demarcacion = DEMARCACION_ASISTENTE.valueOf(request.getParameter("demarcacion"));
 	
 			int[] jornada_actual = new int[1];
 			int[] edicion_actual = new int[1];
@@ -63,7 +63,7 @@ public class Anyadir extends SERVLET_FACTORX {
 			};
 			
 			synchronized (Anyadir.class) {
-				List<Jugador> jugadores = JugadorBO.leer_jugadores(tipo, edicion_actual[0], true);
+				List<Jugador> jugadores = FactorxJugadorBO.leer_jugadores(tipo, edicion_actual[0], true);
 				
 				// Buscamos al jugador entre los que tenemos
 				for (Jugador j : jugadores) {
