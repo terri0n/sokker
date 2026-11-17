@@ -35,7 +35,7 @@ import java.net.URL;
 
 /** Factor X player operations. Independent from Asistente's Jugador and BO. */
 public final class FactorxJugadorBO {
-    private static final String PATH_BASE = System.getProperty("os.name").contains("Windows") ? "d:\\levi\\home\\" : "/home/";
+    public static final String PATH_BASE = System.getProperty("os.name").contains("Windows") ? "d:\\levi\\home\\" : "/home/";
     public static final String CONFIG_PROPERTIES = PATH_BASE + "factorx/config.properties";
     public static final String HISTORICO_PROPERTIES = PATH_BASE + "factorx/historico.properties";
     private FactorxJugadorBO() {}
@@ -61,6 +61,47 @@ public final class FactorxJugadorBO {
             HtmlButton submit=form.getFormByName("newpost").getFirstByXPath("//button[@type='submit']");
             submit.click();
         } catch(Exception e) { e.printStackTrace(); }
+    }
+
+    public static int getJornadaMod(int round) { return round < 976 ? round % 16 : (round - 976) % 13; }
+
+    public static void grabar_jugadores(List<JugadorFactorX> players,TIPO_FACTORX type,int currentRound,boolean historical) throws IOException {
+        Properties properties=new Properties();
+        int index=0;
+        for(JugadorFactorX p:players) {
+            JugadorFactorX o=p.getOriginal();
+            properties.setProperty(index+"_nombre",p.getNombre());
+            properties.setProperty(index+"_pid",String.valueOf(p.getPid()));
+            properties.setProperty(index+"_equipo",p.getEquipo()==null?"":p.getEquipo());
+            properties.setProperty(index+"_tid",String.valueOf(p.getTid()));
+            properties.setProperty(index+"_edad",String.valueOf(p.getEdad()));
+            properties.setProperty(index+"_valor",String.valueOf(p.getValor()));
+            properties.setProperty(index+"_jornada",String.valueOf(p.getJornada()));
+            properties.setProperty(index+"_demarcacion",p.getDemarcacion().name());
+            properties.setProperty(index+"_condicion",String.valueOf(p.getCondicion()));
+            properties.setProperty(index+"_rapidez",String.valueOf(p.getRapidez()));
+            properties.setProperty(index+"_tecnica",String.valueOf(p.getTecnica()));
+            properties.setProperty(index+"_pases",String.valueOf(p.getPases()));
+            properties.setProperty(index+"_porteria",String.valueOf(p.getPorteria()));
+            properties.setProperty(index+"_defensa",String.valueOf(p.getDefensa()));
+            properties.setProperty(index+"_creacion",String.valueOf(p.getCreacion()));
+            properties.setProperty(index+"_anotacion",String.valueOf(p.getAnotacion()));
+            properties.setProperty(index+"_condicion_orig",String.valueOf(o.getCondicion()));
+            properties.setProperty(index+"_rapidez_orig",String.valueOf(o.getRapidez()));
+            properties.setProperty(index+"_tecnica_orig",String.valueOf(o.getTecnica()));
+            properties.setProperty(index+"_pases_orig",String.valueOf(o.getPases()));
+            properties.setProperty(index+"_porteria_orig",String.valueOf(o.getPorteria()));
+            properties.setProperty(index+"_defensa_orig",String.valueOf(o.getDefensa()));
+            properties.setProperty(index+"_creacion_orig",String.valueOf(o.getCreacion()));
+            properties.setProperty(index+"_anotacion_orig",String.valueOf(o.getAnotacion()));
+            if(o.getValor()!=null) properties.setProperty(index+"_valor_orig",String.valueOf(o.getValor()));
+            properties.setProperty(index+"_jornada_orig",String.valueOf(o.getJornada()));
+            index++;
+        }
+        String path=historical?HISTORICO_PROPERTIES+(FactorxBO.getEdicion(currentRound)-1)+type.getSufijo():CONFIG_PROPERTIES+type.getSufijo();
+        Util.guardar_properties(properties,path);
+        if(getJornadaMod(currentRound)==0||historical)
+            Util.guardar_properties(properties,CONFIG_PROPERTIES+currentRound+type.getSufijo());
     }
 
     public static List<JugadorFactorX> leer_historico(TIPO_FACTORX type,int currentEdition) {
@@ -186,7 +227,7 @@ public final class FactorxJugadorBO {
 
     public static void archivar_temporada(TIPO_FACTORX type,int currentRound) throws IOException {
         List<JugadorFactorX> players=leer_jugadores(type,FactorxBO.getEdicion(currentRound),true);
-        FactorxBO.grabar_jugadores(players,type,currentRound,true);
+        grabar_jugadores(players,type,currentRound,true);
         List<JugadorFactorX> next=new ArrayList<JugadorFactorX>();
         for(JugadorFactorX p:players) {
             p.setEdad(p.getEdad()+1);
@@ -194,6 +235,6 @@ public final class FactorxJugadorBO {
                 p.setOriginal(new JugadorFactorX(p));p.setJornada(currentRound);next.add(p);
             }
         }
-        FactorxBO.grabar_jugadores(next,type,currentRound,false);
+        grabar_jugadores(next,type,currentRound,false);
     }
 }
