@@ -15,7 +15,7 @@ public final class FactorxPlayerModelHarness {
         String previousRoot=FactorxJugadorBO.PATH_BASE;
         Path root=Files.createTempDirectory("factorx-player-model-");
         Files.createDirectories(root.resolve("factorx"));
-        FactorxJugadorBO.PATH_BASE=root.toString()+File.separator;
+        FactorxJugadorBO.setPathBase(root.toString()+File.separator);
         try {
             for(TIPO_FACTORX type:TIPO_FACTORX.values()) {
                 JugadorFactorX player=new JugadorFactorX();
