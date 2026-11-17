@@ -32,6 +32,7 @@ jobs:
           mvn -q -f sokker/pom.xml dependency:build-classpath -Dmdep.outputFile=/tmp/maven-classpath.txt
           mvn -q dependency:get -Dartifact=javax.servlet:javax.servlet-api:4.0.1
           mvn -q dependency:get -Dartifact=javax.servlet.jsp:javax.servlet.jsp-api:2.3.3
+          mvn -q -f sokker/pom.xml dependency:copy-dependencies -DincludeArtifactIds=sqlite-jdbc,slf4j-api -DoutputDirectory=/tmp/sqlite-runtime
 
       - name: Normalize mixed source encodings
         shell: bash
@@ -96,6 +97,7 @@ jobs:
           mkdir -p /tmp/sokker-war/WEB-INF/classes
           cp -a sokker/WebContent/. /tmp/sokker-war/
           cp -a /tmp/sokker-classes/. /tmp/sokker-war/WEB-INF/classes/
+          cp -a /tmp/sqlite-runtime/*.jar /tmp/sokker-war/WEB-INF/lib/
           test -f /tmp/sokker-war/WEB-INF/web.xml
           test -f /tmp/sokker-war/WEB-INF/classes/com/formulamanager/sokker/bo/AsistenteBO.class
           test -f /tmp/sokker-war/WEB-INF/classes/com/formulamanager/sokker/acciones/asistente/Cambiar_color.class
@@ -130,6 +132,7 @@ jobs:
           CP="sokker/WebContent/WEB-INF/lib/*:${MAVEN_CP}:${SERVLET}:${JSP}"
           javac -source 8 -target 8 -encoding UTF-8 -cp "/tmp/sokker-classes:${CP}" -d /tmp/compat-harness \
             .github/harness/PersistenceRoundTrip.java \
+            .github/harness/SqliteLegacyImportHarness.java \
             .github/harness/AccountDeletionHarness.java \
             .github/harness/CredentialHygieneHarness.java \
             .github/harness/AccountDeletionUiHarness.java \
