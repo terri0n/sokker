@@ -33,6 +33,7 @@ public class ServletContextLifecycleHarness {
         Files.write(tomcat.resolve("conf/server.xml"), serverXml.getBytes(StandardCharsets.UTF_8));
         SystemUtil.REAL_PATH = webapp.toAbsolutePath().toString() + File.separator;
         JugadorBO.PATH_BASE = home.toAbsolutePath().toString() + File.separator;
+        com.formulamanager.sokker.bo.FactorxJugadorBO.PATH_BASE = home.toAbsolutePath().toString() + File.separator;
 
         Set<Thread> before = new HashSet<Thread>(Thread.getAllStackTraces().keySet());
         ServletContext context = (ServletContext) Proxy.newProxyInstance(
