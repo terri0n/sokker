@@ -141,6 +141,7 @@ public final class GrupoJugadorDAO {
                 connection.rollback();
                 if (e instanceof SQLException) throw (SQLException)e;
                 if (e instanceof IOException) throw (IOException)e;
+                if (e instanceof IllegalArgumentException) throw (IllegalArgumentException)e;
                 throw new SQLException("Cannot assign player group", e);
             } finally {
                 connection.setAutoCommit(true);
