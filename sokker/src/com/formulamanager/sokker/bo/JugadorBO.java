@@ -139,14 +139,8 @@ public class JugadorBO {
 			}
 			
 			File file = new File(BD);
-			if (!file.exists()) {
-				return jugadores;
-			}
-			
-			input = new FileInputStream(file);
-	
-			// load a properties file
-			prop.load(input);
+			prop = Util.cargar_properties(file);
+			if (prop == null) return jugadores;
 	
 			// Buscamos el mayor �ndice de jugadores
 			Set<String> keys = prop.stringPropertyNames();
