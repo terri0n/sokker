@@ -49,13 +49,13 @@ public final class LegacyPropertiesImporter {
                     String relativePath = sourceDirectory.toPath().relativize(file.toPath()).toString().replace(File.separatorChar, '/');
                     byte[] bytes = Files.readAllBytes(file.toPath());
                     String checksum = sha256(bytes);
-                    if (isUnchanged(connection, relativePath, checksum)) {
+                    if (isImported(connection, relativePath)) {
                         unchanged++;
                         continue;
                     }
                     Properties properties = new Properties();
                     properties.load(new ByteArrayInputStream(bytes));
-                    storeFile(connection, relativePath, checksum);
+                    storeFile(connection, relativePath, checksum, file.lastModified());
                     storeEntries(connection, relativePath, properties);
                     imported++;
                 }
@@ -100,22 +100,22 @@ public final class LegacyPropertiesImporter {
                 || candidate.equals(databasePath + "-shm");
     }
 
-    private boolean isUnchanged(Connection connection, String path, String checksum) throws SQLException {
+    private boolean isImported(Connection connection, String path) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
-                "SELECT sha256 FROM legacy_properties_file WHERE path=?")) {
+                "SELECT 1 FROM legacy_properties_file WHERE path=?")) {
             statement.setString(1, path);
             try (java.sql.ResultSet result = statement.executeQuery()) {
-                return result.next() && checksum.equals(result.getString(1));
+                return result.next();
             }
         }
     }
 
-    private void storeFile(Connection connection, String path, String checksum) throws SQLException {
+    private void storeFile(Connection connection, String path, String checksum, long modifiedAt) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
                 "INSERT OR REPLACE INTO legacy_properties_file(path,sha256,imported_at) VALUES(?,?,?)")) {
             statement.setString(1, path);
             statement.setString(2, checksum);
-            statement.setLong(3, System.currentTimeMillis());
+            statement.setLong(3, modifiedAt);
             statement.executeUpdate();
         }
     }

@@ -1,6 +1,5 @@
 package com.formulamanager.sokker.persistence;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -42,18 +41,25 @@ public final class SqlitePropertiesStore {
 
     public Properties load(String relativePath) throws IOException, SQLException {
         String path = normalize(relativePath);
-        try (Connection connection = database.openConnection();
-             PreparedStatement statement = connection.prepareStatement(
-                     "SELECT content FROM legacy_properties_file WHERE path=?")) {
-            statement.setString(1, path);
-            try (ResultSet result = statement.executeQuery()) {
-                if (!result.next()) {
-                    return null;
+        try (Connection connection = database.openConnection()) {
+            try (PreparedStatement exists = connection.prepareStatement(
+                    "SELECT 1 FROM legacy_properties_file WHERE path=?")) {
+                exists.setString(1, path);
+                try (ResultSet result = exists.executeQuery()) {
+                    if (!result.next()) return null;
                 }
-                Properties properties = new Properties();
-                properties.load(new ByteArrayInputStream(result.getBytes(1)));
-                return properties;
             }
+            Properties properties = new Properties();
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "SELECT property_key,property_value FROM legacy_properties_entry WHERE path=?")) {
+                statement.setString(1, path);
+                try (ResultSet result = statement.executeQuery()) {
+                    while (result.next()) {
+                        properties.setProperty(result.getString(1), result.getString(2));
+                    }
+                }
+            }
+            return properties;
         }
     }
 
@@ -71,12 +77,16 @@ public final class SqlitePropertiesStore {
             connection.setAutoCommit(false);
             try {
                 try (PreparedStatement statement = connection.prepareStatement(
-                        "INSERT OR REPLACE INTO legacy_properties_file(path,sha256,content,imported_at) VALUES(?,?,?,?)")) {
+                        "INSERT OR REPLACE INTO legacy_properties_file(path,sha256,imported_at) VALUES(?,?,?)")) {
                     statement.setString(1, path);
                     statement.setString(2, checksum);
-                    statement.setBytes(3, bytes);
-                    statement.setLong(4, System.currentTimeMillis());
+                    statement.setLong(3, System.currentTimeMillis());
                     statement.executeUpdate();
+                }
+                try (PreparedStatement delete = connection.prepareStatement(
+                        "DELETE FROM legacy_properties_entry WHERE path=?")) {
+                    delete.setString(1, path);
+                    delete.executeUpdate();
                 }
                 try (PreparedStatement statement = connection.prepareStatement(
                         "INSERT INTO legacy_properties_entry(path,property_key,property_value) VALUES(?,?,?)")) {
@@ -135,7 +145,7 @@ public final class SqlitePropertiesStore {
 
     public List<String> list(String prefix, String suffix) throws SQLException {
         StringBuilder sql = new StringBuilder("SELECT path FROM legacy_properties_file WHERE 1=1");
-        if (prefix != null) sql.append(" AND path LIKE ?");
+        if (prefix != null) sql.append(" AND path LIKE ? ESCAPE '!'");
         if (suffix != null) sql.append(" AND path LIKE ?");
         sql.append(" ORDER BY path");
         try (Connection connection = database.openConnection();
@@ -162,7 +172,7 @@ public final class SqlitePropertiesStore {
 
     private String normalize(String path) {
         if (path == null || path.trim().isEmpty()) throw new IllegalArgumentException("path is required");
-        String normalized = path.replace('\\\\', '/');
+        String normalized = path.replace('\\', '/');
         while (normalized.startsWith("/")) normalized = normalized.substring(1);
         if (normalized.contains("../") || normalized.equals("..")) {
             throw new IllegalArgumentException("Path traversal is not allowed: " + path);
@@ -171,7 +181,7 @@ public final class SqlitePropertiesStore {
     }
 
     private static String escapeLike(String value) {
-        return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+        return value.replace("!", "!!").replace("%", "!%").replace("_", "!_");
     }
 
     private static String sha256(byte[] bytes) {
