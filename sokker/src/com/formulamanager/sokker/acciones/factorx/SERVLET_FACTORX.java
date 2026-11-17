@@ -13,7 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.formulamanager.sokker.auxiliares.SERVLET;
 import com.formulamanager.sokker.auxiliares.SystemUtil;
 import com.formulamanager.sokker.auxiliares.Util;
-import com.formulamanager.sokker.entity.Jugador;
+import com.formulamanager.sokker.entity.factorx.JugadorFactorX;
 
 /**
  * Servlet implementation class ServletSokker
@@ -30,9 +30,9 @@ public abstract class SERVLET_FACTORX extends SERVLET {
 	}
 	
 	public enum TIPO_HISTORICO { puntos, subidas, valor;
-		public Comparator<Jugador> getComparator() {
+		public Comparator<JugadorFactorX> getComparator() {
 			switch (this) {
-				case puntos: return Jugador.comparator_puntos();
+				case puntos: return JugadorFactorX.comparator_puntos();
 				case subidas: return Jugador.comparator_subidas();
 				case valor: return Jugador.comparator_valor();
 				default: return null;
