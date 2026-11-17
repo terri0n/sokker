@@ -15,7 +15,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.formulamanager.sokker.auxiliares.Navegador;
 import com.formulamanager.sokker.auxiliares.Util;
-import com.formulamanager.sokker.bo.FactorxJugadorBO;
 import com.formulamanager.sokker.bo.FactorxBO;
 import com.formulamanager.sokker.bo.FactorxBO.FORMACIONES;
 import com.formulamanager.sokker.bo.FactorxJugadorBO;
@@ -63,11 +62,11 @@ public class Main extends SERVLET_FACTORX {
 			e.printStackTrace();
 		}
 
-		List<Jugador> jugadores = JugadorBO.leer_jugadores(tipo, edicion[0], edicion_actual[0] == null || edicion[0].equals(edicion_actual[0]));
+		List<JugadorFactorX> jugadores = FactorxJugadorBO.leer_jugadores(tipo, edicion[0], edicion_actual[0] == null || edicion[0].equals(edicion_actual[0]));
 		Collections.sort(jugadores);
 		
 		FORMACIONES formacion = FactorxBO.leer_formacion(tipo);
-		JugadorBO.poner_estrellas(jugadores, formacion, tipo);
+		FactorxJugadorBO.poner_estrellas(jugadores, formacion, tipo);
 		
 		request.setAttribute("jugadores", jugadores);
 		request.setAttribute("jornada", jornada[0]);
