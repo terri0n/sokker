@@ -12,7 +12,8 @@ import java.util.Properties;
  */
 public final class SqlitePersistence {
     private static volatile SqlitePropertiesStore asistente;
-    private static volatile SqlitePropertiesStore factorx;
+    private static volatile File factorxDatabaseFile;
+    private static volatile File factorxRoot;
 
     private SqlitePersistence() {}
 
@@ -40,18 +41,19 @@ public final class SqlitePersistence {
         new LegacyPropertiesImporter(factorxDatabase, factorxRoot).importAll();
 
         SqlitePropertiesStore newAsistente = new SqlitePropertiesStore(asistenteDatabase, asistenteRoot);
-        SqlitePropertiesStore newFactorx = new SqlitePropertiesStore(factorxDatabase, factorxRoot);
-        new FactorxDAO(factorxDatabase).migrateLegacy(newFactorx, factorxRoot);
+        SqlitePropertiesStore factorxMigrationSource = new SqlitePropertiesStore(factorxDatabase, factorxRoot);
+        new FactorxDAO(factorxDatabase).migrateLegacy(factorxMigrationSource, factorxRoot);
         asistente = newAsistente;
-        factorx = newFactorx;
+        SqlitePersistence.factorxRoot = factorxRoot;
+        SqlitePersistence.factorxDatabaseFile = factorxDatabase.getDatabaseFile();
     }
 
     public static SqlitePropertiesStore forFile(File file) throws IOException {
         if (file == null) return null;
         File canonical = file.getCanonicalFile();
-        SqlitePropertiesStore currentFactorx = factorx;
-        if (currentFactorx != null && canonical.toPath().startsWith(currentFactorx.getRoot().toPath())) {
-            return currentFactorx;
+        File currentFactorxRoot = factorxRoot;
+        if (currentFactorxRoot != null && canonical.toPath().startsWith(currentFactorxRoot.toPath())) {
+            throw new IllegalStateException("Factor X data must be accessed through FactorxDAO: " + file);
         }
         SqlitePropertiesStore currentAsistente = asistente;
         if (currentAsistente != null && canonical.toPath().startsWith(currentAsistente.getRoot().toPath())) {
@@ -127,7 +129,7 @@ public final class SqlitePersistence {
     }
 
     public static boolean isInitialized() {
-        return asistente != null && factorx != null;
+        return asistente != null && factorxDatabaseFile != null;
     }
 
     public static File getAsistenteDatabaseFile() {
@@ -135,11 +137,12 @@ public final class SqlitePersistence {
     }
 
     public static File getFactorxDatabaseFile() {
-        return factorx == null ? null : new File(factorx.getRoot(), "factorx.db");
+        return factorxDatabaseFile;
     }
 
     public static synchronized void shutdown() {
         asistente = null;
-        factorx = null;
+        factorxDatabaseFile = null;
+        factorxRoot = null;
     }
 }
