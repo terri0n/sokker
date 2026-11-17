@@ -63,7 +63,7 @@ public class Anyadir extends SERVLET_FACTORX {
 			};
 			
 			synchronized (Anyadir.class) {
-				List<JugadorFactorX> jugadores = FactorxFactorxJugadorBO.leer_jugadores(tipo, edicion_actual[0], true);
+				List<JugadorFactorX> jugadores = FactorxJugadorBO.leer_jugadores(tipo, edicion_actual[0], true);
 				
 				// Buscamos al jugador entre los que tenemos
 				for (JugadorFactorX j : jugadores) {
@@ -91,7 +91,7 @@ public class Anyadir extends SERVLET_FACTORX {
 								Collections.sort(jugadores);
 								FactorxBO.grabar_jugadores(jugadores, tipo, jornada_actual[0], false);
 								
-								JugadorBO.escribir_anuncio(navegador, nuevo, true);
+								FactorxJugadorBO.escribir_anuncio(navegador, nuevo, true);
 							}
 						} else {
 							throw new RuntimeException("Jugador no encontrado");
