@@ -34,6 +34,8 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.formulamanager.sokker.persistence.SqlitePersistence;
+
 public class Util {
 	public static String ApplicationResources = "com.formulamanager.sokker.idiomas.ApplicationResources";
 
@@ -172,27 +174,51 @@ public class Util {
 		return lista;
 	}
 	
-	public static void guardar_properties(Properties prop, String ruta) throws IOException {
-		if (ruta.indexOf("/") > -1) {
-			File carpeta = new File(ruta.substring(0, ruta.indexOf("/")));
-			carpeta.mkdirs();
+	/**
+	 * Lee una base Properties desde SQLite cuando su ruta pertenece a uno de
+	 * los dominios migrados. Antes de inicializar SQLite conserva el acceso
+	 * legacy para los harnesses y herramientas de migración.
+	 */
+	public static Properties cargar_properties(File file) throws IOException {
+		if (file == null) throw new IllegalArgumentException("file is required");
+		if (SqlitePersistence.forFile(file) != null) return SqlitePersistence.load(file);
+		if (!file.isFile()) return null;
+		Properties properties = new Properties();
+		try (InputStream input = new FileInputStream(file)) {
+			properties.load(input);
 		}
+		return properties;
+	}
 
+	public static boolean existe_properties(File file) throws IOException {
+		return SqlitePersistence.exists(file);
+	}
+
+	public static void guardar_properties(Properties prop, String ruta) throws IOException {
+		if (ruta == null) throw new IllegalArgumentException("ruta is required");
 		synchronized (ruta.intern()) {
 			File file = new File(ruta);
-			if (!file.exists()) {
-				file.createNewFile();
+			if (SqlitePersistence.forFile(file) != null) {
+				SqlitePersistence.save(file, prop);
+				return;
 			}
-			FileOutputStream fos = new FileOutputStream(ruta);
-			prop.store(fos, null);
-			fos.close();
+			File parent = file.getAbsoluteFile().getParentFile();
+			if (parent != null && !parent.isDirectory() && !parent.mkdirs() && !parent.isDirectory()) {
+				throw new IOException("No se pudo crear el directorio " + parent);
+			}
+			try (FileOutputStream fos = new FileOutputStream(file)) {
+				prop.store(fos, null);
+			}
 		}
 	}
-	
+
 	public static void borrar_properties(String ruta) {
 		synchronized (ruta.intern()) {
-			File file = new File(ruta);
-			file.delete();
+			try {
+				SqlitePersistence.delete(new File(ruta));
+			} catch (IOException e) {
+				throw new RuntimeException("No se pudo borrar " + ruta, e);
+			}
 		}
 	}
 
