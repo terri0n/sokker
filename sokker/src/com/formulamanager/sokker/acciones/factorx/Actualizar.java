@@ -49,11 +49,11 @@ public class Actualizar extends SERVLET_FACTORX {
 						int edicion_actual = obtener_edicion(navegador);
 						int jornada_actual = obtener_jornada(navegador);
 
-						List<Jugador> jugadores = FactorxJugadorBO.leer_jugadores(tipo, edicion_actual, true);
+						List<JugadorFactorX> jugadores = FactorxFactorxJugadorBO.leer_jugadores(tipo, edicion_actual, true);
 						int pid = Integer.valueOf(request.getParameter("pid"));
 						int jornada = Integer.valueOf(request.getParameter("jornada"));
 
-						for (Jugador j : jugadores) {
+						for (JugadorFactorX j : jugadores) {
 							if (pid == j.getPid()) {
 								j.setDemarcacion(DEMARCACION.valueOf(request.getParameter("demarcacion")));
 								j.getOriginal().setJornada(jornada);
