@@ -27,6 +27,7 @@ import com.formulamanager.sokker.auxiliares.SystemUtil;
 import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.bo.AsistenteBO;
 import com.formulamanager.sokker.bo.FactorxBO;
+import com.formulamanager.sokker.bo.FactorxJugadorBO;
 import com.formulamanager.sokker.bo.JugadorBO;
 import com.formulamanager.sokker.persistence.SqlitePersistence;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
@@ -76,7 +77,7 @@ public class ServletContextListener implements javax.servlet.ServletContextListe
 		SystemUtil.saveRealPath(event.getServletContext());
 		try {
 			File asistenteDirectory = new File(SystemUtil.getVar(SystemUtil.PATH));
-			File factorxDirectory = new File(JugadorBO.PATH_BASE, "factorx");
+			File factorxDirectory = new File(FactorxJugadorBO.PATH_BASE, "factorx");
 			SqlitePersistence.initialize(asistenteDirectory, factorxDirectory);
 			System.out.println("Persistencia SQLite inicializada: "
 					+ SqlitePersistence.getAsistenteDatabaseFile() + " / "
