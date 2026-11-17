@@ -52,6 +52,26 @@ public final class PersistenceRoundTrip {
         try (FileOutputStream output = new FileOutputStream(playerFile)) {
             initial.store(output, null);
         }
+        Properties otherTeam = new Properties();
+        otherTeam.setProperty("42", PLAYER_RECORD.replace("Player", "Different team player"));
+        try (FileOutputStream output = new FileOutputStream(data.resolve("124.properties").toFile())) {
+            otherTeam.store(output, null);
+        }
+        try (FileOutputStream output = new FileOutputStream(data.resolve("123_historico.properties").toFile())) {
+            initial.store(output, null);
+        }
+        Properties juniors = new Properties();
+        juniors.setProperty("77", "Junior,true,1200,17,5,3");
+        try (FileOutputStream output = new FileOutputStream(data.resolve("123_juveniles.properties").toFile())) {
+            juniors.store(output, null);
+        }
+        try (FileOutputStream output = new FileOutputStream(data.resolve("123_historico_juveniles.properties").toFile())) {
+            juniors.store(output, null);
+        }
+        Path backup = Files.createDirectories(data.resolve("backup"));
+        try (FileOutputStream output = new FileOutputStream(backup.resolve("123_1200.properties").toFile())) {
+            initial.store(output, null);
+        }
 
         try {
             SqlitePersistence.initialize(data.toFile(), factorx.toFile());
@@ -64,6 +84,18 @@ public final class PersistenceRoundTrip {
             require(!playerFile.exists(), "Legacy player file was not retired after migration");
             TeamPlayerDAO dao = new TeamPlayerDAO(new SqliteDatabase(SqlitePersistence.getAsistenteDatabaseFile(), true));
             require(dao.load(123, "PLAYER", 0).size() == 1, "Managed player row was not persisted in SQLite");
+            require(dao.load(124, "PLAYER", 0).size() == 1, "Same PID in a different tid was not isolated");
+            require(dao.load(123, "PLAYER_HISTORY", 0).size() == 1, "Player history was not migrated");
+            require(dao.load(123, "JUVENILE", 0).size() == 1, "Juveniles were not migrated");
+            require(dao.load(123, "JUVENILE_HISTORY", 0).size() == 1, "Juvenile history was not migrated");
+            require(dao.load(123, "PLAYER", 1200).size() == 1, "Round snapshot was not migrated");
+            require(AsistenteBO.leer_juveniles(123, false, usuario).size() == 1, "Juvenile DAO read failed");
+            require(AsistenteBO.leer_juveniles(123, true, usuario).size() == 1, "Historical juvenile DAO read failed");
+            require(!data.resolve("124.properties").toFile().exists(), "Second legacy team file was not retired");
+            require(!data.resolve("123_historico.properties").toFile().exists(), "Legacy player history was not retired");
+            require(!data.resolve("123_juveniles.properties").toFile().exists(), "Legacy juvenile file was not retired");
+            require(!data.resolve("123_historico_juveniles.properties").toFile().exists(), "Legacy juvenile history was not retired");
+            require(!backup.resolve("123_1200.properties").toFile().exists(), "Legacy player snapshot was not retired");
             try (java.sql.Connection connection = java.sql.DriverManager.getConnection(
                     "jdbc:sqlite:" + SqlitePersistence.getAsistenteDatabaseFile().getAbsolutePath());
                  java.sql.PreparedStatement query = connection.prepareStatement(
