@@ -41,6 +41,7 @@ public final class SqlitePersistence {
 
         SqlitePropertiesStore newAsistente = new SqlitePropertiesStore(asistenteDatabase, asistenteRoot);
         SqlitePropertiesStore newFactorx = new SqlitePropertiesStore(factorxDatabase, factorxRoot);
+        new FactorxDAO(factorxDatabase).migrateLegacy(newFactorx, factorxRoot);
         asistente = newAsistente;
         factorx = newFactorx;
     }
