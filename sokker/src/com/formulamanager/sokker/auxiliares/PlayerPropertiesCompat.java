@@ -1,9 +1,7 @@
 package com.formulamanager.sokker.auxiliares;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
 
 /**
@@ -24,15 +22,9 @@ public final class PlayerPropertiesCompat {
     }
 
     public static void preserveUnmanagedKeys(File previousFile, Properties next) throws IOException {
-        if (previousFile == null || !previousFile.exists()) {
-            return;
-        }
-
-        Properties previous = new Properties();
-        try (InputStream input = new FileInputStream(previousFile)) {
-            previous.load(input);
-        }
-        preserveUnmanagedKeys(previous, next);
+        if (previousFile == null) return;
+        Properties previous = Util.cargar_properties(previousFile);
+        if (previous != null) preserveUnmanagedKeys(previous, next);
     }
 
     public static void preserveUnmanagedKeys(Properties previous, Properties next) {
