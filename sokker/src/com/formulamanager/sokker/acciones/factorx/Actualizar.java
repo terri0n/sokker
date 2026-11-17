@@ -15,9 +15,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.formulamanager.sokker.auxiliares.Navegador;
 import com.formulamanager.sokker.bo.FactorxBO;
-import com.formulamanager.sokker.bo.JugadorBO;
-import com.formulamanager.sokker.entity.Jugador;
-import com.formulamanager.sokker.entity.Jugador.DEMARCACION_ASISTENTE;
+import com.formulamanager.sokker.bo.FactorxJugadorBO;
+import com.formulamanager.sokker.entity.factorx.JugadorFactorX;
+import com.formulamanager.sokker.entity.factorx.JugadorFactorX.DEMARCACION;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
 
@@ -49,13 +49,13 @@ public class Actualizar extends SERVLET_FACTORX {
 						int edicion_actual = obtener_edicion(navegador);
 						int jornada_actual = obtener_jornada(navegador);
 
-						List<Jugador> jugadores = JugadorBO.leer_jugadores(tipo, edicion_actual, true);
+						List<Jugador> jugadores = FactorxJugadorBO.leer_jugadores(tipo, edicion_actual, true);
 						int pid = Integer.valueOf(request.getParameter("pid"));
 						int jornada = Integer.valueOf(request.getParameter("jornada"));
 
 						for (Jugador j : jugadores) {
 							if (pid == j.getPid()) {
-								j.setDemarcacion(DEMARCACION_ASISTENTE.valueOf(request.getParameter("demarcacion")));
+								j.setDemarcacion(DEMARCACION.valueOf(request.getParameter("demarcacion")));
 								j.getOriginal().setJornada(jornada);
 								j.getOriginal().setCondicion(Integer.valueOf(request.getParameter("condicion")));
 								j.getOriginal().setRapidez(Integer.valueOf(request.getParameter("rapidez")));
