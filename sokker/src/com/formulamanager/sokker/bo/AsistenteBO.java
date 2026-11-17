@@ -1394,7 +1394,7 @@ System.out.println(p.asXml());
 		List<File> archivos = new ArrayList<File>();
 		try {
 			File asistenteDir = new File(SystemUtil.getVar(SystemUtil.PATH));
-			File factorxDir = new File(JugadorBO.PATH_BASE, "factorx");
+			File factorxDir = new File(FactorxJugadorBO.PATH_BASE, "factorx");
 			archivos.addAll(SqliteBackupService.listParts(asistenteDir, "asistente-backup"));
 			archivos.addAll(SqliteBackupService.listParts(factorxDir, "factorx-backup"));
 			if (archivos.isEmpty()) {
