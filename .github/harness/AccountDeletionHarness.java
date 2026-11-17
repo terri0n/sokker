@@ -31,7 +31,7 @@ public final class AccountDeletionHarness {
         seedUser(data, "alice", 123, null, true);
         seedTeamFiles(data, 123);
         touch(data.resolve("backup/999_1199.properties"));
-        touch(data.resolve("logs/_alice.log"));
+        touch(data.getParent().resolve("asistente-logs/_alice.log"));
         HashMap<String, String> ntdb = new HashMap<String, String>();
         ntdb.put("alice", "bob,charlie");
         ntdb.put("owner", "alice,bob");
@@ -44,7 +44,7 @@ public final class AccountDeletionHarness {
         AccountDeletionService.execute(manifest);
 
         require(!Files.exists(data.resolve("_alice.properties")), "Account file still exists");
-        require(!Files.exists(data.resolve("logs/_alice.log")), "Personal log still exists");
+        require(!Files.exists(data.getParent().resolve("asistente-logs/_alice.log")), "Personal log still exists");
         require(!Files.exists(data.resolve("123.properties")), "Current team data still exists");
         require(!Files.exists(data.resolve("123_historico.properties")), "Historical team data still exists");
         require(!Files.exists(data.resolve("123_juveniles.properties")), "Junior data still exists");
@@ -164,7 +164,7 @@ public final class AccountDeletionHarness {
         Files.createDirectories(webapp);
         Files.createDirectories(data);
         Files.createDirectories(data.resolve("backup"));
-        Files.createDirectories(data.resolve("logs"));
+        Files.createDirectories(data.getParent().resolve("asistente-logs"));
         Files.createDirectories(data.resolve("prueba"));
         Files.createDirectories(tomcat.resolve("conf"));
         String dataPath = data.toAbsolutePath().toString() + File.separator;
