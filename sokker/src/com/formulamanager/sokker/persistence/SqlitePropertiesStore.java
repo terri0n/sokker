@@ -145,14 +145,20 @@ public final class SqlitePropertiesStore {
 
     public List<String> list(String prefix, String suffix) throws SQLException {
         StringBuilder sql = new StringBuilder("SELECT path FROM legacy_properties_file WHERE 1=1");
-        if (prefix != null) sql.append(" AND path LIKE ? ESCAPE '!'");
-        if (suffix != null) sql.append(" AND path LIKE ?");
+        if (prefix != null) sql.append(" AND substr(path,1,length(?))=?");
+        if (suffix != null) sql.append(" AND substr(path,-length(?))=?");
         sql.append(" ORDER BY path");
         try (Connection connection = database.openConnection();
              PreparedStatement statement = connection.prepareStatement(sql.toString())) {
             int index = 1;
-            if (prefix != null) statement.setString(index++, escapeLike(prefix) + "%");
-            if (suffix != null) statement.setString(index, "%" + escapeLike(suffix));
+            if (prefix != null) {
+                statement.setString(index++, prefix);
+                statement.setString(index++, prefix);
+            }
+            if (suffix != null) {
+                statement.setString(index++, suffix);
+                statement.setString(index, suffix);
+            }
             List<String> paths = new ArrayList<String>();
             try (ResultSet result = statement.executeQuery()) {
                 while (result.next()) paths.add(result.getString(1));
