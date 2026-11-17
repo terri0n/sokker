@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 import com.formulamanager.sokker.auxiliares.SystemUtil;
 import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.entity.Usuario;
+import com.formulamanager.sokker.persistence.SqlitePersistence;
 
 /**
  * Borrado definitivo de una cuenta del Asistente.
@@ -30,7 +31,12 @@ public final class AccountDeletionService {
     private static final FileOperations REAL_FILE_OPERATIONS = new FileOperations() {
         @Override
         public void deleteIfExists(File file) throws IOException {
-            Files.deleteIfExists(file.toPath());
+            if (file.getName().endsWith(".properties")
+                    && SqlitePersistence.forFile(file) != null) {
+                Util.borrar_properties(file.getPath());
+            } else {
+                Files.deleteIfExists(file.toPath());
+            }
         }
     };
 
@@ -148,26 +154,29 @@ public final class AccountDeletionService {
         return false;
     }
 
-    private static void addIfExists(List<File> files, File file) {
-        if (file.isFile()) {
-            files.add(file);
-        }
+    private static void addIfExists(List<File> files, File file) throws IOException {
+        if (Util.existe_properties(file)) files.add(file);
     }
 
-    private static void addAllowedBackups(List<File> files, File backupDir, Integer tid) {
-        if (!backupDir.isDirectory()) {
+    private static void addAllowedBackups(List<File> files, File backupDir, Integer tid) throws IOException {
+        List<String> paths = SqlitePersistence.list(backupDir, String.valueOf(tid) + "_", ".properties");
+        if (paths != null) {
+            for (String path : paths) {
+                String name = path.substring(path.lastIndexOf('/') + 1);
+                if (name.matches("^" + Pattern.quote(String.valueOf(tid))
+                        + "_[0-9]+(?:_historico)?(?:_juveniles(?:_historico)?)?\\.properties$")) {
+                    files.add(new File(backupDir, name));
+                }
+            }
             return;
         }
+        if (!backupDir.isDirectory()) return;
         final Pattern allowed = Pattern.compile("^" + Pattern.quote(String.valueOf(tid))
                 + "_[0-9]+(?:_historico)?(?:_juveniles(?:_historico)?)?\\.properties$");
         File[] candidates = backupDir.listFiles();
-        if (candidates == null) {
-            return;
-        }
+        if (candidates == null) return;
         for (File candidate : candidates) {
-            if (candidate.isFile() && allowed.matcher(candidate.getName()).matches()) {
-                files.add(candidate);
-            }
+            if (candidate.isFile() && allowed.matcher(candidate.getName()).matches()) files.add(candidate);
         }
     }
 
