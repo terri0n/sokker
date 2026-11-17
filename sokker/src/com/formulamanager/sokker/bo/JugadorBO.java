@@ -74,7 +74,6 @@ public class JugadorBO {
 	// OJO: esta función se llama tanto desde el factorx como del asistente
 	public static boolean actualizar_jugador(WebClient navegador, Jugador jugador, boolean forzar) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 		HtmlPage pagina = navegador.getPage(AsistenteBO.SOKKER_URL + "/player/PID/" + jugador.getPid());
-SERVLET_FACTORX._log_linea(pagina.asXml());
 
 		HtmlAnchor a = (HtmlAnchor)pagina.getFirstByXPath("//div[@class='panel-heading']//a[contains(@href,'player/PID/" + jugador.getPid() + "')]");
 		if (a == null) {
