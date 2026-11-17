@@ -51,11 +51,15 @@ public final class FactorxPlayerModelHarness {
                 original.setPorteria(1); original.setDefensa(1); original.setCreacion(1); original.setAnotacion(1);
                 player.setOriginal(original);
 
+                List<JugadorFactorX> importedCurrent=FactorxJugadorBO.leer_jugadores(type,FactorxBO.getEdicion(1100),true);
+                require(importedCurrent.size()==1 && importedCurrent.get(0).getPid()==7000+type.ordinal(),"Legacy current players were not migrated for "+type);
                 List<JugadorFactorX> importedHistory=FactorxJugadorBO.leer_jugadores(type,30,false);
                 require(importedHistory.size()==1,"Legacy history was not migrated for "+type);
                 require(FactorxBO.leer_formacion(type)==FORMACIONES._541,"Legacy formation was not migrated for "+type);
                 require(!Files.exists(factorxDirectory.resolve("config.properties"+type.getSufijo())),"Legacy current file was not retired for "+type);
                 require(!Files.exists(factorxDirectory.resolve("historico.properties30"+type.getSufijo())),"Legacy history file was not retired for "+type);
+                require(!Files.exists(factorxDirectory.resolve("config.properties1100"+type.getSufijo())),"Legacy snapshot file was not retired for "+type);
+                require(!Files.exists(factorxDirectory.resolve("factorx.properties"+type.getSufijo())),"Legacy formation file was not retired for "+type);
 
                 FactorxJugadorBO.grabar_jugadores(Collections.singletonList(player),type,1100,false);
                 File database=SqlitePersistence.getFactorxDatabaseFile();
