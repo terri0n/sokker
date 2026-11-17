@@ -1822,4 +1822,64 @@ System.out.println("OK");
 			}
 		}
 	}
+
+
+	
+	
+	public static void leer_entrenadores(Usuario usuario, int jornada_anterior, WebClient navegador) {
+		if (usuario.getDef_tid() > NtdbBO.MAX_ID_SELECCION) {
+			try {
+				XmlPage pagina = Navegador.getXmlPage(navegador, AsistenteBO.SOKKER_URL + "/xml/trainers.xml");
+				List<Map<String, String>> entrenadores = SokkerLegacyXmlParser.parseElements(
+						pagina.getWebResponse().getContentAsString(), "trainer");
+				
+				List<BigDecimal> nivel_asistentes = new ArrayList<>();
+				
+				for (Map<String, String> entrenador : entrenadores) {
+					int job = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "job").trim());
+					if (job < 1 || job > TIPO_ENTRENADOR.values().length) {
+						throw new IOException("Tipo de entrenador desconocido: " + job);
+					}
+					TIPO_ENTRENADOR tipo = TIPO_ENTRENADOR.values()[job - 1];
+					int condicion = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillStamina").trim());
+					int rapidez = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillPace").trim());
+					int tecnica = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillTechnique").trim());
+					int pases = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillPassing").trim());
+					int porteria = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillKeeper").trim());
+					int defensa = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillDefending").trim());
+					int creacion = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillPlaymaking").trim());
+					int anotacion = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillScoring").trim());
+					int media = Integer.valueOf(SokkerLegacyXmlParser.required(entrenador, "skillCoach").trim());
+					
+					Jugador j = new Jugador(new Integer[] { condicion, rapidez, tecnica, pases, porteria, defensa, creacion, anotacion, media });
+					
+					switch (tipo) {
+						case PRINCIPAL:
+							usuario.getEntrenador_principal().put(usuario.getDef_jornada(), j);
+							break;
+						case ASISTENTE:
+							nivel_asistentes.add(j.getNivel_entrenador());
+							break;
+						case JUVENILES:
+							usuario.getNivel_juveniles().put(usuario.getDef_jornada(), j.getNivel_entrenador());
+							break;
+						case OTRO:
+					}
+				}
+				
+				usuario.getNivel_asistentes().put(usuario.getDef_jornada(), nivel_asistentes.size() == 0 ? BigDecimal.ZERO : Util.sumar_bd(nivel_asistentes).divide(new BigDecimal(3), MathContext.DECIMAL32));
+				
+				// Actualizamos las jornadas anteriores desde la �ltima actualizaci�n si no estaban establecidas
+				for (int i = jornada_anterior; i < usuario.getDef_jornada(); i++) {
+					if (usuario.getEntrenador_principal().get(i) == null) {
+						usuario.getEntrenador_principal().put(i, usuario.getEntrenador_principal().get(usuario.getDef_jornada()));
+						usuario.getNivel_asistentes().put(i, usuario.getNivel_asistentes().get(usuario.getDef_jornada()));
+						usuario.getNivel_juveniles().put(i, usuario.getNivel_juveniles().get(usuario.getDef_jornada()));
+					}
+				}
+			} catch (Exception e) {
+				throw new RuntimeException("Error al leer entrenadores", e);
+			}
+		}
+	}
 }
