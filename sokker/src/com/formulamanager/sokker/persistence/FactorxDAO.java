@@ -96,6 +96,7 @@ public final class FactorxDAO {
     /** Imports all legacy Factor X player, snapshot, history and formation documents atomically. */
     public void migrateLegacy(SqlitePropertiesStore legacy,File root) throws IOException,SQLException {
         final String marker="factorx-normalized-v1";
+        List<String> documents=legacy.list(null,null);
         try(Connection connection=database.openConnection()) {
             connection.setAutoCommit(false);
             try {
@@ -103,8 +104,7 @@ public final class FactorxDAO {
                 try(PreparedStatement q=connection.prepareStatement("SELECT 1 FROM factorx_migration WHERE name=?")) {
                     q.setString(1,marker); try(ResultSet r=q.executeQuery()){done=r.next();}
                 }
-                List<String> paths=legacy.list(null,null);
-                for(String path:paths) {
+                for(String path:documents) {
                     if(!isFactorxDocument(path)) continue;
                     if(!done) migrateDocument(connection,path,legacy.load(path));
                     try(PreparedStatement d=connection.prepareStatement("DELETE FROM legacy_properties_file WHERE path=?")) {
@@ -124,7 +124,7 @@ public final class FactorxDAO {
             } finally { connection.setAutoCommit(true); }
         }
         // Only remove source files after the complete normalized import committed.
-        for(String path:legacy.list(null,null)) if(isFactorxDocument(path)) {
+        for(String path:documents) if(isFactorxDocument(path)) {
             File source=new File(root,path.replace('/',File.separatorChar));
             if(source.exists()&&!source.delete()) throw new IOException("Cannot remove migrated Factor X file: "+source);
         }
