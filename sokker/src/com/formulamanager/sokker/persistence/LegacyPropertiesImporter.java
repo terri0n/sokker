@@ -16,8 +16,8 @@ import java.util.Properties;
 
 /**
  * Imports a read-only snapshot of every .properties file below the configured
- * data directory. Original bytes are stored verbatim; parsed entries are an
- * index only. The importer never changes or deletes source files.
+ * data directory. Each property is stored once as a key/value row. Unknown
+ * keys are retained, and source files are never modified or deleted.
  */
 public final class LegacyPropertiesImporter {
     private final SqliteDatabase database;
@@ -55,7 +55,7 @@ public final class LegacyPropertiesImporter {
                     }
                     Properties properties = new Properties();
                     properties.load(new ByteArrayInputStream(bytes));
-                    storeFile(connection, relativePath, checksum, bytes);
+                    storeFile(connection, relativePath, checksum);
                     storeEntries(connection, relativePath, properties);
                     imported++;
                 }
@@ -117,13 +117,12 @@ public final class LegacyPropertiesImporter {
         }
     }
 
-    private void storeFile(Connection connection, String path, String checksum, byte[] bytes) throws SQLException {
+    private void storeFile(Connection connection, String path, String checksum) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
-                "INSERT OR REPLACE INTO legacy_properties_file(path,sha256,content,imported_at) VALUES(?,?,?,?)")) {
+                "INSERT OR REPLACE INTO legacy_properties_file(path,sha256,imported_at) VALUES(?,?,?)")) {
             statement.setString(1, path);
             statement.setString(2, checksum);
-            statement.setBytes(3, bytes);
-            statement.setLong(4, System.currentTimeMillis());
+            statement.setLong(3, System.currentTimeMillis());
             statement.executeUpdate();
         }
     }

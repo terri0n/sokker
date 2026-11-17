@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 
 import com.formulamanager.sokker.persistence.LegacyPropertiesImporter;
 import com.formulamanager.sokker.persistence.SqliteDatabase;
@@ -24,15 +25,28 @@ public class SqliteLegacyImportHarness {
         Files.write(new File(nested, "config.properties").toPath(),
                 "0_pid=123\n0_future_skill=17\n".getBytes(StandardCharsets.ISO_8859_1));
 
-        SqliteDatabase database = new SqliteDatabase(new File(root, "db/sokker.db"));
+        File dbFile = new File(root, "db/sokker.db");
+        SqliteDatabase database = new SqliteDatabase(dbFile);
         LegacyPropertiesImporter importer = new LegacyPropertiesImporter(database, source);
         LegacyPropertiesImporter.ImportReport first = importer.importAll();
         require(first.getDiscovered() == 2, "Expected both root and nested properties files");
         require(first.getImported() == 2, "Expected two files imported");
-        require(java.util.Arrays.equals(original, readOriginal(database, "_alice.properties")),
-                "Original bytes were not preserved");
+        require("alice,secret,".equals(readProperty(database, "_alice.properties", "usuario")),
+                "Known property was not preserved");
         require("must survive".equals(readProperty(database, "_alice.properties", "future_field")),
-                "Unknown property was not indexed");
+                "Unknown property was not preserved");
+        require("áéíóú".equals(readProperty(database, "_alice.properties", "notas")),
+                "ISO-8859-1 property value was not preserved");
+        require("17".equals(readProperty(database, "factorx/config.properties", "0_future_skill")),
+                "Nested FactorX property was not preserved");
+        require(!hasColumn(database, "legacy_properties_file", "content"),
+                "Original file BLOB duplicates the parsed key/value data");
+        require("delete".equals(readJournalMode(database)),
+                "Database must use DELETE journaling to avoid persistent sidecar files");
+        require(!new File(dbFile.getAbsolutePath() + "-wal").exists(),
+                "WAL sidecar must not be created");
+        require(!new File(dbFile.getAbsolutePath() + "-shm").exists(),
+                "SHM sidecar must not be created");
 
         LegacyPropertiesImporter.ImportReport second = importer.importAll();
         require(second.getImported() == 0 && second.getUnchanged() == 2,
@@ -40,17 +54,6 @@ public class SqliteLegacyImportHarness {
         require(java.util.Arrays.equals(original, Files.readAllBytes(fixture.toPath())),
                 "Source file was modified");
         System.out.println("SqliteLegacyImportHarness: OK");
-    }
-
-    private static byte[] readOriginal(SqliteDatabase database, String path) throws Exception {
-        try (Connection c = database.openConnection();
-             PreparedStatement s = c.prepareStatement("SELECT content FROM legacy_properties_file WHERE path=?")) {
-            s.setString(1, path);
-            try (ResultSet r = s.executeQuery()) {
-                if (!r.next()) throw new AssertionError("Missing imported file " + path);
-                return r.getBytes(1);
-            }
-        }
     }
 
     private static String readProperty(SqliteDatabase database, String path, String key) throws Exception {
@@ -62,6 +65,23 @@ public class SqliteLegacyImportHarness {
             try (ResultSet r = s.executeQuery()) {
                 return r.next() ? r.getString(1) : null;
             }
+        }
+    }
+
+    private static boolean hasColumn(SqliteDatabase database, String table, String column) throws Exception {
+        try (Connection c = database.openConnection();
+             Statement s = c.createStatement();
+             ResultSet r = s.executeQuery("PRAGMA table_info(" + table + ")")) {
+            while (r.next()) if (column.equalsIgnoreCase(r.getString("name"))) return true;
+            return false;
+        }
+    }
+
+    private static String readJournalMode(SqliteDatabase database) throws Exception {
+        try (Connection c = database.openConnection();
+             Statement s = c.createStatement();
+             ResultSet r = s.executeQuery("PRAGMA journal_mode")) {
+            return r.next() ? r.getString(1) : null;
         }
     }
 
