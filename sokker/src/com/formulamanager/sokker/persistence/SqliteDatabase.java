@@ -153,6 +153,16 @@ public final class SqliteDatabase {
             statement.execute("CREATE TABLE IF NOT EXISTS migration_marker (" +
                     "name TEXT PRIMARY KEY NOT NULL," +
                     "completed_at INTEGER NOT NULL)");
+            statement.execute("CREATE TABLE IF NOT EXISTS team_player (" +
+                    "tid INTEGER NOT NULL CHECK(tid>0), pid INTEGER NOT NULL CHECK(pid>0)," +
+                    "record_type TEXT NOT NULL CHECK(record_type IN ('PLAYER','PLAYER_HISTORY','JUVENILE','JUVENILE_HISTORY'))," +
+                    "snapshot_round INTEGER NOT NULL DEFAULT 0, serialized_data TEXT NOT NULL," +
+                    "PRIMARY KEY(tid,pid,record_type,snapshot_round))");
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_team_player_lookup ON team_player(tid,record_type,snapshot_round,pid)");
+            statement.execute("CREATE TABLE IF NOT EXISTS team_player_extension (" +
+                    "tid INTEGER NOT NULL, record_type TEXT NOT NULL, snapshot_round INTEGER NOT NULL," +
+                    "property_key TEXT NOT NULL, property_value TEXT NOT NULL," +
+                    "PRIMARY KEY(tid,record_type,snapshot_round,property_key))");
             statement.execute("CREATE TABLE IF NOT EXISTS app_user ("+
                     "user_id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "login TEXT NOT NULL COLLATE NOCASE UNIQUE)");
