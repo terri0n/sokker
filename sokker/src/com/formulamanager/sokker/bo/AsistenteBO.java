@@ -1606,4 +1606,220 @@ System.out.print("Actualizaciones automáticas...");
 		}
 System.out.println("OK");
 	}
+
+
+	// Métodos de negocio restaurados desde la versión previa a la migración SQLite.
+	
+	
+	public static void enviar_skmail(WebClient navegador, String destinatario, String asunto, String texto) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
+		try {
+			StringWebResponse response = new StringWebResponse(getFormSkmail(destinatario, asunto, texto), new URL("file:///."));
+			HtmlPage form = HTMLParser.parseHtml(response, navegador.getCurrentWindow());
+
+			HtmlSubmitInput botonFormulario = form.getFormByName("form").getFirstByXPath("//input[@type='submit']");
+			HtmlPage p = botonFormulario.click();
+//System.out.println(p.asXml());
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	
+
+	private static String getFormSkmail(String destinatario, String asunto, String texto) {
+		return "<form name='form' action='" + AsistenteBO.SOKKER_URL + "/mailbox/sent.php' method='post'>"
+					+ "<input type='hidden' name='typeto' value='login'/>"
+					+ "<input type='text' name='send_to' value='" + destinatario + "'/>"
+					+ "<input type='hidden' name='mailtype' value='sokker'/>"
+					+ "<input type='text' name='title' id='title' value='" + asunto + "' />"
+					+ "<textarea name='text'>" + texto + "</textarea>"
+					+ "<input type='submit' />"
+				+ "</form>";
+	}
+
+	
+
+	public static void calcular_juveniles(List<Juvenil> juveniles) {
+		for (Juvenil j : juveniles) {
+			j.calcular_niveles();
+		}
+	}
+
+	
+    public static double[] calcRectaRegresionYsobreX(int[] lasX, int[] lasY) {
+        double[] retVal = new double[3];
+        double mediaX = calcMedia(lasX);
+        double mediaY = calcMedia(lasY);
+        double varianzaX = (calcMediaDeLosCuadrados(lasX) - Math.pow(mediaX, 2));
+        double varianzaY = (calcMediaDeLosCuadrados(lasY) - Math.pow(mediaY, 2));
+        double covarianza = calcMediaDeLosProductos(lasX, lasY) - (mediaX * mediaY);
+        double diviCovaX = covarianza / varianzaX;
+
+        retVal[0] = diviCovaX;                     
+        // aqui devuelve la pendiente de la recta
+        retVal[1] = -(diviCovaX * mediaX) + mediaY;   
+        // aqui devuelve el parametro independiente
+        if ((Math.sqrt(varianzaX) * Math.sqrt(varianzaY))==0){
+            retVal[2]=1;
+        } else {
+            retVal[2] = covarianza / (Math.sqrt(varianzaX) * Math.sqrt(varianzaY)); // esto es la correlacion r
+        }
+        return retVal;
+    }
+
+	
+    public static double[] calcRectaRegresionXsobreY(int[] lasX, int[] lasY) {
+        double[] retVal = new double[3];
+        double mediaX = calcMedia(lasX);
+        double mediaY = calcMedia(lasY);
+        double varianzaX = (calcMediaDeLosCuadrados(lasX) - Math.pow(mediaX, 2));
+        double varianzaY = (calcMediaDeLosCuadrados(lasY) - Math.pow(mediaY, 2));
+        double covarianza = calcMediaDeLosProductos(lasX, lasY) - (mediaX * mediaY);
+        double diviCovaY = covarianza / varianzaY;
+
+        retVal[0] = diviCovaY;                     
+        // aqui devuelve la pendiente de la recta
+        retVal[1] = -(diviCovaY * mediaY) + mediaX;   
+        // aqui devuelve el parametro independiente
+        retVal[2] = covarianza / (Math.sqrt(varianzaX) * Math.sqrt(varianzaY)); // esta es la correlacion r
+        return retVal;
+    }
+
+	
+
+    public static double calcMedia(int[] valores) {
+        double retVal = 0;
+        for (int i = 0; i < valores.length; i++) {
+            retVal += valores[i];
+        }
+        return retVal / valores.length;
+    }
+
+	
+
+    public static double calcMediaDeLosCuadrados(int[] valores) {
+        double retVal = 0;
+        for (int i = 0; i < valores.length; i++) {
+            retVal += Math.pow(valores[i], 2);
+        }
+        return retVal / valores.length;
+    }
+
+	
+
+    public static double calcMediaDeLosProductos(int[] valores1, int[] valores2) {
+        double retVal = 0;
+        for (int i = 0; i < valores1.length; i++) {
+            retVal += valores1[i] * valores2[i];
+        }
+        return retVal / valores1.length;
+    }
+
+	
+    public static float[] regresion_lineal(List<Juvenil> juveniles) {
+    	int cantidad = juveniles.size();
+    	int x = 0;
+    	int y = 0;
+    	int xy = 0;
+    	int xx = 0;
+    	
+    	for (int i = 0; i < cantidad; i++) {
+    		int x_ = juveniles.get(i).getJornada() - juveniles.get(i).getPrimera_jornada();
+    		x += x_;
+			y += Math.abs(juveniles.get(i).getNivel());
+			xy += x_ * Math.abs(juveniles.get(i).getNivel());
+			xx += x_ * x_;
+    	}
+    	
+    	float b = ((cantidad * xy) - (x * y)) / (float)((cantidad * xx) - (x * x));
+    	float a = (y - (b * x)) / (float)cantidad;
+
+    	return new float[] {b, a};
+    }
+
+	
+
+	public static List<Jugador> filtrar_demarcacion(List<Jugador> jugadores, DEMARCACION_ASISTENTE demarcacion) {
+		List<Jugador> lista = new ArrayList<Jugador>();
+
+		for (Jugador j : jugadores) {
+			if (j.getDemarcacion() == demarcacion) {
+				lista.add(j);
+			}
+		}
+
+		return lista;
+	}
+
+	
+
+	public static Usuario obtener_usuario_seleccion(int tid) {
+		String[] archivos = UsuarioBO.obtener_usuarios();
+		for (String login : archivos) {
+			Usuario usuario = UsuarioBO.leer_usuario(login.split(".properties")[0].substring(1), false);
+			if (usuario != null && new Integer(tid).equals(usuario.getTid_nt())) {
+				return usuario;
+			}
+		}
+		return null;
+	}
+
+	
+	
+	
+	public static void actualizar_seleccionadores(WebClient navegador) throws IOException {
+		List<Pais> paises = Pais.obtener_paises(navegador);
+		
+		Map<String, Integer> seleccion_usuario = new HashMap<String, Integer>();
+		Map<Integer, String> nombre_seleccion = new HashMap<Integer, String>();
+
+		// 1. Buscamos los usuarios de cada selección
+		
+		// Hacemos dos pasadas, para U21 y NT
+		for (int i = 0; i <= 400; i += 400) {
+			for (Pais pais : paises) {
+				int teamID = pais.getId() + i;
+				
+				try {
+					XmlPage pagina = navegador.getPage(AsistenteBO.SOKKER_URL + "/xml/team-" + teamID + ".xml");
+					String nombre = ((DomText) pagina.getFirstByXPath("//teamdata/team/name/text()")).asText();
+					String login = ((DomText) pagina.getFirstByXPath("//teamdata/user/login/text()")).asText();
+					seleccion_usuario.put(login.toLowerCase(), teamID);
+					nombre_seleccion.put(teamID, nombre);
+	
+					//System.out.println(login + " -> " + nombre + " (" + teamID + ")");
+				} catch (Exception e) {
+					System.out.println("Error al acceder a " + AsistenteBO.SOKKER_URL + "/xml/team-" + teamID + ".xml");
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		// 2. Actualizamos la selección de cada usuario
+		
+		String[] archivos = UsuarioBO.obtener_usuarios();
+		for (String login : archivos) {
+			Usuario usuario = UsuarioBO.leer_usuario(login.split(".properties")[0].substring(1), false);
+			if (usuario != null) {
+				Integer seleccion = seleccion_usuario.get(usuario.getLogin_sokker().toLowerCase());
+
+				// Si este usuario no es el seleccionador actual, conservamos su
+				// tid_nt y actualizamos los datos del mismo equipo. Puede haber
+				// varios usuarios del asistente apuntando a la misma selección.
+				if (seleccion == null && usuario.getTid_nt() != null && nombre_seleccion.containsKey(usuario.getTid_nt())) {
+					seleccion = usuario.getTid_nt();
+				}
+
+				if (usuario.getTid_nt() == null && seleccion != null || usuario.getTid_nt() != null && !usuario.getTid_nt().equals(seleccion)) {
+					usuario.setTid_nt(seleccion);
+					usuario.setEquipo_nt(seleccion == null ? null : nombre_seleccion.get(seleccion));
+					usuario.setDef_tid(usuario.getTid());
+					UsuarioBO.grabar_usuario(usuario);
+
+					System.out.println("Cambio: " + usuario.getLogin_sokker() + " -> " + usuario.getEquipo_nt());
+				}
+			}
+		}
+	}
 }
