@@ -35,7 +35,7 @@ import java.net.URL;
 
 /** Factor X player operations. Independent from Asistente's Jugador and BO. */
 public final class FactorxJugadorBO {
-    public static final String PATH_BASE = System.getProperty("os.name").contains("Windows") ? "d:\\levi\\home\\" : "/home/";
+    public static String PATH_BASE = System.getProperty("os.name").contains("Windows") ? "d:\\levi\\home\\" : "/home/";
     public static final String CONFIG_PROPERTIES = PATH_BASE + "factorx/config.properties";
     public static final String HISTORICO_PROPERTIES = PATH_BASE + "factorx/historico.properties";
     private FactorxJugadorBO() {}
