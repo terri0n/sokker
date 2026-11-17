@@ -1394,7 +1394,9 @@ System.out.println(p.asXml());
 		List<File> archivos = new ArrayList<File>();
 		try {
 			File asistenteDir = new File(SystemUtil.getVar(SystemUtil.PATH));
-			File factorxDir = SqlitePersistence.getFactorxDatabaseFile().getParentFile();
+			File factorxDatabase = SqlitePersistence.getFactorxDatabaseFile();
+			if (factorxDatabase == null) throw new IOException("Factor X SQLite no está inicializado");
+			File factorxDir = factorxDatabase.getParentFile();
 			archivos.addAll(SqliteBackupService.listParts(asistenteDir, "asistente-backup"));
 			archivos.addAll(SqliteBackupService.listParts(factorxDir, "factorx-backup"));
 			if (archivos.isEmpty()) {
@@ -1503,7 +1505,7 @@ System.out.println("Limpiando selección " + tid);
 				throw new IOException("SQLite no está inicializado");
 			}
 			File asistenteDir = new File(SystemUtil.getVar(SystemUtil.PATH));
-			File factorxDir = new File(JugadorBO.PATH_BASE, "factorx");
+			File factorxDir = factorxDatabase.getParentFile();
 			SqliteBackupService.createParts(asistenteDatabase, asistenteDir, "asistente-backup");
 			SqliteBackupService.createParts(factorxDatabase, factorxDir, "factorx-backup");
 		} catch (Exception e) {
