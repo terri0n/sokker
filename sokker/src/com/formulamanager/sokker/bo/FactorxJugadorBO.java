@@ -104,7 +104,7 @@ public final class FactorxJugadorBO {
             Util.guardar_properties(properties,CONFIG_PROPERTIES+currentRound+type.getSufijo());
     }
 
-    public static List<JugadorFactorX> leer_historico(TIPO_FACTORX type,int currentEdition) {
+    public static List<JugadorFactorX> leer_historico(TIPO_FACTORX type,int currentEdition) throws IOException {
         List<JugadorFactorX> result=new ArrayList<JugadorFactorX>();
         for(int edition=currentEdition;edition>23;edition--) result.addAll(leer_jugadores(type,edition,edition==currentEdition));
         return result;
