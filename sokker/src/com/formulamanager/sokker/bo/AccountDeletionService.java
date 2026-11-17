@@ -125,7 +125,7 @@ public final class AccountDeletionService {
             sortByCanonicalPath(teamFiles);
         }
 
-        File personalLog = new File(basePath + "logs/_" + targetLogin + ".log");
+        File personalLog = new File(SystemUtil.getLogsPath() + "_" + targetLogin + ".log");
         if (!personalLog.isFile()) {
             personalLog = null;
         }
