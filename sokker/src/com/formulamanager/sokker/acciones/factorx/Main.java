@@ -51,7 +51,7 @@ public class Main extends SERVLET_FACTORX {
 				@Override
 				protected void execute(WebClient navegador)	throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException {
 					edicion[0] = Util.getInteger(request, "edicion");
-					jornada[0] = FactorxFactorxJugadorBO.getJornadaMod(obtener_jornada(navegador));
+					jornada[0] = FactorxJugadorBO.getJornadaMod(obtener_jornada(navegador));
 					edicion_actual[0] = obtener_edicion(navegador);
 					if (edicion[0] == null) {
 						edicion[0] = edicion_actual[0];
