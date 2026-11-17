@@ -115,14 +115,8 @@ public class AsistenteBO extends JugadorBO {
 			}
 			
 			File file = new File(BD);
-			if (!file.exists()) {
-				return jugadores;
-			}
-			
-			input = new FileInputStream(file);
-	
-			// load a properties file
-			prop.load(input);
+			prop = Util.cargar_properties(file);
+			if (prop == null) return jugadores;
 	
 			Set<String> keys = prop.stringPropertyNames();
 			for (String key : keys) {
@@ -878,14 +872,8 @@ if (nuevo.getLesion() > 0) {
 			String BD = SystemUtil.getVar(SystemUtil.PATH) + tid + (historico ? "_historico" : "") + "_juveniles.properties";
 			
 			File file = new File(BD);
-			if (!file.exists()) {
-				return juveniles;
-			}
-			
-			input = new FileInputStream(file);
-	
-			// load a properties file
-			prop.load(input);
+			prop = Util.cargar_properties(file);
+			if (prop == null) return juveniles;
 	
 			Set<String> keys = prop.stringPropertyNames();
 			for (String key : keys) {
