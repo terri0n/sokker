@@ -99,6 +99,30 @@ public final class SqlitePropertiesStore {
         }
     }
 
+    public boolean exists(String relativePath) throws SQLException {
+        String path = normalize(relativePath);
+        try (Connection connection = database.openConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "SELECT 1 FROM legacy_properties_file WHERE path=?")) {
+            statement.setString(1, path);
+            try (ResultSet result = statement.executeQuery()) {
+                return result.next();
+            }
+        }
+    }
+
+    public long lastModified(String relativePath) throws SQLException {
+        String path = normalize(relativePath);
+        try (Connection connection = database.openConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "SELECT imported_at FROM legacy_properties_file WHERE path=?")) {
+            statement.setString(1, path);
+            try (ResultSet result = statement.executeQuery()) {
+                return result.next() ? result.getLong(1) : 0L;
+            }
+        }
+    }
+
     public boolean delete(String relativePath) throws SQLException {
         String path = normalize(relativePath);
         try (Connection connection = database.openConnection();
