@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
-import java.sql.SQLException;
 
 /**
  * Owns the two independent persistence domains used by the application.
