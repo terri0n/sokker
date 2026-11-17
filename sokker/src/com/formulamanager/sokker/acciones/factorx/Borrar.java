@@ -48,7 +48,7 @@ public class Borrar extends SERVLET_FACTORX {
 					protected void execute(WebClient navegador)	throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException {
 						Integer pid = Integer.valueOf(request.getParameter("pid"));
 						int edicion_actual = obtener_edicion(navegador);
-						List<JugadorFactorX> jugadores = FactorxFactorxJugadorBO.leer_jugadores(tipo, edicion_actual, true);
+						List<JugadorFactorX> jugadores = FactorxJugadorBO.leer_jugadores(tipo, edicion_actual, true);
 						
 						Iterator<JugadorFactorX> it = jugadores.iterator();
 						while (it.hasNext()) {
