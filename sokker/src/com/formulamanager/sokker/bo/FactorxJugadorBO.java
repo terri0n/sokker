@@ -110,7 +110,7 @@ public final class FactorxJugadorBO {
         return result;
     }
 
-    public static List<JugadorFactorX> leer_jugadores(TIPO_FACTORX type,Integer edition,boolean current) {
+    public static List<JugadorFactorX> leer_jugadores(TIPO_FACTORX type,Integer edition,boolean current) throws IOException {
         List<JugadorFactorX> players=new ArrayList<JugadorFactorX>();
         Properties properties=Util.cargar_properties(new File(current?CONFIG_PROPERTIES+type.getSufijo():HISTORICO_PROPERTIES+edition+type.getSufijo()));
         if(properties==null)return players;
@@ -222,6 +222,19 @@ public final class FactorxJugadorBO {
                 reserveCount--;substitutes[position]--;p.setIcono("<span class='estrella_sup'>&#x2605;</span>");
                 p.setIcono_foro("[/color][color=OliveDrab][size=16px]&#x2605;[/size][/color][/family][family=monospace][color="+p.getColor_demarcacion()+"]");
             }
+        }
+    }
+
+    public static void actualizar_jugadores(WebClient browser,List<JugadorFactorX> players,int currentRound)
+            throws FailingHttpStatusCodeException,MalformedURLException,IOException {
+        Iterator<JugadorFactorX> iterator=players.iterator();
+        while(iterator.hasNext()) {
+            JugadorFactorX player=iterator.next();
+            if(actualizar_jugador(browser,player,false)) {
+                player.setActualizado(player.getJornada()==null||!player.getJornada().equals(currentRound));
+                player.setJornada(currentRound);
+            }
+            if(player.getEquipo()==null)iterator.remove();
         }
     }
 
