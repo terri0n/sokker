@@ -37,6 +37,9 @@ import com.gargoylesoftware.htmlunit.xml.XmlPage;
 
 public class JugadorBO {
 
+	/** Shared filesystem root used by non-player application resources. */
+	public static final String PATH_BASE = System.getProperty("os.name").contains("Windows") ? "d:\\levi\\home\\" : "/home/";
+
 	@Deprecated
 	public static WebClient hacer_login(HttpServletRequest request) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 		WebClient navegador = new WebClient();
