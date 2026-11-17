@@ -27,9 +27,9 @@ public class ServletContextLifecycleHarness {
         Files.createDirectories(home.resolve("factorx"));
         Files.createDirectories(tomcat.resolve("conf"));
         String dataPath = data.toAbsolutePath().toString() + File.separator;
-        String serverXml = "<Server><GlobalNamingResources><Environment name=\\"path\\" value=\\""
-                + dataPath.replace("&", "&amp;").replace("\\", "\\\\").replace("\"", "&quot;")
-                + "\\" type=\\"java.lang.String\\"/></GlobalNamingResources></Server>";
+        String serverXml = "<Server><GlobalNamingResources><Environment name='path' value='"
+                + dataPath.replace("&", "&amp;").replace("'", "&apos;")
+                + "' type='java.lang.String'/></GlobalNamingResources></Server>";
         Files.write(tomcat.resolve("conf/server.xml"), serverXml.getBytes(StandardCharsets.UTF_8));
         SystemUtil.REAL_PATH = webapp.toAbsolutePath().toString() + File.separator;
         JugadorBO.PATH_BASE = home.toAbsolutePath().toString() + File.separator;
