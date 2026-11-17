@@ -47,8 +47,7 @@ public abstract class SERVLET_FACTORX extends SERVLET {
 		if (tipo == null) {
 			return TIPO_FACTORX.junior;
 		}
-		// Compatibilidad con enlaces antiguos que todavía envían "internacional".
-		return TIPO_FACTORX.valueOf("internacional".equals(tipo) ? "Venezuela" : tipo);
+		return TIPO_FACTORX.valueOf(tipo);
     }
 
     protected SERVLET_FACTORX.TIPO_HISTORICO getTipo_hist(HttpServletRequest request) {
