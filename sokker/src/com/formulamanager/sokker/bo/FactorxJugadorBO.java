@@ -13,7 +13,6 @@ import javax.servlet.http.HttpServletRequest;
 import com.formulamanager.sokker.acciones.factorx.SERVLET_FACTORX;
 import com.formulamanager.sokker.acciones.factorx.SERVLET_FACTORX.TIPO_FACTORX;
 import com.formulamanager.sokker.auxiliares.SystemUtil;
-import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.entity.factorx.JugadorFactorX;
 import com.formulamanager.sokker.persistence.FactorxDAO;
 import com.formulamanager.sokker.persistence.SqliteDatabase;
@@ -37,15 +36,11 @@ import java.net.URL;
 /** Factor X player operations. Independent from Asistente's Jugador and BO. */
 public final class FactorxJugadorBO {
     public static String PATH_BASE = System.getProperty("os.name").contains("Windows") ? "d:\\levi\\home\\" : "/home/";
-    public static String CONFIG_PROPERTIES = PATH_BASE + "factorx/config.properties";
-    public static String HISTORICO_PROPERTIES = PATH_BASE + "factorx/historico.properties";
     private FactorxJugadorBO() {}
 
     public static void setPathBase(String pathBase) {
         if (pathBase == null || pathBase.trim().isEmpty()) throw new IllegalArgumentException("Factor X path is required");
         PATH_BASE = pathBase.endsWith(File.separator) ? pathBase : pathBase + File.separator;
-        CONFIG_PROPERTIES = PATH_BASE + "factorx/config.properties";
-        HISTORICO_PROPERTIES = PATH_BASE + "factorx/historico.properties";
     }
 
     private static String getFormForo() {
