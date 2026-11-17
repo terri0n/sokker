@@ -16,8 +16,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.formulamanager.sokker.auxiliares.Navegador;
 import com.formulamanager.sokker.bo.FactorxBO;
-import com.formulamanager.sokker.bo.JugadorBO;
-import com.formulamanager.sokker.entity.Jugador;
+import com.formulamanager.sokker.bo.FactorxJugadorBO;
+import com.formulamanager.sokker.entity.factorx.JugadorFactorX;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
 
@@ -48,7 +48,7 @@ public class Borrar extends SERVLET_FACTORX {
 					protected void execute(WebClient navegador)	throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException {
 						Integer pid = Integer.valueOf(request.getParameter("pid"));
 						int edicion_actual = obtener_edicion(navegador);
-						List<Jugador> jugadores = JugadorBO.leer_jugadores(tipo, edicion_actual, true);
+						List<Jugador> jugadores = FactorxJugadorBO.leer_jugadores(tipo, edicion_actual, true);
 						
 						Iterator<Jugador> it = jugadores.iterator();
 						while (it.hasNext()) {
