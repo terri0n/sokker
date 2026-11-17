@@ -32,7 +32,7 @@ public final class SqlitePersistence {
         ensureDirectory(asistenteRoot);
         ensureDirectory(factorxRoot);
         SqliteDatabase asistenteDatabase = new SqliteDatabase(new File(asistenteRoot, "asistente.db"));
-        SqliteDatabase factorxDatabase = new SqliteDatabase(new File(factorxRoot, "factorx.db"));
+        SqliteDatabase factorxDatabase = new SqliteDatabase(new File(factorxRoot, "factorx.db"), false);
 
         // Import both domains before publishing either store. The importer is
         // idempotent and does not modify or delete the legacy source files.

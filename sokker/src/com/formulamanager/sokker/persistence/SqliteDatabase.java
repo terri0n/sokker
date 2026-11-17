@@ -15,14 +15,20 @@ import java.sql.Statement;
  * rows; the importer does not retain a second copy of each file's bytes.
  */
 public final class SqliteDatabase {
-    private static final int SCHEMA_VERSION = 2;
+    private static final int SCHEMA_VERSION = 3;
     private final File databaseFile;
+    private final boolean playerGroupsEnabled;
 
     public SqliteDatabase(File databaseFile) {
+        this(databaseFile, true);
+    }
+
+    public SqliteDatabase(File databaseFile, boolean playerGroupsEnabled) {
         if (databaseFile == null) {
             throw new IllegalArgumentException("databaseFile is required");
         }
         this.databaseFile = databaseFile.getAbsoluteFile();
+        this.playerGroupsEnabled = playerGroupsEnabled;
     }
 
     public File getDatabaseFile() {
@@ -94,6 +100,9 @@ public final class SqliteDatabase {
                             "PRIMARY KEY(path, property_key))");
                     statement.execute("CREATE INDEX IF NOT EXISTS idx_legacy_properties_key " +
                             "ON legacy_properties_entry(property_key)");
+                    if (playerGroupsEnabled) {
+                        createPlayerGroupSchema(connection);
+                    }
                     statement.executeUpdate("UPDATE schema_version SET version=" + SCHEMA_VERSION);
                 }
                 connection.commit();
@@ -109,6 +118,62 @@ public final class SqliteDatabase {
             } finally {
                 connection.setAutoCommit(true);
             }
+        }
+    }
+
+    private static void createPlayerGroupSchema(Connection connection) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("CREATE TABLE IF NOT EXISTS app_user (" +
+                    "user_id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "login TEXT NOT NULL COLLATE NOCASE UNIQUE)");
+            statement.execute("CREATE TABLE IF NOT EXISTS player_group (" +
+                    "group_id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "user_id INTEGER REFERENCES app_user(user_id) ON DELETE CASCADE," +
+                    "code TEXT," +
+                    "name TEXT NOT NULL," +
+                    "sort_order INTEGER NOT NULL," +
+                    "CHECK ((user_id IS NULL AND code IS NOT NULL) OR (user_id IS NOT NULL AND code IS NULL)))");
+            statement.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_player_group_default_code " +
+                    "ON player_group(code) WHERE user_id IS NULL");
+            statement.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_player_group_user_name " +
+                    "ON player_group(user_id, lower(name)) WHERE user_id IS NOT NULL");
+            statement.execute("CREATE TABLE IF NOT EXISTS player_group_assignment (" +
+                    "user_id INTEGER REFERENCES app_user(user_id) ON DELETE CASCADE," +
+                    "tid INTEGER NOT NULL CHECK (tid > 0)," +
+                    "pid INTEGER NOT NULL CHECK (pid > 0)," +
+                    "group_id INTEGER NOT NULL REFERENCES player_group(group_id) ON DELETE CASCADE)");
+            statement.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_player_group_assignment_default " +
+                    "ON player_group_assignment(tid, pid) WHERE user_id IS NULL");
+            statement.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_player_group_assignment_user " +
+                    "ON player_group_assignment(user_id, tid, pid) WHERE user_id IS NOT NULL");
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_player_group_assignment_group " +
+                    "ON player_group_assignment(group_id)");
+            statement.execute("CREATE TRIGGER IF NOT EXISTS trg_player_group_assignment_owner_insert " +
+                    "BEFORE INSERT ON player_group_assignment " +
+                    "WHEN NOT EXISTS (SELECT 1 FROM player_group g WHERE g.group_id=NEW.group_id AND g.user_id IS NEW.user_id) " +
+                    "BEGIN SELECT RAISE(ABORT, 'player group owner mismatch'); END");
+            statement.execute("CREATE TRIGGER IF NOT EXISTS trg_player_group_assignment_owner_update " +
+                    "BEFORE UPDATE OF user_id, group_id ON player_group_assignment " +
+                    "WHEN NOT EXISTS (SELECT 1 FROM player_group g WHERE g.group_id=NEW.group_id AND g.user_id IS NEW.user_id) " +
+                    "BEGIN SELECT RAISE(ABORT, 'player group owner mismatch'); END");
+        }
+        String[][] defaults = {
+            {"GK", "common.goalkeepers", "1"},
+            {"DEF", "common.defenders", "2"},
+            {"MID", "common.midfielders", "3"},
+            {"ATT", "common.forwards", "4"},
+            {"BANQUILLO", "common.bench", "5"},
+            {"OTRA", "common.other_position", "6"}
+        };
+        try (java.sql.PreparedStatement insert = connection.prepareStatement(
+                "INSERT OR IGNORE INTO player_group(user_id,code,name,sort_order) VALUES(NULL,?,?,?)")) {
+            for (String[] group : defaults) {
+                insert.setString(1, group[0]);
+                insert.setString(2, group[1]);
+                insert.setInt(3, Integer.parseInt(group[2]));
+                insert.addBatch();
+            }
+            insert.executeBatch();
         }
     }
 
