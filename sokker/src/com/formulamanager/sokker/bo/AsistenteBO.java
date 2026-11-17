@@ -33,7 +33,6 @@ import org.apache.commons.lang3.StringUtils;
 import com.formulamanager.sokker.auxiliares.EmailSenderService;
 import com.formulamanager.sokker.auxiliares.FileUtil;
 import com.formulamanager.sokker.auxiliares.Navegador;
-import com.formulamanager.sokker.auxiliares.PlayerPropertiesCompat;
 import com.formulamanager.sokker.auxiliares.SokkerLegacyXmlParser;
 import com.formulamanager.sokker.auxiliares.SERVLET_ASISTENTE;
 import com.formulamanager.sokker.auxiliares.SystemUtil;
@@ -50,6 +49,8 @@ import com.formulamanager.sokker.entity.Pais;
 import com.formulamanager.sokker.entity.Usuario;
 import com.formulamanager.sokker.persistence.SqliteBackupService;
 import com.formulamanager.sokker.persistence.SqlitePersistence;
+import com.formulamanager.sokker.persistence.SqliteDatabase;
+import com.formulamanager.sokker.persistence.TeamPlayerDAO;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.StringWebResponse;
 import com.gargoylesoftware.htmlunit.WebClient;
@@ -99,82 +100,48 @@ public class AsistenteBO extends JugadorBO {
 				"</form>";
 	}
 	
-	public static List<Jugador> leer_jugadores (Integer tid, String equipo, boolean historico, Usuario usuario) {
-		return leer_jugadores (tid, equipo, historico, usuario, null);
+			private static TeamPlayerDAO team_player_dao() throws IOException {
+		File database = SqlitePersistence.getAsistenteDatabaseFile();
+		if (database == null) throw new IOException("Asistente SQLite no está inicializado");
+		return new TeamPlayerDAO(new SqliteDatabase(database, true));
+	}
+
+public static List<Jugador> leer_jugadores (Integer tid, String equipo, boolean historico, Usuario usuario) {
+		return leer_jugadores(tid, equipo, historico, usuario, null);
 	}
 
 	public static List<Jugador> leer_jugadores (Integer tid, String equipo, boolean historico, Usuario usuario, Integer jornada) {
 		List<Jugador> jugadores = new ArrayList<Jugador>();
-		Properties prop = new Properties();
-		InputStream input = null;
-	
+		String tipo = historico ? "PLAYER_HISTORY" : "PLAYER";
+		int snapshotRound = jornada == null ? 0 : jornada;
 		try {
-			String BD;
-			if (jornada == null) {
-				BD = SystemUtil.getVar(SystemUtil.PATH) + tid + (historico ? "_historico" : "") + ".properties";
-			} else {
-				BD = SystemUtil.getVar(SystemUtil.PATH) + "/backup/" + tid + "_" + jornada + (historico ? "_historico" : "") + ".properties";
+			for (Entry<Integer, String> record : team_player_dao().load(tid, tipo, snapshotRound).entrySet()) {
+				Jugador jugador = new Jugador(record.getKey(), Arrays.asList(record.getValue().split(",")),
+						true, null, null, usuario, null, null);
+				if (equipo != null) jugador.setEquipo(equipo);
+				jugadores.add(jugador);
 			}
-			
-			File file = new File(BD);
-			prop = Util.cargar_properties(file);
-			if (prop == null) return jugadores;
-	
-			Set<String> keys = prop.stringPropertyNames();
-			for (String key : keys) {
-				if (!PlayerPropertiesCompat.isManagedPlayerKey(key)) {
-					continue;
-				}
-				String linea = prop.getProperty(key);
-//System.out.println(linea);
-				Jugador j = new Jugador(Integer.valueOf(key), Arrays.asList(linea.split(",")), true, null, null, usuario, null, null);
-				if (equipo != null) {
-					j.setEquipo(equipo);
-				}
-				jugadores.add(j);
-		    }
-		} catch (IOException ex) {
-			throw new IllegalStateException("Error leyendo la plantilla del equipo " + tid, ex);
-		} finally {
-			if (input != null) {
-				try {
-					input.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
+			return jugadores;
+		} catch (SQLException e) {
+			throw new IllegalStateException("Error leyendo la plantilla del equipo " + tid, e);
+		} catch (IOException e) {
+			throw new IllegalStateException("Persistencia SQLite no disponible para el equipo " + tid, e);
 		}
-		
-		return jugadores;
 	}
 
-	/**
-	 * Lee únicamente el registro de un jugador del fichero del equipo.
-	 * No reconstruye el resto de jugadores ni modifica el fichero properties.
-	 */
 	public static Jugador leer_jugador(Integer tid, String equipo, boolean historico, Usuario usuario, Integer pid) throws IOException {
-		String ruta = SystemUtil.getVar(SystemUtil.PATH) + tid + (historico ? "_historico" : "") + ".properties";
-		File file = new File(ruta);
-		Properties prop = Util.cargar_properties(file);
-		if (prop == null) return null;
-
-		String clave = String.valueOf(pid);
-		if (!PlayerPropertiesCompat.isManagedPlayerKey(clave)) {
-			return null;
+		try {
+			String serialized = team_player_dao().load(tid, pid, historico ? "PLAYER_HISTORY" : "PLAYER");
+			if (serialized == null) return null;
+			Jugador jugador = new Jugador(pid, Arrays.asList(serialized.split(",")), true, null, null, usuario, null, null);
+			if (equipo != null) jugador.setEquipo(equipo);
+			return jugador;
+		} catch (SQLException e) {
+			throw new IOException("Error leyendo el jugador " + pid + " del equipo " + tid, e);
 		}
-		String linea = prop.getProperty(clave);
-		if (linea == null) {
-			return null;
-		}
-
-		Jugador jugador = new Jugador(pid, Arrays.asList(linea.split(",")), true, null, null, usuario, null, null);
-		if (equipo != null) {
-			jugador.setEquipo(equipo);
-		}
-		return jugador;
 	}
 
-	public static boolean existe_jugador(Integer pid, WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
+public static boolean existe_jugador(Integer pid, WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 		XmlPage pagina = navegador.getPage(AsistenteBO.SOKKER_URL + "/xml/player-" + pid + ".xml");
 	
 		DomNode domNodeN = pagina.getFirstByXPath("player/name/text()");
@@ -321,42 +288,27 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.asXml())
 		return lista;
 	}*/
 	
-	public static void grabar_jugadores(List<Jugador> jugadores, int tid, int jornada_actual, boolean historico) throws IOException {
-		Properties prop = new Properties();
-		
-		for (Jugador j : jugadores) {
-			prop.setProperty(j.getPid()+"", j.serializar(true));
+		public static void grabar_jugadores(List<Jugador> jugadores, int tid, int jornada_actual, boolean historico) throws IOException {
+		Map<Integer, String> records = new LinkedHashMap<Integer, String>();
+		for (Jugador jugador : jugadores) records.put(jugador.getPid(), jugador.serializar(true));
+		try {
+			team_player_dao().save(tid, historico ? "PLAYER_HISTORY" : "PLAYER", 0, records);
+		} catch (SQLException e) {
+			throw new IOException("Error guardando jugadores del equipo " + tid, e);
 		}
-	
-		String ruta = SystemUtil.getVar(SystemUtil.PATH) + tid + (historico ? "_historico" : "") + ".properties";
-		PlayerPropertiesCompat.preserveUnmanagedKeys(new File(ruta), prop);
-		Util.guardar_properties(prop, ruta);
-
-/*		File f = new File(PATH_BACKUP);
-		if (!f.exists()) {
-			f.mkdirs();
-		}
-		
-		ruta = PATH_BACKUP + tid + "_" + jornada_actual + (historico ? "_historico" : "") + ".properties";
-		Util.guardar_properties(prop, ruta);
-*/	}
+	}
 
 	public static void grabar_juveniles(List<Juvenil> juveniles, int tid, int jornada_actual, boolean historico) throws IOException {
-		Properties prop = new Properties();
-		
-		for (Jugador j : juveniles) {
-			prop.setProperty(j.getPid()+"", j.serializar(true));
+		Map<Integer, String> records = new LinkedHashMap<Integer, String>();
+		for (Juvenil juvenil : juveniles) records.put(juvenil.getPid(), juvenil.serializar(true));
+		try {
+			team_player_dao().save(tid, historico ? "JUVENILE_HISTORY" : "JUVENILE", 0, records);
+		} catch (SQLException e) {
+			throw new IOException("Error guardando juveniles del equipo " + tid, e);
 		}
-	
-		String ruta = SystemUtil.getVar(SystemUtil.PATH) + tid + (historico ? "_historico" : "") + "_juveniles.properties";
-		PlayerPropertiesCompat.preserveUnmanagedKeys(new File(ruta), prop);
-		Util.guardar_properties(prop, ruta);
-
-//		ruta = PATH_BACKUP + tid + "_" + jornada_actual + (historico ? "_historico" : "") + "_juveniles.properties";
-//		Util.guardar_properties(prop, ruta);
 	}
-	
-	public static int obtener_jornada(DomNode pagina) {
+
+public static int obtener_jornada(DomNode pagina) {
 		Integer week = Integer.valueOf(((DomText) pagina.getFirstByXPath("week/text()")).asText());
 		Integer dia = Integer.valueOf(((DomText) pagina.getFirstByXPath("day/text()")).asText());
 		int resta = dia >= 5 ? 0 : 1;
@@ -850,57 +802,32 @@ if (nuevo.getLesion() > 0) {
 		return jugadores_actualizados;
 	}
 
-	public static List<Juvenil> leer_juveniles(int tid, boolean historico, Usuario usuario) {
+		public static List<Juvenil> leer_juveniles(int tid, boolean historico, Usuario usuario) {
 		return leer_juveniles(tid, historico, usuario, null);
 	}
 
-	/**
-	 * Lee el historial completo o solo los juveniles cuyos nombres se necesitan.
-	 * El filtro evita reconstruir cadenas históricas de jugadores que ya no están en la plantilla.
-	 */
 	public static List<Juvenil> leer_juveniles(int tid, boolean historico, Usuario usuario, Set<String> nombres) {
 		List<Juvenil> juveniles = new ArrayList<Juvenil>();
-		Properties prop = new Properties();
-		InputStream input = null;
-	
 		try {
-			String BD = SystemUtil.getVar(SystemUtil.PATH) + tid + (historico ? "_historico" : "") + "_juveniles.properties";
-			
-			File file = new File(BD);
-			prop = Util.cargar_properties(file);
-			if (prop == null) return juveniles;
-	
-			Set<String> keys = prop.stringPropertyNames();
-			for (String key : keys) {
-				if (!PlayerPropertiesCompat.isManagedPlayerKey(key)) {
-					continue;
-				}
-				String linea = prop.getProperty(key);
+			Map<Integer, String> records = team_player_dao().load(tid,
+					historico ? "JUVENILE_HISTORY" : "JUVENILE", 0);
+			for (Entry<Integer, String> record : records.entrySet()) {
+				String serialized = record.getValue();
 				if (nombres != null) {
-					int separador = linea.indexOf(',');
-					if (separador >= 0 && !nombres.contains(linea.substring(0, separador))) {
-						continue;
-					}
+					int separator = serialized.indexOf(',');
+					if (separator >= 0 && !nombres.contains(serialized.substring(0, separator))) continue;
 				}
-				Juvenil j = new Juvenil(Integer.valueOf(key), Arrays.asList(linea.split(",")), true, null, usuario);
-				juveniles.add(j);
-		    }
-		} catch (IOException ex) {
-			throw new IllegalStateException("Error leyendo los juveniles del equipo " + tid, ex);
-		} finally {
-			if (input != null) {
-				try {
-					input.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+				juveniles.add(new Juvenil(record.getKey(), Arrays.asList(serialized.split(",")), true, null, usuario));
 			}
+			return juveniles;
+		} catch (SQLException e) {
+			throw new IllegalStateException("Error leyendo los juveniles del equipo " + tid, e);
+		} catch (IOException e) {
+			throw new IllegalStateException("Persistencia SQLite no disponible para los juveniles del equipo " + tid, e);
 		}
-		
-		return juveniles;
 	}
 
-	protected static List<Juvenil> obtener_juveniles(int jornada_actual, boolean incrementar_edad, Usuario usuario, WebClient navegador) {
+protected static List<Juvenil> obtener_juveniles(int jornada_actual, boolean incrementar_edad, Usuario usuario, WebClient navegador) {
 		List<Juvenil> juveniles = new ArrayList<Juvenil>();
 
 		try {
