@@ -46,14 +46,8 @@ public class FactorxBO {
 	
 		try {
 			File file = new File(FACTORX_PROPERTIES + tipo.getSufijo());
-			if (!file.exists()) {
-				return FORMACIONES._442;
-			}
-			
-			input = new FileInputStream(file);
-	
-			// load a properties file
-			prop.load(input);
+			prop = Util.cargar_properties(file);
+			if (prop == null) return FORMACIONES._442;
 			
 			return FORMACIONES.valueOf(prop.getProperty("formacion"));
 		} catch (IOException ex) {
