@@ -165,11 +165,18 @@ public final class LegacyPropertiesImporter {
             if (child.isDirectory()) {
                 collect(child, files);
             } else if (child.isFile()
-                    && child.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".properties")
+                    && isPropertiesDocument(child.getName())
                     && !isDatabaseArtifact(child)) {
                 files.add(child);
             }
         }
+    }
+
+
+    private boolean isPropertiesDocument(String name) {
+        String lower=name.toLowerCase(java.util.Locale.ROOT);
+        return lower.endsWith(".properties")
+                || lower.matches("(?:config|historico|factorx)\\\\.properties.*");
     }
 
     private boolean isDatabaseArtifact(File file) throws IOException {
