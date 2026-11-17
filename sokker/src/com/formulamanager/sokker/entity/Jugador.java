@@ -1770,6 +1770,19 @@ public class Jugador implements Comparable<Jugador> {
 		}
 	}
 	
+	public String getColor_demarcacion() {
+		if (demarcacion != null) {
+			switch (demarcacion) {
+				case GK: return "SkyBlue";
+				case DEF: return "lightgreen";
+				case MID: return "orange";
+				case ATT: return "salmon";
+				default: break;
+			}
+		}
+		return "silver";
+	}
+
 	public void insertar_inicio(Jugador j) {
 		if (original == null) {
 			original = j;
