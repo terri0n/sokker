@@ -7,8 +7,6 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Properties;
-import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -17,6 +15,9 @@ import com.formulamanager.sokker.acciones.factorx.SERVLET_FACTORX.TIPO_FACTORX;
 import com.formulamanager.sokker.auxiliares.SystemUtil;
 import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.entity.factorx.JugadorFactorX;
+import com.formulamanager.sokker.persistence.FactorxDAO;
+import com.formulamanager.sokker.persistence.SqliteDatabase;
+import com.formulamanager.sokker.persistence.SqlitePersistence;
 import com.formulamanager.sokker.entity.factorx.JugadorFactorX.DEMARCACION;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
@@ -72,43 +73,15 @@ public final class FactorxJugadorBO {
 
     public static int getJornadaMod(int round) { return round < 976 ? round % 16 : (round - 976) % 13; }
 
+    private static FactorxDAO dao() throws IOException {
+        File database=SqlitePersistence.getFactorxDatabaseFile();
+        if(database==null)throw new IOException("Factor X SQLite is not initialized");
+        return new FactorxDAO(new SqliteDatabase(database,false));
+    }
+
     public static void grabar_jugadores(List<JugadorFactorX> players,TIPO_FACTORX type,int currentRound,boolean historical) throws IOException {
-        Properties properties=new Properties();
-        int index=0;
-        for(JugadorFactorX p:players) {
-            JugadorFactorX o=p.getOriginal();
-            properties.setProperty(index+"_nombre",p.getNombre());
-            properties.setProperty(index+"_pid",String.valueOf(p.getPid()));
-            properties.setProperty(index+"_equipo",p.getEquipo()==null?"":p.getEquipo());
-            properties.setProperty(index+"_tid",String.valueOf(p.getTid()));
-            properties.setProperty(index+"_edad",String.valueOf(p.getEdad()));
-            properties.setProperty(index+"_valor",String.valueOf(p.getValor()));
-            properties.setProperty(index+"_jornada",String.valueOf(p.getJornada()));
-            properties.setProperty(index+"_demarcacion",p.getDemarcacion().name());
-            properties.setProperty(index+"_condicion",String.valueOf(p.getCondicion()));
-            properties.setProperty(index+"_rapidez",String.valueOf(p.getRapidez()));
-            properties.setProperty(index+"_tecnica",String.valueOf(p.getTecnica()));
-            properties.setProperty(index+"_pases",String.valueOf(p.getPases()));
-            properties.setProperty(index+"_porteria",String.valueOf(p.getPorteria()));
-            properties.setProperty(index+"_defensa",String.valueOf(p.getDefensa()));
-            properties.setProperty(index+"_creacion",String.valueOf(p.getCreacion()));
-            properties.setProperty(index+"_anotacion",String.valueOf(p.getAnotacion()));
-            properties.setProperty(index+"_condicion_orig",String.valueOf(o.getCondicion()));
-            properties.setProperty(index+"_rapidez_orig",String.valueOf(o.getRapidez()));
-            properties.setProperty(index+"_tecnica_orig",String.valueOf(o.getTecnica()));
-            properties.setProperty(index+"_pases_orig",String.valueOf(o.getPases()));
-            properties.setProperty(index+"_porteria_orig",String.valueOf(o.getPorteria()));
-            properties.setProperty(index+"_defensa_orig",String.valueOf(o.getDefensa()));
-            properties.setProperty(index+"_creacion_orig",String.valueOf(o.getCreacion()));
-            properties.setProperty(index+"_anotacion_orig",String.valueOf(o.getAnotacion()));
-            if(o.getValor()!=null) properties.setProperty(index+"_valor_orig",String.valueOf(o.getValor()));
-            properties.setProperty(index+"_jornada_orig",String.valueOf(o.getJornada()));
-            index++;
-        }
-        String path=historical?HISTORICO_PROPERTIES+(FactorxBO.getEdicion(currentRound)-1)+type.getSufijo():CONFIG_PROPERTIES+type.getSufijo();
-        Util.guardar_properties(properties,path);
-        if(getJornadaMod(currentRound)==0||historical)
-            Util.guardar_properties(properties,CONFIG_PROPERTIES+currentRound+type.getSufijo());
+        try { dao().savePlayers(players,type,currentRound,historical); }
+        catch(java.sql.SQLException e) { throw new IOException("Cannot save Factor X players for "+type,e); }
     }
 
     public static List<JugadorFactorX> leer_historico(TIPO_FACTORX type,int currentEdition) throws IOException {
@@ -118,49 +91,8 @@ public final class FactorxJugadorBO {
     }
 
     public static List<JugadorFactorX> leer_jugadores(TIPO_FACTORX type,Integer edition,boolean current) throws IOException {
-        List<JugadorFactorX> players=new ArrayList<JugadorFactorX>();
-        Properties properties=Util.cargar_properties(new File(current?CONFIG_PROPERTIES+type.getSufijo():HISTORICO_PROPERTIES+edition+type.getSufijo()));
-        if(properties==null)return players;
-        Set<String> keys=properties.stringPropertyNames();
-        int max=-1;
-        for(String key:keys) max=Math.max(max,Integer.valueOf(key.split("_")[0]));
-        for(int i=0;i<=max;i++) {
-            JugadorFactorX p=new JugadorFactorX();
-            p.setEdad(Integer.valueOf(properties.getProperty(i+"_edad")));
-            if(p.getEdad()<21 ^ type==TIPO_FACTORX.senior) {
-                p.setOriginal(new JugadorFactorX());
-                p.setNombre(properties.getProperty(i+"_nombre"));
-                p.setPid(Integer.valueOf(properties.getProperty(i+"_pid")));
-                p.setEquipo(properties.getProperty(i+"_equipo"));
-                p.setTid(Integer.valueOf(properties.getProperty(i+"_tid")));
-                p.setValor(Integer.valueOf(properties.getProperty(i+"_valor")));
-                p.setJornada(Integer.valueOf(properties.getProperty(i+"_jornada")));
-                p.setDemarcacion(DEMARCACION.valueOf(properties.getProperty(i+"_demarcacion")));
-                p.setCondicion(Integer.valueOf(properties.getProperty(i+"_condicion")));
-                p.setRapidez(Integer.valueOf(properties.getProperty(i+"_rapidez")));
-                p.setTecnica(Integer.valueOf(properties.getProperty(i+"_tecnica")));
-                p.setPases(Integer.valueOf(properties.getProperty(i+"_pases")));
-                p.setPorteria(Integer.valueOf(properties.getProperty(i+"_porteria")));
-                p.setDefensa(Integer.valueOf(properties.getProperty(i+"_defensa")));
-                p.setCreacion(Integer.valueOf(properties.getProperty(i+"_creacion")));
-                p.setAnotacion(Integer.valueOf(properties.getProperty(i+"_anotacion")));
-                JugadorFactorX original=p.getOriginal();
-                original.setCondicion(Integer.valueOf(properties.getProperty(i+"_condicion_orig")));
-                original.setRapidez(Integer.valueOf(properties.getProperty(i+"_rapidez_orig")));
-                original.setTecnica(Integer.valueOf(properties.getProperty(i+"_tecnica_orig")));
-                original.setPases(Integer.valueOf(properties.getProperty(i+"_pases_orig")));
-                original.setPorteria(Integer.valueOf(properties.getProperty(i+"_porteria_orig")));
-                original.setDefensa(Integer.valueOf(properties.getProperty(i+"_defensa_orig")));
-                original.setCreacion(Integer.valueOf(properties.getProperty(i+"_creacion_orig")));
-                original.setAnotacion(Integer.valueOf(properties.getProperty(i+"_anotacion_orig")));
-                original.setJornada(Integer.valueOf(properties.getProperty(i+"_jornada_orig")));
-                if(Util.nnvl(properties.getProperty(i+"_valor_orig"))!=null) original.setValor(Util.stringToInteger(properties.getProperty(i+"_valor_orig")));
-                p.setEdicion(edition);
-                p.calcular_puntos();
-                players.add(p);
-            }
-        }
-        return players;
+        try { return dao().loadPlayers(type,edition,current); }
+        catch(java.sql.SQLException e) { throw new IOException("Cannot read Factor X players for "+type,e); }
     }
 
     public static boolean actualizar_jugador(WebClient browser,JugadorFactorX player,boolean force)
