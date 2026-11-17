@@ -27,6 +27,7 @@ import com.formulamanager.sokker.bo.EquipoBO.TIPO_ENTRENAMIENTO;
 import com.formulamanager.sokker.entity.Jugador;
 import com.formulamanager.sokker.entity.Jugador.DEMARCACION;
 import com.formulamanager.sokker.entity.Usuario;
+import com.formulamanager.sokker.persistence.SqlitePersistence;
 
 public class UsuarioBO {
 	public static final String ACCOUNT_DELETION_REQUESTED_AT = "account_deletion_requested_at";
@@ -39,14 +40,8 @@ public class UsuarioBO {
 	private static Properties cargar_properties_usuario(String login) throws IOException {
 		String ruta = ruta_usuario(login);
 		File file = new File(ruta);
-		if (!file.exists()) {
-			throw new IOException("Usuario no encontrado: " + login);
-		}
-
-		Properties prop = new Properties();
-		try (InputStream input = new FileInputStream(file)) {
-			prop.load(input);
-		}
+		Properties prop = Util.cargar_properties(file);
+		if (prop == null) throw new IOException("Usuario no encontrado: " + login);
 		return prop;
 	}
 
@@ -105,21 +100,11 @@ public class UsuarioBO {
 	}
 
 	public static Usuario leer_usuario (String login, boolean leer_scouts) {
-		Properties prop = new Properties();
-		InputStream input = null;
-	
 		try {
 			String BD = ruta_usuario(login);
-			
 			File file = new File(BD);
-			if (!file.exists()) {
-				return null;
-			}
-			
-			input = new FileInputStream(file);
-	
-			// load a properties file
-			prop.load(input);
+			Properties prop = Util.cargar_properties(file);
+			if (prop == null) return null;
 			String linea = prop.getProperty("usuario");
 			Usuario usuario = new Usuario(Arrays.asList(linea.split(",")));
 			usuario.setNotas(prop.getProperty("notas", ""));
@@ -180,14 +165,6 @@ public class UsuarioBO {
 				SERVLET_ASISTENTE._log_linea(login, "Error al leer usuario: " + ex);
 			} catch (IOException e) {
 				e.printStackTrace();
-			}
-		} finally {
-			if (input != null) {
-				try {
-					input.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
 			}
 		}
 		
@@ -261,13 +238,9 @@ public class UsuarioBO {
 	public static void grabar_usuario(Usuario usuario) throws IOException {
 		// El usuario de prueba tiene "prueba/" como prefijo
 		String ruta = ruta_usuario(usuario.getLogin());
-		Properties prop = new Properties();
 		File file = new File(ruta);
-		if (file.exists()) {
-			try (InputStream input = new FileInputStream(file)) {
-				prop.load(input);
-			}
-		}
+		Properties prop = Util.cargar_properties(file);
+		if (prop == null) prop = new Properties();
 
 		String usuario_anterior = prop.getProperty("usuario");
 		HashMap<String, String> entrenamientos_anteriores = new HashMap<String, String>();
@@ -317,68 +290,76 @@ public class UsuarioBO {
 
 	public static String[] obtener_usuarios() {
 		try {
-			File f = new File(SystemUtil.getVar("path"));
-	
-			String[] archivos = f.list(new FilenameFilter() {
-				@Override
-				public boolean accept(File dir, String name) {
-					return name.startsWith("_");
+			File root = new File(SystemUtil.getVar(SystemUtil.PATH));
+			List<String> paths = SqlitePersistence.list(root, "_", ".properties");
+			if (paths != null) {
+				List<String> names = new ArrayList<String>();
+				for (String path : paths) {
+					if (path.indexOf('/') < 0) names.add(path);
 				}
+				return names.toArray(new String[names.size()]);
+			}
+			String[] archivos = root.list(new FilenameFilter() {
+				@Override public boolean accept(File dir, String name) { return name.startsWith("_"); }
 			});
-			
 			return archivos == null ? new String[0] : archivos;
 		} catch (Exception e) {
-			return new String[] {"Error reading users"};
+			throw new IllegalStateException("Error leyendo usuarios desde SQLite", e);
 		}
 	}
 
-	/**
-	 * Cuenta los ficheros de usuario sin crear un array con todos sus nombres
-	 * ni cargar/deserializar sus propiedades. Se conserva el criterio de
-	 * {@link #obtener_usuarios()}: los nombres de usuario comienzan por "_".
-	 */
 	public static int contar_usuarios() {
-		int total = 0;
-		Path directorio = Paths.get(SystemUtil.getVar("path"));
-
-		try (DirectoryStream<Path> archivos = Files.newDirectoryStream(directorio)) {
-			for (Path archivo : archivos) {
-				if (archivo.getFileName().toString().startsWith("_") && Files.isRegularFile(archivo)) {
-					total++;
+		try {
+			File root = new File(SystemUtil.getVar(SystemUtil.PATH));
+			List<String> paths = SqlitePersistence.list(root, "_", ".properties");
+			if (paths != null) {
+				int count = 0;
+				for (String path : paths) if (path.indexOf('/') < 0) count++;
+				return count;
+			}
+			int total = 0;
+			try (DirectoryStream<Path> archivos = Files.newDirectoryStream(root.toPath())) {
+				for (Path archivo : archivos) {
+					if (archivo.getFileName().toString().startsWith("_") && Files.isRegularFile(archivo)) total++;
 				}
 			}
+			return total;
 		} catch (IOException e) {
-			return 0;
+			throw new IllegalStateException("Error contando usuarios", e);
 		}
-
-		return total;
 	}
-	
+
 	public static String[] obtener_ultimos_usuarios(int dias) {
-		File f = new File(SystemUtil.getVar("path"));
-		Calendar c = Calendar.getInstance();
-		c.add(Calendar.DAY_OF_MONTH, -dias);
-
-		String[] archivos = f.list(new FilenameFilter() {
-			@Override
-			public boolean accept(File dir, String name) {
-				File f = new File(SystemUtil.getVar("path") + "/" + name);
-
-				return f.isFile()
-					&& c.getTime().before(new Date(f.lastModified()))
-					&& name.startsWith("_");
+		try {
+			File root = new File(SystemUtil.getVar(SystemUtil.PATH));
+			List<String> paths = SqlitePersistence.list(root, "_", ".properties");
+			Calendar limite = Calendar.getInstance();
+			limite.add(Calendar.DAY_OF_MONTH, -dias);
+			List<String> recientes = new ArrayList<String>();
+			if (paths != null) {
+				for (String path : paths) {
+					if (path.indexOf('/') < 0 && SqlitePersistence.lastModified(new File(root, path)) > limite.getTimeInMillis()) recientes.add(path);
+				}
+				return recientes.toArray(new String[recientes.size()]);
 			}
-		});
-		
-		return archivos;
+			File[] files = root.listFiles();
+			if (files != null) for (File file : files) {
+				if (file.isFile() && file.getName().startsWith("_") && file.lastModified() > limite.getTimeInMillis()) recientes.add(file.getName());
+			}
+			return recientes.toArray(new String[recientes.size()]);
+		} catch (IOException e) {
+			throw new IllegalStateException("Error buscando usuarios recientes", e);
+		}
 	}
-	
+
 	public static List<Usuario> leer_usuarios() {
 		String[] archivos = obtener_usuarios();
 		List<Usuario> usuarios = new ArrayList<Usuario>();
-		for (String login : archivos) {
-			Usuario usuario = leer_usuario(login.split(".properties")[0].substring(1), false);
-			usuarios.add(usuario);
+		for (String archivo : archivos) {
+			if (archivo.endsWith(".properties")) {
+				Usuario usuario = leer_usuario(archivo.substring(1, archivo.length() - ".properties".length()), false);
+				if (usuario != null) usuarios.add(usuario);
+			}
 		}
 		return usuarios;
 	}
@@ -386,26 +367,34 @@ public class UsuarioBO {
 	public static List<Usuario> leer_ultimos_usuarios(int dias) {
 		String[] archivos = obtener_ultimos_usuarios(dias);
 		List<Usuario> usuarios = new ArrayList<Usuario>();
-		for (String login : archivos) {
-			Usuario usuario = leer_usuario(login.split(".properties")[0].substring(1), false);
-			usuarios.add(usuario);
+		for (String archivo : archivos) {
+			if (archivo.endsWith(".properties")) {
+				Usuario usuario = leer_usuario(archivo.substring(1, archivo.length() - ".properties".length()), false);
+				if (usuario != null) usuarios.add(usuario);
+			}
 		}
 		return usuarios;
 	}
-	
-	public static String[] obtener_backups(int tid) {
-		File f = new File(SystemUtil.getVar("path") + "/backup/");
 
-		String[] archivos = f.list(new FilenameFilter() {
-			@Override
-			public boolean accept(File dir, String name) {
-				return name.matches(tid + "_[0-9]+\\.properties");
+	public static String[] obtener_backups(int tid) {
+		try {
+			File root = new File(SystemUtil.getVar(SystemUtil.PATH));
+			List<String> paths = SqlitePersistence.list(root, "backup/" + tid + "_", ".properties");
+			if (paths != null) {
+				List<String> names = new ArrayList<String>();
+				for (String path : paths) names.add(path.substring(path.lastIndexOf('/') + 1));
+				return names.toArray(new String[names.size()]);
 			}
-		});
-		
-		return archivos;
+			File directory = new File(root, "backup");
+			String[] files = directory.list(new FilenameFilter() {
+				@Override public boolean accept(File dir, String name) { return name.matches(tid + "_[0-9]+\\.properties"); }
+			});
+			return files;
+		} catch (IOException e) {
+			throw new IllegalStateException("Error listando backups del equipo " + tid, e);
+		}
 	}
-	
+
 	public static void main(String[] args) {
 //		System.out.println("_texex_123.properties".matches("_texex_[0-9]+\\.properties"));
 		System.out.println(Arrays.asList("Porteria-Defensa---*".split("-")));
