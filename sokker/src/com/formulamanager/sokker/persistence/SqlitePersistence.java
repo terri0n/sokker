@@ -41,6 +41,7 @@ public final class SqlitePersistence {
         new LegacyPropertiesImporter(factorxDatabase, factorxRoot).importAll();
 
         SqlitePropertiesStore newAsistente = new SqlitePropertiesStore(asistenteDatabase, asistenteRoot);
+        new TeamPlayerDAO(asistenteDatabase).migrateLegacy(newAsistente, asistenteRoot);
         SqlitePropertiesStore factorxMigrationSource = new SqlitePropertiesStore(factorxDatabase, factorxRoot);
         new FactorxDAO(factorxDatabase).migrateLegacy(factorxMigrationSource, factorxRoot);
         asistente = newAsistente;
@@ -57,6 +58,10 @@ public final class SqlitePersistence {
         }
         SqlitePropertiesStore currentAsistente = asistente;
         if (currentAsistente != null && canonical.toPath().startsWith(currentAsistente.getRoot().toPath())) {
+            String relative = currentAsistente.relativePath(canonical);
+            if (TeamPlayerDAO.isManagedPath(relative)) {
+                throw new IllegalStateException("Team player data must be accessed through TeamPlayerDAO: " + file);
+            }
             return currentAsistente;
         }
         return null;
