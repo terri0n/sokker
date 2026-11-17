@@ -36,9 +36,16 @@ import java.net.URL;
 /** Factor X player operations. Independent from Asistente's Jugador and BO. */
 public final class FactorxJugadorBO {
     public static String PATH_BASE = System.getProperty("os.name").contains("Windows") ? "d:\\levi\\home\\" : "/home/";
-    public static final String CONFIG_PROPERTIES = PATH_BASE + "factorx/config.properties";
-    public static final String HISTORICO_PROPERTIES = PATH_BASE + "factorx/historico.properties";
+    public static String CONFIG_PROPERTIES = PATH_BASE + "factorx/config.properties";
+    public static String HISTORICO_PROPERTIES = PATH_BASE + "factorx/historico.properties";
     private FactorxJugadorBO() {}
+
+    public static void setPathBase(String pathBase) {
+        if (pathBase == null || pathBase.trim().isEmpty()) throw new IllegalArgumentException("Factor X path is required");
+        PATH_BASE = pathBase.endsWith(File.separator) ? pathBase : pathBase + File.separator;
+        CONFIG_PROPERTIES = PATH_BASE + "factorx/config.properties";
+        HISTORICO_PROPERTIES = PATH_BASE + "factorx/historico.properties";
+    }
 
     private static String getFormForo() {
         return "<form action=\"https://sokker.org/forum_topic/#new\" method=\"post\" name=\"newpost\" role=\"form\">" +
