@@ -1390,46 +1390,44 @@ System.out.println(p.asXml());
 	}
 
 	public static void enviar_backups() {
-		System.out.print("Enviando email...");
-		List<File> archivos = new ArrayList<File>();
+		File asistenteDir = new File(SystemUtil.getVar(SystemUtil.PATH));
+		File factorxDatabase = SqlitePersistence.getFactorxDatabaseFile();
+		if (factorxDatabase == null) throw new IllegalStateException("Factor X SQLite no está inicializado");
+		enviar_backup_independiente(asistenteDir, "asistente-backup", "Sokker Asistente BACKUP");
+		enviar_backup_independiente(factorxDatabase.getParentFile(), "factorx-backup", "Sokker Factor X BACKUP");
+	}
+
+	private static void enviar_backup_independiente(File directory, String prefix, String subject) {
+		List<File> parts;
 		try {
-			File asistenteDir = new File(SystemUtil.getVar(SystemUtil.PATH));
-			File factorxDatabase = SqlitePersistence.getFactorxDatabaseFile();
-			if (factorxDatabase == null) throw new IOException("Factor X SQLite no está inicializado");
-			File factorxDir = factorxDatabase.getParentFile();
-			archivos.addAll(SqliteBackupService.listParts(asistenteDir, "asistente-backup"));
-			archivos.addAll(SqliteBackupService.listParts(factorxDir, "factorx-backup"));
-			if (archivos.isEmpty()) {
-				System.out.println("No hay fragmentos pendientes");
+			parts = SqliteBackupService.listParts(directory, prefix);
+			if (parts.isEmpty()) {
+				System.out.println("No hay fragmentos pendientes para " + prefix);
 				return;
 			}
-			String asuntoBase = "Sokker Asistente BACKUP " + Util.dateToString(new Date());
-			for (int i = 0; i < archivos.size(); i++) {
-				File archivo = archivos.get(i);
-				if (archivo.length() > SqliteBackupService.MAX_EMAIL_PART_BYTES) {
-					throw new IOException("El fragmento supera 10 MB: " + archivo);
+			for (int i = 0; i < parts.size(); i++) {
+				File part = parts.get(i);
+				if (part.length() > SqliteBackupService.MAX_EMAIL_PART_BYTES) {
+					throw new IOException("El fragmento supera 10 MB: " + part);
 				}
-				HashMap<String, byte[]> adjunto = new HashMap<String, byte[]>();
-				adjunto.put(archivo.getName(), FileUtil.leerFichero(archivo.getAbsolutePath()));
+				HashMap<String, byte[]> attachment = new HashMap<String, byte[]>();
+				attachment.put(part.getName(), FileUtil.leerFichero(part.getAbsolutePath()));
 				EmailSenderService.sendEmail("tejedor@gmail.com",
-						asuntoBase + " (" + (i + 1) + "/" + archivos.size() + ")", "", adjunto);
-				System.out.println("Enviado backup " + archivo.getName());
+						subject + " " + Util.dateToString(new Date()) + " (" + (i + 1) + "/" + parts.size() + ")", "", attachment);
+				System.out.println("Enviado backup " + part.getName());
 			}
-			// Solo se eliminan los fragmentos cuando todos los correos se han enviado.
-			for (File archivo : archivos) {
-				if (!archivo.delete() && archivo.exists()) {
-					throw new IOException("No se pudo borrar el fragmento enviado: " + archivo);
-				}
+			// Each database is acknowledged and cleaned independently.
+			for (File part : parts) {
+				if (!part.delete() && part.exists()) throw new IOException("No se pudo borrar el fragmento enviado: " + part);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			try {
-				SERVLET_ASISTENTE._log_linea("_ENVIAR_BACKUPS", e.getMessage() + " " + e.toString());
-			} catch (IOException e1) {
-				e1.printStackTrace();
+				SERVLET_ASISTENTE._log_linea("_ENVIAR_BACKUPS", prefix + ": " + e.getMessage() + " " + e.toString());
+			} catch (IOException logError) {
+				logError.printStackTrace();
 			}
 		}
-		System.out.println("OK");
 	}
 
     public static void tareas_NTs(WebClient navegador, int jornada_actual) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
