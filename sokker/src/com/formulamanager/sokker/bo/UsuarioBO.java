@@ -169,7 +169,6 @@ public class UsuarioBO {
 			throw new IllegalStateException("Error al leer usuario " + login, ex);
 		}
 		
-		return null;
 	}
 
 	/**
