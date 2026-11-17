@@ -135,11 +135,41 @@ public final class SqlitePropertiesStore {
 
     public boolean delete(String relativePath) throws SQLException {
         String path = normalize(relativePath);
+        if (database.isPlayerGroupsEnabled() && path.matches("_[^/]+\\\\.properties")) {
+            String login = path.substring(1, path.length() - ".properties".length());
+            return deleteAccount(path, login);
+        }
         try (Connection connection = database.openConnection();
              PreparedStatement statement = connection.prepareStatement(
                      "DELETE FROM legacy_properties_file WHERE path=?")) {
             statement.setString(1, path);
             return statement.executeUpdate() > 0;
+        }
+    }
+
+    private boolean deleteAccount(String path, String login) throws SQLException {
+        try (Connection connection = database.openConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                boolean deleted;
+                try (PreparedStatement statement = connection.prepareStatement(
+                        "DELETE FROM legacy_properties_file WHERE path=?")) {
+                    statement.setString(1, path);
+                    deleted = statement.executeUpdate() > 0;
+                }
+                try (PreparedStatement statement = connection.prepareStatement(
+                        "DELETE FROM app_user WHERE login=?")) {
+                    statement.setString(1, login);
+                    statement.executeUpdate();
+                }
+                connection.commit();
+                return deleted;
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
+            }
         }
     }
 
