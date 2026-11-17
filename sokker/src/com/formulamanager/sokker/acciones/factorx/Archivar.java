@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.formulamanager.sokker.auxiliares.Navegador;
-import com.formulamanager.sokker.bo.JugadorBO;
+import com.formulamanager.sokker.bo.FactorxJugadorBO;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
 
@@ -42,7 +42,7 @@ public class Archivar extends SERVLET_FACTORX {
 					@Override
 					protected void execute(WebClient navegador)	throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException {
 						int jornada_actual = obtener_jornada(navegador);
-						JugadorBO.archivar_temporada(tipo, jornada_actual);
+						FactorxJugadorBO.archivar_temporada(tipo, jornada_actual);
 					}
 				};
 			} catch (FailingHttpStatusCodeException | LoginException | ParseException e) {
