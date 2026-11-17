@@ -49,7 +49,7 @@ public class Anyadir extends SERVLET_FACTORX {
 				throw new RuntimeException("Jugador no encontrado");
 			}
 				
-			DEMARCACION demarcacion = DEMARCACION_ASISTENTE.valueOf(request.getParameter("demarcacion"));
+			DEMARCACION demarcacion = DEMARCACION.valueOf(request.getParameter("demarcacion"));
 	
 			int[] jornada_actual = new int[1];
 			int[] edicion_actual = new int[1];
@@ -63,10 +63,10 @@ public class Anyadir extends SERVLET_FACTORX {
 			};
 			
 			synchronized (Anyadir.class) {
-				List<Jugador> jugadores = FactorxJugadorBO.leer_jugadores(tipo, edicion_actual[0], true);
+				List<JugadorFactorX> jugadores = FactorxFactorxJugadorBO.leer_jugadores(tipo, edicion_actual[0], true);
 				
 				// Buscamos al jugador entre los que tenemos
-				for (Jugador j : jugadores) {
+				for (JugadorFactorX j : jugadores) {
 					if (j.getPid().equals(pid)) {
 						throw new RuntimeException("Jugador repetido");
 					}
@@ -76,7 +76,7 @@ public class Anyadir extends SERVLET_FACTORX {
 				new Navegador(request) {
 					@Override
 					protected void execute(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
-						Jugador nuevo = FactorxBO.buscar(navegador, pid, forzar, jornada_actual[0]);
+						JugadorFactorX nuevo = FactorxBO.buscar(navegador, pid, forzar, jornada_actual[0]);
 						if (nuevo != null) {
 							if (tipo != TIPO_FACTORX.Venezuela && nuevo.getPais() != 17) {
 								throw new RuntimeException("El jugador no es espa�ol");
