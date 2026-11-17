@@ -15,7 +15,7 @@ import java.sql.Statement;
  * rows; the importer does not retain a second copy of each file's bytes.
  */
 public final class SqliteDatabase {
-    private static final int SCHEMA_VERSION = 3;
+    private static final int SCHEMA_VERSION = 4;
     private final File databaseFile;
     private final boolean playerGroupsEnabled;
 
@@ -106,6 +106,8 @@ public final class SqliteDatabase {
                             "ON legacy_properties_entry(property_key)");
                     if (playerGroupsEnabled) {
                         createPlayerGroupSchema(connection);
+                    } else {
+                        createFactorxSchema(connection);
                     }
                     statement.executeUpdate("UPDATE schema_version SET version=" + SCHEMA_VERSION);
                 }
@@ -122,6 +124,27 @@ public final class SqliteDatabase {
             } finally {
                 connection.setAutoCommit(true);
             }
+        }
+    }
+
+
+    private static void createFactorxSchema(Connection connection) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("CREATE TABLE IF NOT EXISTS factorx_migration (name TEXT PRIMARY KEY NOT NULL, completed_at INTEGER NOT NULL)");
+            statement.execute("CREATE TABLE IF NOT EXISTS factorx_formation (scope TEXT PRIMARY KEY NOT NULL, formation TEXT NOT NULL)");
+            statement.execute("CREATE TABLE IF NOT EXISTS factorx_property_extension (path TEXT NOT NULL, property_key TEXT NOT NULL, property_value TEXT NOT NULL, PRIMARY KEY(path,property_key))");
+            statement.execute("CREATE TABLE IF NOT EXISTS factorx_player (" +
+                    "scope TEXT NOT NULL CHECK(scope IN ('junior','senior','Venezuela','Paraguay'))," +
+                    "record_type TEXT NOT NULL CHECK(record_type IN ('CURRENT','HISTORY','SNAPSHOT'))," +
+                    "edition INTEGER NOT NULL, snapshot_round INTEGER NOT NULL DEFAULT 0, pid INTEGER NOT NULL," +
+                    "name TEXT, team TEXT, tid INTEGER, age INTEGER, value INTEGER, round_no INTEGER, position TEXT," +
+                    "condicion INTEGER, rapidez INTEGER, tecnica INTEGER, pases INTEGER, porteria INTEGER, defensa INTEGER, creacion INTEGER, anotacion INTEGER," +
+                    "original_value INTEGER, original_round INTEGER, original_condicion INTEGER, original_rapidez INTEGER," +
+                    "original_tecnica INTEGER, original_pases INTEGER, original_porteria INTEGER, original_defensa INTEGER," +
+                    "original_creacion INTEGER, original_anotacion INTEGER," +
+                    "PRIMARY KEY(scope,record_type,edition,snapshot_round,pid))");
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_factorx_player_history ON factorx_player(scope,record_type,edition,pid)");
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_factorx_player_tid ON factorx_player(scope,tid,pid)");
         }
     }
 
