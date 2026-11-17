@@ -15,11 +15,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.formulamanager.sokker.auxiliares.Navegador;
 import com.formulamanager.sokker.auxiliares.Util;
-import com.formulamanager.sokker.bo.AsistenteBO;
+import com.formulamanager.sokker.bo.FactorxJugadorBO;
 import com.formulamanager.sokker.bo.FactorxBO;
 import com.formulamanager.sokker.bo.FactorxBO.FORMACIONES;
-import com.formulamanager.sokker.bo.JugadorBO;
-import com.formulamanager.sokker.entity.Jugador;
+import com.formulamanager.sokker.bo.FactorxJugadorBO;
+import com.formulamanager.sokker.entity.factorx.JugadorFactorX;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
 
@@ -52,7 +52,7 @@ public class Main extends SERVLET_FACTORX {
 				@Override
 				protected void execute(WebClient navegador)	throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException {
 					edicion[0] = Util.getInteger(request, "edicion");
-					jornada[0] = AsistenteBO.getJornadaMod(obtener_jornada(navegador));
+					jornada[0] = FactorxFactorxJugadorBO.getJornadaMod(obtener_jornada(navegador));
 					edicion_actual[0] = obtener_edicion(navegador);
 					if (edicion[0] == null) {
 						edicion[0] = edicion_actual[0];
