@@ -3,6 +3,9 @@ package com.formulamanager.sokker.persistence;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Properties;
+import java.sql.SQLException;
 
 /**
  * Owns the two independent persistence domains used by the application.
@@ -53,6 +56,66 @@ public final class SqlitePersistence {
             return currentAsistente;
         }
         return null;
+    }
+
+    public static Properties load(File file) throws IOException {
+        SqlitePropertiesStore store = forFile(file);
+        if (store == null) return null;
+        try {
+            return store.load(store.relativePath(file));
+        } catch (SQLException e) {
+            throw new IOException("Cannot read SQLite properties: " + file, e);
+        }
+    }
+
+    public static boolean exists(File file) throws IOException {
+        SqlitePropertiesStore store = forFile(file);
+        if (store == null) return file != null && file.isFile();
+        try {
+            return store.exists(store.relativePath(file));
+        } catch (SQLException e) {
+            throw new IOException("Cannot check SQLite properties: " + file, e);
+        }
+    }
+
+    public static void save(File file, Properties properties) throws IOException {
+        SqlitePropertiesStore store = forFile(file);
+        if (store == null) throw new IOException("No SQLite store configured for " + file);
+        try {
+            store.save(store.relativePath(file), properties);
+        } catch (SQLException e) {
+            throw new IOException("Cannot save SQLite properties: " + file, e);
+        }
+    }
+
+    public static boolean delete(File file) throws IOException {
+        SqlitePropertiesStore store = forFile(file);
+        if (store == null) return file != null && file.delete();
+        try {
+            return store.delete(store.relativePath(file));
+        } catch (SQLException e) {
+            throw new IOException("Cannot delete SQLite properties: " + file, e);
+        }
+    }
+
+    public static List<String> list(File root, String prefix, String suffix) throws IOException {
+        SqlitePropertiesStore store = forFile(root);
+        if (store == null) return null;
+        try {
+            return store.list(prefix, suffix);
+        } catch (SQLException e) {
+            throw new IOException("Cannot list SQLite properties below " + root, e);
+        }
+    }
+
+    public static long lastModified(File file) throws IOException {
+        SqlitePropertiesStore store = forFile(file);
+        if (store == null) return file == null ? 0L : file.lastModified();
+        try {
+            return store.lastModified(store.relativePath(file));
+        } catch (SQLException e) {
+            throw new IOException("Cannot read SQLite properties timestamp: " + file, e);
+        }
     }
 
     public static boolean isInitialized() {
