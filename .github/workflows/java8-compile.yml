@@ -134,6 +134,7 @@ jobs:
             .github/harness/PersistenceRoundTrip.java \
             .github/harness/SqliteLegacyImportHarness.java \
             .github/harness/SqlitePlayerGroupHarness.java \
+            .github/harness/FactorxPlayerModelHarness.java \
             .github/harness/AccountDeletionHarness.java \
             .github/harness/CredentialHygieneHarness.java \
             .github/harness/AccountDeletionUiHarness.java \
@@ -160,6 +161,7 @@ jobs:
             .github/harness/ServletContextLifecycleHarness.java
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" PersistenceRoundTrip
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" SqlitePlayerGroupHarness
+          java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" FactorxPlayerModelHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" com.formulamanager.sokker.bo.AccountDeletionHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" com.formulamanager.sokker.acciones.asistente.CredentialHygieneHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" AccountDeletionUiHarness
