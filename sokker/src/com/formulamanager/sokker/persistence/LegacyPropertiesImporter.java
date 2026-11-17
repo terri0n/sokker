@@ -176,7 +176,7 @@ public final class LegacyPropertiesImporter {
     private boolean isPropertiesDocument(String name) {
         String lower=name.toLowerCase(java.util.Locale.ROOT);
         return lower.endsWith(".properties")
-                || lower.matches("(?:config|historico|factorx)\\\\.properties.*");
+                || lower.matches("(?:config|historico|factorx)\\.properties.*");
     }
 
     private boolean isDatabaseArtifact(File file) throws IOException {
