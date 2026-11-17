@@ -27,6 +27,8 @@ import com.formulamanager.sokker.auxiliares.SystemUtil;
 import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.bo.AsistenteBO;
 import com.formulamanager.sokker.bo.FactorxBO;
+import com.formulamanager.sokker.bo.JugadorBO;
+import com.formulamanager.sokker.persistence.SqlitePersistence;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
 
@@ -61,6 +63,7 @@ public class ServletContextListener implements javax.servlet.ServletContextListe
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+        SqlitePersistence.shutdown();
     }
 
 	/**
@@ -70,6 +73,16 @@ public class ServletContextListener implements javax.servlet.ServletContextListe
 		System.out.println("Iniciando ServletContextListener...");
 		
 		SystemUtil.saveRealPath(event.getServletContext());
+		try {
+			File asistenteDirectory = new File(SystemUtil.getVar(SystemUtil.PATH));
+			File factorxDirectory = new File(JugadorBO.PATH_BASE, "factorx");
+			SqlitePersistence.initialize(asistenteDirectory, factorxDirectory);
+			System.out.println("Persistencia SQLite inicializada: "
+					+ SqlitePersistence.getAsistenteDatabaseFile() + " / "
+					+ SqlitePersistence.getFactorxDatabaseFile());
+		} catch (Exception e) {
+			throw new IllegalStateException("No se pudo inicializar la persistencia SQLite", e);
+		}
 		
     	scheduledWorker = new Thread() {
     		@Override
