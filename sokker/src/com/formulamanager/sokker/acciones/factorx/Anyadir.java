@@ -78,7 +78,7 @@ public class Anyadir extends SERVLET_FACTORX {
 					protected void execute(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 						Jugador nuevo = FactorxBO.buscar(navegador, pid, forzar, jornada_actual[0]);
 						if (nuevo != null) {
-							if (tipo != TIPO_FACTORX.internacional && nuevo.getPais() != 17) {
+							if (tipo != TIPO_FACTORX.Venezuela && nuevo.getPais() != 17) {
 								throw new RuntimeException("El jugador no es espa�ol");
 							} else {
 								nuevo.setDemarcacion(demarcacion);

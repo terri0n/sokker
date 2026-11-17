@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Servlet implementation class ServletSokker
  */
-@WebServlet("/factorx/inter")
+@WebServlet({"/factorx/inter", "/factorx/venezuela"})
 public class Inter extends SERVLET_FACTORX {
 	private static final long serialVersionUID = 1L;
 	
@@ -26,7 +26,7 @@ public class Inter extends SERVLET_FACTORX {
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.sendRedirect(request.getContextPath() + "/factorx?tipo=" + TIPO_FACTORX.internacional.name());
+		response.sendRedirect(request.getContextPath() + "/factorx?tipo=" + TIPO_FACTORX.Venezuela.name());
 	}
 	
 	@Override

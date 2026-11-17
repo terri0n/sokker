@@ -19,7 +19,7 @@ import com.formulamanager.sokker.entity.Jugador;
  * Servlet implementation class ServletSokker
  */
 public abstract class SERVLET_FACTORX extends SERVLET {
-	public static enum TIPO_FACTORX { junior(""), senior("_senior"), internacional("_inter"), Paraguay("_paraguay");
+	public static enum TIPO_FACTORX { junior(""), senior("_senior"), Venezuela("_inter"), Paraguay("_paraguay");
 		private String sufijo;
 		private TIPO_FACTORX(String sufijo) {
 			this.sufijo = sufijo;
@@ -43,7 +43,12 @@ public abstract class SERVLET_FACTORX extends SERVLET {
 	private static final long serialVersionUID = 1L;
 	
     protected SERVLET_FACTORX.TIPO_FACTORX getTipo(HttpServletRequest request) {
-		return Util.nnvl(request.getParameter("tipo")) == null ? TIPO_FACTORX.junior : TIPO_FACTORX.valueOf(Util.getString(request, "tipo"));
+		String tipo = Util.getString(request, "tipo");
+		if (tipo == null) {
+			return TIPO_FACTORX.junior;
+		}
+		// Compatibilidad con enlaces antiguos que todavía envían "internacional".
+		return TIPO_FACTORX.valueOf("internacional".equals(tipo) ? "Venezuela" : tipo);
     }
 
     protected SERVLET_FACTORX.TIPO_HISTORICO getTipo_hist(HttpServletRequest request) {

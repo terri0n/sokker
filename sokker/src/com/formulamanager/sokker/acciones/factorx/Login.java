@@ -37,7 +37,7 @@ public class Login extends SERVLET_FACTORX {
 		if (ilogin.equals(SystemUtil.getVar("factorx_login")) && ipassword.equals(SystemUtil.getVar("factorx_password"))
 				|| tipo == TIPO_FACTORX.junior && ilogin.equals(SystemUtil.getVar("factorx_loginJ")) && ipassword.equals(SystemUtil.getVar("factorx_passwordJ"))
 				|| tipo == TIPO_FACTORX.senior && ilogin.equals(SystemUtil.getVar("factorx_loginS")) && ipassword.equals(SystemUtil.getVar("factorx_passwordS"))
-				|| tipo == TIPO_FACTORX.internacional && ilogin.equals(SystemUtil.getVar("factorx_loginI")) && ipassword.equals(SystemUtil.getVar("factorx_passwordI"))) {
+				|| tipo == TIPO_FACTORX.Venezuela && ilogin.equals(SystemUtil.getVar("factorx_loginI")) && ipassword.equals(SystemUtil.getVar("factorx_passwordI"))) {
 			request.getSession().setAttribute("login", ilogin);
 			request.getSession().setAttribute("password", ipassword);
 			request.getSession().setAttribute("tipo", tipo.name());
