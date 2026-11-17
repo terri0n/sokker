@@ -33,8 +33,8 @@ public abstract class SERVLET_FACTORX extends SERVLET {
 		public Comparator<JugadorFactorX> getComparator() {
 			switch (this) {
 				case puntos: return JugadorFactorX.comparator_puntos();
-				case subidas: return Jugador.comparator_subidas();
-				case valor: return Jugador.comparator_valor();
+				case subidas: return JugadorFactorX.comparator_subidas();
+				case valor: return JugadorFactorX.comparator_valor();
 				default: return null;
 			}
 		}
