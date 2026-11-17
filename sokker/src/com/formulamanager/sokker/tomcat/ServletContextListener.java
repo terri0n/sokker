@@ -187,9 +187,9 @@ System.out.print("Borrando backups...");
     				Calendar c = Calendar.getInstance();
     				c.add(Calendar.DAY_OF_MONTH, -30);
 
-    				for (String archivo : new File(SystemUtil.getVar("path") + "logs/").list()) {
+    				for (String archivo : new File(SystemUtil.getLogsPath()).list()) {
     					String salida = "";
-    					try (FileInputStream bis = new FileInputStream(SystemUtil.getVar("path") + "logs/" + archivo)) {
+    					try (FileInputStream bis = new FileInputStream(SystemUtil.getLogsPath() + archivo)) {
     						BufferedReader br = new BufferedReader(new InputStreamReader(bis));
     				        String linea;
 						while ((linea = br.readLine()) != null) {
@@ -211,7 +211,7 @@ System.out.print("Borrando backups...");
     						}
     					}
 
-    					try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(SystemUtil.getVar("path") + "logs/" + archivo, false))) {
+    					try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(SystemUtil.getLogsPath() + archivo, false))) {
     						// Guardamos las líneas filtradas
     						bos.write(salida.getBytes());
     					}
