@@ -13,6 +13,9 @@ import com.formulamanager.sokker.bo.AsistenteBO;
 import com.formulamanager.sokker.bo.UsuarioBO;
 import com.formulamanager.sokker.entity.Jugador;
 import com.formulamanager.sokker.entity.Usuario;
+import com.formulamanager.sokker.persistence.SqlitePersistence;
+import com.formulamanager.sokker.persistence.TeamPlayerDAO;
+import com.formulamanager.sokker.persistence.SqliteDatabase;
 
 public final class PersistenceRoundTrip {
     private static final String PLAYER_RECORD = "Player,123,DEF,1,18/09/2026 12:00,true,0,,,,note,-1000,180,75,23,-1.5,false,#,-,-false,1200,25,100000,10,11,12,13,14,15,16,17,-0,10,MID,90.0,-5,6,7,true,*";
@@ -39,6 +42,7 @@ public final class PersistenceRoundTrip {
 
     private static void playerUnmanagedEntryRoundTrip() throws Exception {
         Path data = configureTempDataPath("sokker-player-persistence-");
+        Path factorx = Files.createTempDirectory("sokker-factorx-persistence-");
         File playerFile = data.resolve("123.properties").toFile();
         String orphan = "12,15,18,false,*";
 
@@ -49,24 +53,35 @@ public final class PersistenceRoundTrip {
             initial.store(output, null);
         }
 
-        Usuario usuario = new Usuario(123, "Team");
-        List<Jugador> loaded = AsistenteBO.leer_jugadores(123, "Team", false, usuario);
-        require(loaded.size() == 1 && Integer.valueOf(42).equals(loaded.get(0).getPid()),
-                "Unmanaged player entry was interpreted as a PID");
+        try {
+            SqlitePersistence.initialize(data.toFile(), factorx.toFile());
+            Usuario usuario = new Usuario(123, "Team");
+            List<Jugador> loaded = AsistenteBO.leer_jugadores(123, "Team", false, usuario);
+            require(loaded.size() == 1 && Integer.valueOf(42).equals(loaded.get(0).getPid()),
+                    "Unmanaged player entry was interpreted as a PID");
 
-        AsistenteBO.grabar_jugadores(loaded, 123, 1200, false);
+            AsistenteBO.grabar_jugadores(loaded, 123, 1200, false);
+            require(!playerFile.exists(), "Legacy player file was not retired after migration");
+            TeamPlayerDAO dao = new TeamPlayerDAO(new SqliteDatabase(SqlitePersistence.getAsistenteDatabaseFile(), true));
+            require(dao.load(123, "PLAYER", 0).size() == 1, "Managed player row was not persisted in SQLite");
+            try (java.sql.Connection connection = java.sql.DriverManager.getConnection(
+                    "jdbc:sqlite:" + SqlitePersistence.getAsistenteDatabaseFile().getAbsolutePath());
+                 java.sql.PreparedStatement query = connection.prepareStatement(
+                    "SELECT property_value FROM team_player_extension WHERE tid=? AND property_key=?")) {
+                query.setInt(1, 123);
+                query.setString(2, orphan);
+                try (java.sql.ResultSet result = query.executeQuery()) {
+                    require(result.next() && "".equals(result.getString(1)),
+                            "Unmanaged player property entry was lost during migration");
+                }
+            }
 
-        Properties saved = new Properties();
-        try (FileInputStream input = new FileInputStream(playerFile)) {
-            saved.load(input);
+            List<Jugador> loadedAgain = AsistenteBO.leer_jugadores(123, "Team", false, usuario);
+            require(loadedAgain.size() == 1 && Integer.valueOf(42).equals(loadedAgain.get(0).getPid()),
+                    "Player database could not be re-read after saving to SQLite");
+        } finally {
+            SqlitePersistence.shutdown();
         }
-        require(saved.containsKey(orphan) && "".equals(saved.getProperty(orphan)),
-                "Unmanaged player property entry was lost on save");
-        require(saved.getProperty("42") != null, "Managed player entry was lost on save");
-
-        List<Jugador> loadedAgain = AsistenteBO.leer_jugadores(123, "Team", false, usuario);
-        require(loadedAgain.size() == 1 && Integer.valueOf(42).equals(loadedAgain.get(0).getPid()),
-                "Player database could not be re-read after preserving unmanaged entry");
     }
 
     private static void userUnknownFieldsRoundTrip() throws Exception {
