@@ -96,6 +96,20 @@ public class SystemUtil {
 		REAL_PATH = servletContext.getRealPath("/");
 	}
 	
+	/**
+	 * Logs live beside the Asistente data directory, never inside either
+	 * SQLite data directory.
+	 */
+	public static String getLogsPath() {
+		File dataDirectory = new File(getVar(PATH)).getAbsoluteFile();
+		File parent = dataDirectory.getParentFile();
+		File logs = new File(parent == null ? new File(".") : parent, "asistente-logs");
+		if (!logs.isDirectory() && !logs.mkdirs() && !logs.isDirectory()) {
+			throw new IllegalStateException("Cannot create logs directory: " + logs);
+		}
+		return logs.getAbsolutePath() + File.separator;
+	}
+
 	public static String getVar(String variable) {
         String tomcatPath = new File(REAL_PATH).getParentFile().getParent();
 
