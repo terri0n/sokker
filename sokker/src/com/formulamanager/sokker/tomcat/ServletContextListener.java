@@ -54,6 +54,7 @@ public class ServletContextListener implements javax.servlet.ServletContextListe
         Thread worker = scheduledWorker;
         scheduledWorker = null;
         if (worker == null) {
+            SqlitePersistence.shutdown();
             return;
         }
 
