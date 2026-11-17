@@ -1,18 +1,17 @@
 package com.formulamanager.sokker.bo;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Properties;
 
 import com.formulamanager.sokker.acciones.factorx.SERVLET_FACTORX.TIPO_FACTORX;
-import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.entity.factorx.JugadorFactorX;
+import com.formulamanager.sokker.persistence.FactorxDAO;
+import com.formulamanager.sokker.persistence.SqliteDatabase;
+import com.formulamanager.sokker.persistence.SqlitePersistence;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
 
 public final class FactorxBO {
-    public static final String FACTORX_PROPERTIES = FactorxJugadorBO.PATH_BASE + "factorx/factorx.properties";
 
     public enum FORMACIONES {
         _541("5-4-1"), _532("5-3-2"), _523("5-2-3"), _442("4-4-2"),
@@ -24,18 +23,22 @@ public final class FactorxBO {
 
     private FactorxBO() {}
 
+    private static FactorxDAO dao() throws IOException {
+        File database=SqlitePersistence.getFactorxDatabaseFile();
+        if(database==null)throw new IOException("Factor X SQLite is not initialized");
+        return new FactorxDAO(new SqliteDatabase(database,false));
+    }
+
     public static void grabar_formacion(FORMACIONES formation,TIPO_FACTORX type) throws IOException {
-        Properties properties=new Properties();
-        properties.setProperty("formacion",formation.name());
-        Util.guardar_properties(properties,FACTORX_PROPERTIES+type.getSufijo());
+        try { dao().saveFormation(type,formation.name()); }
+        catch(java.sql.SQLException e) { throw new IOException("Cannot save Factor X formation for "+type,e); }
     }
 
     public static FORMACIONES leer_formacion(TIPO_FACTORX type) {
         try {
-            Properties properties=Util.cargar_properties(new File(FACTORX_PROPERTIES+type.getSufijo()));
-            if(properties==null)return FORMACIONES._442;
-            return FORMACIONES.valueOf(properties.getProperty("formacion"));
-        } catch(IOException e) { throw new IllegalStateException("Cannot read Factor X formation for "+type,e); }
+            String formation=dao().loadFormation(type);
+            return formation==null?FORMACIONES._442:FORMACIONES.valueOf(formation);
+        } catch(Exception e) { throw new IllegalStateException("Cannot read Factor X formation for "+type,e); }
     }
 
     public static void actualizar_todos(TIPO_FACTORX type,WebClient browser,int currentRound)
