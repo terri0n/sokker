@@ -58,7 +58,7 @@ public abstract class SERVLET_FACTORX extends SERVLET {
 	public static void _log_linea(String linea) throws IOException {
 		linea = SimpleDateFormat.getInstance().format(new Date()) + "\t" + linea + "\r\n";
 
-		String LOG = SystemUtil.getVar("path") + "/logs/factorx.log";
+		String LOG = SystemUtil.getLogsPath() + "factorx.log";
 		
 		File file = new File(LOG);
 		if (file.exists()) {
