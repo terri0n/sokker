@@ -2,7 +2,6 @@ package com.formulamanager.sokker.persistence;
 
 import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -67,7 +66,8 @@ public final class FactorxDAO {
         String recordType=current?"CURRENT":"HISTORY";
         try(Connection connection=database.openConnection();
             PreparedStatement statement=connection.prepareStatement(
-                "SELECT * FROM factorx_player WHERE scope=? AND record_type=? AND edition=? AND snapshot_round=0 ORDER BY pid")) {
+                "SELECT * FROM factorx_player WHERE scope=? AND record_type=? AND edition=? AND snapshot_round=0 " +
+                "AND ((scope='senior' AND age>=21) OR (scope<>'senior' AND age<21)) ORDER BY pid")) {
             statement.setString(1,scope.name()); statement.setString(2,recordType); statement.setInt(3,current?0:edition);
             List<JugadorFactorX> players=new ArrayList<JugadorFactorX>();
             try(ResultSet result=statement.executeQuery()) {
