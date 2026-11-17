@@ -9,13 +9,16 @@ import com.formulamanager.sokker.bo.FactorxBO;
 import com.formulamanager.sokker.bo.FactorxJugadorBO;
 import com.formulamanager.sokker.entity.factorx.JugadorFactorX;
 import com.formulamanager.sokker.entity.factorx.JugadorFactorX.DEMARCACION;
+import com.formulamanager.sokker.persistence.SqlitePersistence;
 
 public final class FactorxPlayerModelHarness {
     public static void main(String[] args) throws Exception {
         String previousRoot=FactorxJugadorBO.PATH_BASE;
         Path root=Files.createTempDirectory("factorx-player-model-");
         Files.createDirectories(root.resolve("factorx"));
+        Path assistant=Files.createTempDirectory("asistente-player-model-");
         FactorxJugadorBO.setPathBase(root.toString()+File.separator);
+        SqlitePersistence.initialize(assistant.toFile(),root.resolve("factorx").toFile());
         try {
             for(TIPO_FACTORX type:TIPO_FACTORX.values()) {
                 JugadorFactorX player=new JugadorFactorX();
@@ -36,9 +39,8 @@ public final class FactorxPlayerModelHarness {
                 player.setOriginal(original);
                 FactorxJugadorBO.grabar_jugadores(Collections.singletonList(player),type,1100,false);
 
-                String suffix=type.getSufijo();
-                File current=new File(FactorxJugadorBO.CONFIG_PROPERTIES+suffix);
-                require(current.isFile(),"Missing current store for "+type+": "+current);
+                File database=SqlitePersistence.getFactorxDatabaseFile();
+                require(database!=null && database.isFile(),"Missing Factor X SQLite database for "+type);
                 List<JugadorFactorX> loaded=FactorxJugadorBO.leer_jugadores(type,FactorxBO.getEdicion(1100),true);
                 require(loaded.size()==1,"Player was not loaded for "+type);
                 JugadorFactorX copy=loaded.get(0);
@@ -51,6 +53,7 @@ public final class FactorxPlayerModelHarness {
             require("_inter".equals(TIPO_FACTORX.Venezuela.getSufijo()),"Venezuela must retain its legacy storage suffix");
             System.out.println("FactorxPlayerModelHarness: OK");
         } finally {
+            SqlitePersistence.shutdown();
             FactorxJugadorBO.PATH_BASE=previousRoot;
         }
     }
