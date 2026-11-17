@@ -78,7 +78,7 @@ public abstract class SERVLET_ASISTENTE extends HttpServlet {
 	}   
 	
 	protected void _log(HttpServletRequest request, String linea) throws IOException {
-		File file = new File(SystemUtil.getVar("path") + "logs");
+		File file = new File(SystemUtil.getLogsPath().replaceAll("[/\\\\]+$", ""));
 		if (!file.exists()) {
 			file.mkdirs();
 		}
@@ -91,7 +91,7 @@ public abstract class SERVLET_ASISTENTE extends HttpServlet {
 				) : "(sin usuario)\t") +
 				getClass().getSimpleName() + "\t" + 
 				linea + "\r\n";
-		String LOG = SystemUtil.getVar("path") + "logs/_" + (getUsuario(request) == null ? "_NTDB" : getUsuario(request).getLogin()) + ".log";
+		String LOG = SystemUtil.getLogsPath() + "_" + (getUsuario(request) == null ? "_NTDB" : getUsuario(request).getLogin()) + ".log";
 		
 		file = new File(LOG);
 		if (!file.exists()) {
@@ -107,7 +107,7 @@ public abstract class SERVLET_ASISTENTE extends HttpServlet {
 	public static void _log_linea(String login, String linea) throws IOException {
 		linea = new SimpleDateFormat("dd/MM/yy HH:mm").format(new Date()) + "\t" + linea + "\r\n";
 
-		String LOG = SystemUtil.getVar("path") + "logs/_" + login + ".log";
+		String LOG = SystemUtil.getLogsPath() + "_" + login + ".log";
 		
 		File file = new File(LOG);
 		if (!file.exists()) {
