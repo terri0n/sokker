@@ -52,10 +52,13 @@ public final class SqliteDatabase {
 
     public void initialize() throws SQLException, IOException {
         try (Connection connection = openConnection()) {
+            // journal_mode cannot be changed inside a transaction.
+            try (Statement statement = connection.createStatement()) {
+                statement.execute("PRAGMA journal_mode=WAL");
+            }
             connection.setAutoCommit(false);
             try {
                 try (Statement statement = connection.createStatement()) {
-                    statement.execute("PRAGMA journal_mode=WAL");
                     statement.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL)");
                     statement.execute("INSERT INTO schema_version(version) SELECT 0 WHERE NOT EXISTS (SELECT 1 FROM schema_version)");
                     statement.execute("CREATE TABLE IF NOT EXISTS legacy_properties_file (" +
