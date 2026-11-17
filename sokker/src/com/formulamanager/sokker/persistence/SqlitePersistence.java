@@ -30,6 +30,8 @@ public final class SqlitePersistence {
             throw new IOException("Asistente and FactorX data directories must be independent");
         }
 
+        ensureDirectory(asistenteRoot);
+        ensureDirectory(factorxRoot);
         SqliteDatabase asistenteDatabase = new SqliteDatabase(new File(asistenteRoot, "asistente.db"));
         SqliteDatabase factorxDatabase = new SqliteDatabase(new File(factorxRoot, "factorx.db"));
 
@@ -56,6 +58,12 @@ public final class SqlitePersistence {
             return currentAsistente;
         }
         return null;
+    }
+
+    private static void ensureDirectory(File directory) throws IOException {
+        if (!directory.isDirectory() && !directory.mkdirs() && !directory.isDirectory()) {
+            throw new IOException("Cannot create data directory: " + directory);
+        }
     }
 
     public static Properties load(File file) throws IOException {
