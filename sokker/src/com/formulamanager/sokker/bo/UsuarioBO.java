@@ -47,9 +47,10 @@ public class UsuarioBO {
 
 	private static Properties cargar_properties_usuario_sin_excepcion(String login) {
 		try {
-			return cargar_properties_usuario(login);
-		} catch (Exception e) {
-			return new Properties();
+			Properties properties = Util.cargar_properties(new File(ruta_usuario(login)));
+			return properties == null ? new Properties() : properties;
+		} catch (IOException e) {
+			throw new IllegalStateException("Error leyendo el usuario " + login, e);
 		}
 	}
 
@@ -160,12 +161,12 @@ public class UsuarioBO {
 			
 			return usuario;
 		} catch (IOException ex) {
-			ex.printStackTrace();
 			try {
 				SERVLET_ASISTENTE._log_linea(login, "Error al leer usuario: " + ex);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			throw new IllegalStateException("Error al leer usuario " + login, ex);
 		}
 		
 		return null;

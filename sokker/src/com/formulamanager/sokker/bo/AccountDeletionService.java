@@ -147,7 +147,8 @@ public final class AccountDeletionService {
                 continue;
             }
             Usuario other = UsuarioBO.leer_usuario(login, false);
-            if (other != null && tid.equals(other.getTid())) {
+            if (other != null && (tid.equals(other.getTid())
+                    || tid.equals(other.getTid_nt()) || tid.equals(other.getDef_tid()))) {
                 return true;
             }
         }
@@ -159,7 +160,7 @@ public final class AccountDeletionService {
     }
 
     private static void addAllowedBackups(List<File> files, File backupDir, Integer tid) throws IOException {
-        List<String> paths = SqlitePersistence.list(backupDir, String.valueOf(tid) + "_", ".properties");
+        List<String> paths = SqlitePersistence.list(backupDir, "backup/" + tid + "_", ".properties");
         if (paths != null) {
             for (String path : paths) {
                 String name = path.substring(path.lastIndexOf('/') + 1);

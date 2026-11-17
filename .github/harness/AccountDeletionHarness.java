@@ -19,6 +19,7 @@ public final class AccountDeletionHarness {
     public static void main(String[] args) throws Exception {
         uniqueUserDeletesOwnedData();
         sharedTidPreservesTeamData();
+        nationalTeamReferencePreservesTeamData();
         nationalTeamDataIsPreserved();
         configuredAdminCannotBeDeleted();
         deletionIsIdempotent();
@@ -76,6 +77,22 @@ public final class AccountDeletionHarness {
         require(Files.exists(data.resolve("123_historico.properties")), "Shared historical data was deleted");
         require(Files.exists(data.resolve("123_juveniles.properties")), "Shared junior data was deleted");
         require(Files.exists(data.resolve("backup/123_1199.properties")), "Shared backup was deleted");
+    }
+
+    private static void nationalTeamReferencePreservesTeamData() throws Exception {
+        Path data = configure("sokker-delete-shared-nt-", "admin");
+        seedUser(data, "alice", 123, null, true);
+        seedUser(data, "scout", 777, 123, false);
+        seedTeamFiles(data, 123);
+
+        AccountDeletionService.DeletionManifest manifest = AccountDeletionService.buildManifest("alice");
+        require(!manifest.isDeleteTeamData(),
+                "A team referenced as another account's national team was treated as exclusive");
+        AccountDeletionService.execute(manifest);
+        require(Files.exists(data.resolve("123.properties")),
+                "Team data referenced through tid_nt was deleted");
+        require(Files.exists(data.resolve("backup/123_1199.properties")),
+                "Team backup referenced through tid_nt was deleted");
     }
 
     private static void nationalTeamDataIsPreserved() throws Exception {

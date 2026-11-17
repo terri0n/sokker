@@ -194,7 +194,7 @@ public class JugadorBO {
 			}
 	
 		} catch (IOException ex) {
-			ex.printStackTrace();
+			throw new IllegalStateException("Error leyendo la base SQLite de Factor X", ex);
 		} finally {
 			if (input != null) {
 				try {

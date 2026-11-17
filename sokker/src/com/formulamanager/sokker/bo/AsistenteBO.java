@@ -134,7 +134,7 @@ public class AsistenteBO extends JugadorBO {
 				jugadores.add(j);
 		    }
 		} catch (IOException ex) {
-			ex.printStackTrace();
+			throw new IllegalStateException("Error leyendo la plantilla del equipo " + tid, ex);
 		} finally {
 			if (input != null) {
 				try {
@@ -886,7 +886,7 @@ if (nuevo.getLesion() > 0) {
 				juveniles.add(j);
 		    }
 		} catch (IOException ex) {
-			ex.printStackTrace();
+			throw new IllegalStateException("Error leyendo los juveniles del equipo " + tid, ex);
 		} finally {
 			if (input != null) {
 				try {
