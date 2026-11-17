@@ -35,6 +35,10 @@ public final class SqliteDatabase {
         return databaseFile;
     }
 
+    public boolean isPlayerGroupsEnabled() {
+        return playerGroupsEnabled;
+    }
+
     public Connection openConnection() throws SQLException {
         File parent = databaseFile.getParentFile();
         if (parent != null && !parent.isDirectory() && !parent.mkdirs() && !parent.isDirectory()) {
@@ -123,7 +127,10 @@ public final class SqliteDatabase {
 
     private static void createPlayerGroupSchema(Connection connection) throws SQLException {
         try (Statement statement = connection.createStatement()) {
-            statement.execute("CREATE TABLE IF NOT EXISTS app_user (" +
+            statement.execute("CREATE TABLE IF NOT EXISTS migration_marker (" +
+                    "name TEXT PRIMARY KEY NOT NULL," +
+                    "completed_at INTEGER NOT NULL)");
+            statement.execute("CREATE TABLE IF NOT EXISTS app_user ("+
                     "user_id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "login TEXT NOT NULL COLLATE NOCASE UNIQUE)");
             statement.execute("CREATE TABLE IF NOT EXISTS player_group (" +
