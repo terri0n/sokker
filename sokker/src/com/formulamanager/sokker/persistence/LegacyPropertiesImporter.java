@@ -46,7 +46,7 @@ public final class LegacyPropertiesImporter {
             connection.setAutoCommit(false);
             try {
                 for (File file : files) {
-                    String relativePath = sourceDirectory.toURI().relativize(file.toURI()).getPath();
+                    String relativePath = sourceDirectory.toPath().relativize(file.toPath()).toString().replace(File.separatorChar, '/');
                     byte[] bytes = Files.readAllBytes(file.toPath());
                     String checksum = sha256(bytes);
                     if (isUnchanged(connection, relativePath, checksum)) {
@@ -83,28 +83,21 @@ public final class LegacyPropertiesImporter {
         }
         for (File child : children) {
             if (child.isDirectory()) {
-                // Never recurse into the SQLite database's own directory subtree.
-                if (child.getCanonicalFile().equals(database.getDatabaseFile().getParentFile().getCanonicalFile())) {
-                    if (containsDatabase(child)) {
-                        continue;
-                    }
-                }
                 collect(child, files);
-            } else if (child.isFile() && child.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".properties")) {
-                if (!child.getCanonicalFile().equals(database.getDatabaseFile().getCanonicalFile())) {
-                    files.add(child);
-                }
+            } else if (child.isFile()
+                    && child.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".properties")
+                    && !isDatabaseArtifact(child)) {
+                files.add(child);
             }
         }
     }
 
-    private boolean containsDatabase(File directory) {
-        File db = database.getDatabaseFile();
-        try {
-            return db.getCanonicalPath().startsWith(directory.getCanonicalPath() + File.separator);
-        } catch (IOException e) {
-            return false;
-        }
+    private boolean isDatabaseArtifact(File file) throws IOException {
+        String candidate = file.getCanonicalPath();
+        String databasePath = database.getDatabaseFile().getCanonicalPath();
+        return candidate.equals(databasePath)
+                || candidate.equals(databasePath + "-wal")
+                || candidate.equals(databasePath + "-shm");
     }
 
     private boolean isUnchanged(Connection connection, String path, String checksum) throws SQLException {
