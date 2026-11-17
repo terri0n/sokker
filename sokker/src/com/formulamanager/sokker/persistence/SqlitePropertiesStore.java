@@ -135,7 +135,7 @@ public final class SqlitePropertiesStore {
 
     public boolean delete(String relativePath) throws SQLException {
         String path = normalize(relativePath);
-        if (database.isPlayerGroupsEnabled() && path.matches("_[^/]+\\\\.properties")) {
+        if (database.isPlayerGroupsEnabled() && path.matches("_[^/]+\\.properties")) {
             String login = path.substring(1, path.length() - ".properties".length());
             return deleteAccount(path, login);
         }
