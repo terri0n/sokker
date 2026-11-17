@@ -1496,21 +1496,23 @@ System.out.println("Limpiando selección " + tid);
 	 */
 	public static void crear_backups() {
 		System.out.print("Creando backups...");
+		crear_backup_independiente(SqlitePersistence.getAsistenteDatabaseFile(), "asistente-backup");
+		crear_backup_independiente(SqlitePersistence.getFactorxDatabaseFile(), "factorx-backup");
+		System.out.println("OK");
+	}
+
+	private static void crear_backup_independiente(File database, String prefix) {
 		try {
-			File asistenteDatabase = SqlitePersistence.getAsistenteDatabaseFile();
-			File factorxDatabase = SqlitePersistence.getFactorxDatabaseFile();
-			if (asistenteDatabase == null || factorxDatabase == null) {
-				throw new IOException("SQLite no está inicializado");
-			}
-			File asistenteDir = new File(SystemUtil.getVar(SystemUtil.PATH));
-			File factorxDir = factorxDatabase.getParentFile();
-			SqliteBackupService.createParts(asistenteDatabase, asistenteDir, "asistente-backup");
-			SqliteBackupService.createParts(factorxDatabase, factorxDir, "factorx-backup");
+			if (database == null) throw new IOException("SQLite no está inicializado para " + prefix);
+			SqliteBackupService.createParts(database, database.getParentFile(), prefix);
 		} catch (Exception e) {
 			e.printStackTrace();
-			throw new RuntimeException("No se pudieron crear los backups SQLite", e);
+			try {
+				SERVLET_ASISTENTE._log_linea("_CREAR_BACKUPS", prefix + ": " + e.getMessage() + " " + e.toString());
+			} catch (IOException logError) {
+				logError.printStackTrace();
+			}
 		}
-		System.out.println("OK");
 	}
 
 	public static int getJornadaMod(int jornada) {
