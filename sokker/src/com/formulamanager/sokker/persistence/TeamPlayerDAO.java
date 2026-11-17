@@ -59,15 +59,15 @@ public final class TeamPlayerDAO {
         }
     }
 
-    public List<String> load(int tid,String recordType,int snapshotRound) throws SQLException {
+    public Map<Integer,String> load(int tid,String recordType,int snapshotRound) throws SQLException {
         validate(tid,recordType,snapshotRound);
         try(Connection c=database.openConnection();
             PreparedStatement q=c.prepareStatement(
-                "SELECT serialized_data FROM team_player WHERE tid=? AND record_type=? AND snapshot_round=? ORDER BY pid")) {
+                "SELECT pid,serialized_data FROM team_player WHERE tid=? AND record_type=? AND snapshot_round=? ORDER BY pid")) {
             q.setInt(1,tid); q.setString(2,recordType); q.setInt(3,snapshotRound);
-            List<String> records=new ArrayList<String>();
-            try(ResultSet r=q.executeQuery()){while(r.next())records.add(r.getString(1));}
-            return Collections.unmodifiableList(records);
+            Map<Integer,String> records=new LinkedHashMap<Integer,String>();
+            try(ResultSet r=q.executeQuery()){while(r.next())records.put(r.getInt(1),r.getString(2));}
+            return Collections.unmodifiableMap(records);
         }
     }
 
