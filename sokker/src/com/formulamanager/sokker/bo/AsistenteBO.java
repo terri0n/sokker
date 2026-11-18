@@ -53,6 +53,7 @@ import com.formulamanager.sokker.entity.Usuario;
 import com.formulamanager.sokker.persistence.SqliteBackupService;
 import com.formulamanager.sokker.persistence.SqlitePersistence;
 import com.formulamanager.sokker.persistence.SqliteDatabase;
+import com.formulamanager.sokker.persistence.AsistenteUpdateDAO;
 import com.formulamanager.sokker.persistence.TeamPlayerDAO;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.StringWebResponse;
@@ -780,12 +781,25 @@ if (nuevo.getLesion() > 0) {
 		juveniles.removeAll(juveniles_actualizados);
 		juveniles_historico.addAll(juveniles);
 
-		// Guardamos jugadores y usuario
-		grabar_jugadores(jugadores_actualizados, tid, jornada_actual, false);
-		grabar_jugadores(jugadores_historico, tid, jornada_actual, true);
-		grabar_juveniles(juveniles_actualizados, tid, jornada_actual, false);
-		grabar_juveniles(juveniles_historico, tid, jornada_actual, true);
-		UsuarioBO.grabar_usuario(_usuario);
+		// Los cuatro conjuntos y el marcador de jornada se confirman en una única transacción.
+		Map<Integer, String> currentPlayers = new LinkedHashMap<Integer, String>();
+		for (Jugador jugador : jugadores_actualizados) currentPlayers.put(jugador.getPid(), jugador.serializar(true));
+		Map<Integer, String> historicalPlayers = new LinkedHashMap<Integer, String>();
+		for (Jugador jugador : jugadores_historico) historicalPlayers.put(jugador.getPid(), jugador.serializar(true));
+		Map<Integer, String> currentJuniors = new LinkedHashMap<Integer, String>();
+		for (Juvenil juvenil : juveniles_actualizados) currentJuniors.put(juvenil.getPid(), juvenil.serializar(true));
+		Map<Integer, String> historicalJuniors = new LinkedHashMap<Integer, String>();
+		for (Juvenil juvenil : juveniles_historico) historicalJuniors.put(juvenil.getPid(), juvenil.serializar(true));
+
+		File database = SqlitePersistence.getAsistenteDatabaseFile();
+		if (database == null) throw new IOException("Asistente SQLite no está inicializado");
+		try {
+			new AsistenteUpdateDAO(new SqliteDatabase(database, true)).save(tid,
+				currentPlayers, historicalPlayers, currentJuniors, historicalJuniors,
+				UsuarioBO.preparar_guardado(_usuario));
+		} catch (SQLException e) {
+			throw new IOException("No se pudo confirmar la actualización completa del equipo " + tid, e);
+		}
 		
 		// Envío jugadores a las NTDB
 		if (tid > NtdbBO.MAX_ID_SELECCION && _usuario.isNtdb()) {
