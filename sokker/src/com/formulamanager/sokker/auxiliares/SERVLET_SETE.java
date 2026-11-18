@@ -85,7 +85,7 @@ public abstract class SERVLET_SETE extends HttpServlet {
 				) : "(sin usuario)\t") +
 				getClass().getSimpleName() + "\t" + 
 				linea + "\r\n";
-		String LOG = SystemUtil.getVar("path") + "logs/_" + (getUsuario(request) == null ? "_NTDB" : getUsuario(request).getLogin()) + ".log";
+		String LOG = SystemUtil.getLogsPath() + "_" + (getUsuario(request) == null ? "_NTDB" : getUsuario(request).getLogin()) + ".log";
 		
 		File file = new File(LOG);
 		if (!file.exists()) {
