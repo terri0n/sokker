@@ -144,6 +144,17 @@ public final class UserDAO {
         if (data == null || data.getSerialized() == null)
             throw new IllegalArgumentException("serialized user is required");
         long id;
+        long updatedAt = System.currentTimeMillis();
+        try (PreparedStatement previous = c.prepareStatement("SELECT updated_at FROM app_user WHERE login=?")) {
+            previous.setString(1, data.getLogin());
+            try (ResultSet result = previous.executeQuery()) {
+                if (result.next()) {
+                    long previousUpdatedAt = result.getLong(1);
+                    long nextVersion = previousUpdatedAt == Long.MAX_VALUE ? Long.MAX_VALUE : previousUpdatedAt + 1L;
+                    updatedAt = Math.max(updatedAt, nextVersion);
+                }
+            }
+        }
         try (PreparedStatement upsert = c.prepareStatement(
                 "INSERT INTO app_user(login,serialized_data,notes,account_deletion_requested_at,updated_at) " +
                 "VALUES(?,?,?,?,?) ON CONFLICT(login) DO UPDATE SET serialized_data=excluded.serialized_data," +
@@ -154,7 +165,7 @@ public final class UserDAO {
             upsert.setString(3, data.getNotes());
             if (data.getDeletionRequestedAt() == null) upsert.setNull(4, java.sql.Types.BIGINT);
             else upsert.setLong(4, data.getDeletionRequestedAt().longValue());
-            upsert.setLong(5, System.currentTimeMillis());
+            upsert.setLong(5, updatedAt);
             upsert.executeUpdate();
         }
         try (PreparedStatement q = c.prepareStatement("SELECT user_id FROM app_user WHERE login=?")) {
