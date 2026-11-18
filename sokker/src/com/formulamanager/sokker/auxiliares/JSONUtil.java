@@ -44,14 +44,7 @@ public class JSONUtil {
 	}
 
 	public static Double getDouble(LinkedHashMap<String, Object> lista, String path) {
-		// Parece que cuando el peso es un nº entero devuelve un Integer. Hago esto para que funcione en cualquier caso
-		Object o = getJSON(lista, path);
-		if (o instanceof Double || o == null) {
-			return (Double)o;
-		} else if (o instanceof Integer) {
-			return ((Integer)o).doubleValue();
-		} else {
-			return null;
-		}
+		Object value = getJSON(lista, path);
+		return value instanceof Number ? Double.valueOf(((Number) value).doubleValue()) : null;
 	}
 }
