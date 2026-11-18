@@ -55,6 +55,11 @@ public final class SqliteUserRoundTripHarness {
             throw new AssertionError("Unknown extension properties were not round-tripped");
         if (dao.count() != 1 || !dao.listLogins().contains("levi"))
             throw new AssertionError("User listing/count is inconsistent");
+        dao.setUpdatedAt("levi", 1234L);
+        if (dao.load("levi").getUpdatedAt() != 1234L)
+            throw new AssertionError("User activity timestamp could not be restored");
+        if (!dao.listRecentLogins(1000L).contains("levi"))
+            throw new AssertionError("Restored user activity timestamp is not used by recent-user listing");
         if (!dao.delete("levi") || dao.load("levi") != null)
             throw new AssertionError("User deletion failed");
         delete(root);
