@@ -207,7 +207,7 @@ public class UsuarioBO {
 		return String.join(",", valores);
 	}
 
-	public static void grabar_usuario(Usuario usuario) throws IOException {
+	public static UserDAO.SaveData preparar_guardado(Usuario usuario) throws IOException {
 		String login = usuario.getLogin();
 		UserDAO.UserRecord previous = load_user_record(login);
 		String usuarioAnterior = previous == null ? null : previous.getSerialized();
@@ -232,12 +232,21 @@ public class UsuarioBO {
 				value = tipo + ",," + (usuario.getEntrenador_principal().get(jornada) == null ? "" : usuario.getEntrenador_principal().get(jornada).serializar_entrenador()) + "," +
 					Util.nvl(usuario.getNivel_asistentes().get(jornada)) + "," + Util.nvl(usuario.getNivel_juveniles().get(jornada)) + ",*";
 			}
-			String key = "entrenamiento" + jornada;
 			String old = previous == null ? null : previous.getTraining().get(jornada);
 			training.put(jornada, conservar_valores_usuario_desconocidos(old, value));
 		}
-		save_user_record(login, serialized, Util.nvl(usuario.getNotas()),
+		return new UserDAO.SaveData(login, serialized, Util.nvl(usuario.getNotas()),
 			previous == null ? null : previous.getDeletionRequestedAt(), training, extensions);
+	}
+
+	public static void grabar_usuario(Usuario usuario) throws IOException {
+		UserDAO.SaveData data = preparar_guardado(usuario);
+		try {
+			user_dao().save(data.getLogin(), data.getSerialized(), data.getNotes(),
+				data.getDeletionRequestedAt(), data.getTraining(), data.getExtensions());
+		} catch (java.sql.SQLException e) {
+			throw new IOException("Error guardando usuario " + data.getLogin() + " en SQLite", e);
+		}
 	}
 
 	public static void borrar_usuario(String login) throws IOException {
