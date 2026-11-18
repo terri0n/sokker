@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 
 /** Team-owned Asistente player and junior records. Player identity is (tid,pid). */
 public final class TeamPlayerDAO {
-    private static final Pattern PATH = Pattern.compile("^(?:backup/)?([0-9]+)(?:_([0-9]+))?(_historico)?(_juveniles)?\\.properties$");
+    private static final Pattern PATH = Pattern.compile("^(?:backup/)?([0-9]+)(?:_([0-9]+))?(?:(_historico)(_juveniles)?|(_juveniles)(_historico)?)?\\.properties$");
     private static final Pattern PID = Pattern.compile("[0-9]+");
     private final SqliteDatabase database;
 
@@ -144,7 +144,7 @@ public final class TeamPlayerDAO {
         if(!m.matches())return;
         int tid=Integer.parseInt(m.group(1));
         int round=m.group(2)==null?0:Integer.parseInt(m.group(2));
-        boolean historical=m.group(3)!=null,juvenile=m.group(4)!=null;
+        boolean historical=m.group(3)!=null||m.group(6)!=null,juvenile=m.group(4)!=null||m.group(5)!=null;
         String type=juvenile?(historical?"JUVENILE_HISTORY":"JUVENILE"):(historical?"PLAYER_HISTORY":"PLAYER");
         Map<Integer,String> players=new LinkedHashMap<Integer,String>();
         for(String key:properties.stringPropertyNames()) {
