@@ -360,7 +360,7 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 					
 					// Habilidades
 					jug_semana.setForma(requiredSkills(entrenamiento, "form"));
-					jug_semana.setDisciplina_tactica(JSONUtil.getSkills(entrenamiento, "tacticalDiscipline"));
+					jug_semana.setDisciplina_tactica(requiredSkills(entrenamiento, "tacticalDiscipline"));
 					jug_semana.setTrabajo_en_equipo(JSONUtil.getSkills(entrenamiento, "teamwork"));
 					jug_semana.setExperiencia(JSONUtil.getSkills(entrenamiento, "experience"));
 	
