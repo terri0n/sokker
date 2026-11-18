@@ -47,7 +47,8 @@ public final class PersistenceRoundTrip {
     private static void unknownTrailingPlayerFieldsRoundTrip() {
         String future = PLAYER_RECORD.substring(0, PLAYER_RECORD.length() - 2) + ",future-player-field,*";
         Jugador player = new Jugador(42, Arrays.asList(future.split(",", -1)), true, null, null, null, null, null);
-        require(future.equals(player.serializar(true)), "Unknown trailing Jugador field was lost");
+        String actual = player.serializar(true);
+        require(future.equals(actual), "Unknown trailing Jugador field was lost. expected=" + future + " actual=" + actual);
     }
 
     private static void unknownTrailingJuniorFieldsRoundTrip() {
