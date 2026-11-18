@@ -25,6 +25,8 @@ public final class PersistenceRoundTrip {
 
     public static void main(String[] args) throws Exception {
         playerKnownFormatRoundTrip();
+        unknownTrailingPlayerFieldsRoundTrip();
+        unknownTrailingJuniorFieldsRoundTrip();
         playerUnmanagedEntryRoundTrip();
         userUnknownFieldsRoundTrip();
         userDeletionRequestRoundTrip();
@@ -39,6 +41,19 @@ public final class PersistenceRoundTrip {
 
         require(saved.equals(savedAgain), "Jugador known-format round-trip changed after second read");
         require(saved.contains(",#,-,-false,"), "Jugador bot/login2 compatibility fields were not preserved");
+    }
+
+    private static void unknownTrailingPlayerFieldsRoundTrip() {
+        String future = PLAYER_RECORD.substring(0, PLAYER_RECORD.length() - 2) + ",future-player-field,*";
+        Jugador player = new Jugador(42, Arrays.asList(future.split(",", -1)), true, null, null, null, null, null);
+        require(future.equals(player.serializar(true)), "Unknown trailing Jugador field was lost");
+    }
+
+    private static void unknownTrailingJuniorFieldsRoundTrip() {
+        String known = new Juvenil(42, "Junior", 1200, 16, 5, 10, true, null).serializar(true);
+        String future = known + ",future-junior-field";
+        Juvenil junior = new Juvenil(42, Arrays.asList(future.split(",", -1)), true, null, null);
+        require(future.equals(junior.serializar(true)), "Unknown trailing Juvenil field was lost");
     }
 
     private static void playerUnmanagedEntryRoundTrip() throws Exception {
