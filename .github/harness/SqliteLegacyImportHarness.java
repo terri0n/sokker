@@ -78,7 +78,7 @@ public class SqliteLegacyImportHarness {
 
         File external = new File(root, "outside/iberica.properties");
         if (!external.getParentFile().mkdirs()) throw new IllegalStateException("Cannot create external fixture");
-        byte[] externalBytes = "competicion_num_grupos=2\\nfuture_iberia_key=preserve\\n"
+        byte[] externalBytes = "competicion_num_grupos=2\nfuture_iberia_key=preserve\n"
                 .getBytes(StandardCharsets.ISO_8859_1);
         Files.write(external.toPath(), externalBytes);
         importer.importExternal(external, "iberica.properties");
@@ -88,7 +88,7 @@ public class SqliteLegacyImportHarness {
                 "Unknown external properties key was not preserved");
         require(external.isFile(), "External source was deleted before migration completion");
         boolean changedSourceRejected = false;
-        Files.write(external.toPath(), "competicion_num_grupos=3\\n".getBytes(StandardCharsets.ISO_8859_1));
+        Files.write(external.toPath(), "competicion_num_grupos=3\n".getBytes(StandardCharsets.ISO_8859_1));
         try {
             importer.importExternal(external, "iberica.properties");
         } catch (java.sql.SQLException expected) {
