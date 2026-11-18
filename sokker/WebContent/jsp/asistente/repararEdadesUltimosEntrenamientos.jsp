@@ -552,13 +552,13 @@
         try {
             RepairSummary summary = repairDatabase(database);
             if (summary.concurrentSkips == 0) {
-                result = "Reparación terminada. Ficheros revisados: " + summary.scannedFiles
-                        + ", ficheros modificados: " + summary.modifiedFiles
+                result = "Reparación terminada. Equipos revisados: " + summary.scannedTeams
+                        + ", equipos modificados: " + summary.modifiedFiles
                         + ", jugadores corregidos: " + summary.modifiedPlayers
                         + ", edades corregidas: " + summary.modifiedSnapshots + ".";
             } else {
                 error = "Durante la reparación " + summary.concurrentSkips
-                        + " fichero(s) cambiaron mientras se procesaban. Los ficheros concurrentes se dejaron intactos."
+                        + " equipo(s) cambiaron mientras se procesaban. Los equipos concurrentes se dejaron intactos."
                         + " Repite la ejecución cuando no haya actualizaciones en curso; los ya reparados no volverán a cambiar.";
             }
         } catch (Throwable e) {
