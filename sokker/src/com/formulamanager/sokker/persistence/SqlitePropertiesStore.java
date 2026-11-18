@@ -157,13 +157,14 @@ public final class SqlitePropertiesStore {
                     statement.setString(1, path);
                     deleted = statement.executeUpdate() > 0;
                 }
+                boolean userDeleted;
                 try (PreparedStatement statement = connection.prepareStatement(
                         "DELETE FROM app_user WHERE login=?")) {
                     statement.setString(1, login);
-                    statement.executeUpdate();
+                    userDeleted = statement.executeUpdate() > 0;
                 }
                 connection.commit();
-                return deleted;
+                return deleted || userDeleted;
             } catch (SQLException e) {
                 connection.rollback();
                 throw e;
