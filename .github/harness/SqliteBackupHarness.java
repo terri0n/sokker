@@ -84,6 +84,15 @@ public final class SqliteBackupHarness {
             gapRejected = true;
         }
         require(gapRejected, "Restore accepted a backup with a missing first fragment");
+
+        boolean finalPartRejected = false;
+        try {
+            SqliteBackupService.restoreParts(parts.subList(0, parts.size() - 1),
+                    restoreRoot.resolve("incomplete-final.db").toFile());
+        } catch (IOException expected) {
+            finalPartRejected = true;
+        }
+        require(finalPartRejected, "Restore accepted a backup with a missing final fragment");
         System.out.println("SqliteBackupHarness: OK");
     }
     private static void require(boolean condition,String message) {
