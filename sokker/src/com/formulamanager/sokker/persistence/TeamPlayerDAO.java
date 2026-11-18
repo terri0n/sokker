@@ -190,9 +190,6 @@ public final class TeamPlayerDAO {
                 }
                 for(String path:documents) {
                     if(!done)migrateDocument(c,path,legacy.load(path),legacy.lastModified(path));
-                    try(PreparedStatement d=c.prepareStatement("DELETE FROM legacy_properties_file WHERE path=?")) {
-                        d.setString(1,path);d.executeUpdate();
-                    }
                 }
                 if(!done)try(PreparedStatement i=c.prepareStatement("INSERT INTO migration_marker(name,completed_at) VALUES(?,?)")) {
                     i.setString(1,"team_players_legacy_imported");i.setLong(2,System.currentTimeMillis());i.executeUpdate();
@@ -207,7 +204,7 @@ public final class TeamPlayerDAO {
         }
         for(String path:documents) {
             File source=new File(root,path.replace('/',File.separatorChar));
-            if(source.exists()&&!source.delete())throw new IOException("Cannot remove migrated team player file: "+source);
+            legacy.retireImportedSource(source,path);
         }
     }
 
