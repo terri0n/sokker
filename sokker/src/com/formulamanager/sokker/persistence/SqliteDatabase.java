@@ -15,7 +15,7 @@ import java.sql.Statement;
  * rows; the importer does not retain a second copy of each file's bytes.
  */
 public final class SqliteDatabase {
-    private static final int SCHEMA_VERSION = 6;
+    private static final int SCHEMA_VERSION = 7;
     private final File databaseFile;
     private final boolean playerGroupsEnabled;
 
@@ -128,6 +128,28 @@ public final class SqliteDatabase {
     }
 
 
+    private static void migrateTeamPlayerPidZero(Connection connection) throws SQLException {
+        String tableSql = null;
+        try (PreparedStatement q = connection.prepareStatement(
+                "SELECT sql FROM sqlite_master WHERE type='table' AND name='team_player'");
+             ResultSet r = q.executeQuery()) {
+            if (r.next()) tableSql = r.getString(1);
+        }
+        if (tableSql == null || !tableSql.contains("CHECK(pid>0)")) return;
+        try (Statement s = connection.createStatement()) {
+            s.execute("DROP INDEX IF EXISTS idx_team_player_lookup");
+            s.execute("ALTER TABLE team_player RENAME TO team_player_before_pid_zero");
+            s.execute("CREATE TABLE team_player (" +
+                    "tid INTEGER NOT NULL CHECK(tid>0), pid INTEGER NOT NULL CHECK(pid>=0), " +
+                    "record_type TEXT NOT NULL CHECK(record_type IN ('PLAYER','PLAYER_HISTORY','JUVENILE','JUVENILE_HISTORY')), " +
+                    "snapshot_round INTEGER NOT NULL DEFAULT 0, serialized_data TEXT NOT NULL, " +
+                    "PRIMARY KEY(tid,pid,record_type,snapshot_round))");
+            s.execute("INSERT INTO team_player(tid,pid,record_type,snapshot_round,serialized_data) " +
+                    "SELECT tid,pid,record_type,snapshot_round,serialized_data FROM team_player_before_pid_zero");
+            s.execute("DROP TABLE team_player_before_pid_zero");
+        }
+    }
+
     private static void createFactorxSchema(Connection connection) throws SQLException {
         try (Statement statement = connection.createStatement()) {
             statement.execute("CREATE TABLE IF NOT EXISTS factorx_migration (name TEXT PRIMARY KEY NOT NULL, completed_at INTEGER NOT NULL)");
@@ -154,10 +176,11 @@ public final class SqliteDatabase {
                     "name TEXT PRIMARY KEY NOT NULL," +
                     "completed_at INTEGER NOT NULL)");
             statement.execute("CREATE TABLE IF NOT EXISTS team_player (" +
-                    "tid INTEGER NOT NULL CHECK(tid>0), pid INTEGER NOT NULL CHECK(pid>0)," +
+                    "tid INTEGER NOT NULL CHECK(tid>0), pid INTEGER NOT NULL CHECK(pid>=0)," +
                     "record_type TEXT NOT NULL CHECK(record_type IN ('PLAYER','PLAYER_HISTORY','JUVENILE','JUVENILE_HISTORY'))," +
                     "snapshot_round INTEGER NOT NULL DEFAULT 0, serialized_data TEXT NOT NULL," +
                     "PRIMARY KEY(tid,pid,record_type,snapshot_round))");
+            migrateTeamPlayerPidZero(connection);
             statement.execute("CREATE INDEX IF NOT EXISTS idx_team_player_lookup ON team_player(tid,record_type,snapshot_round,pid)");
             statement.execute("CREATE TABLE IF NOT EXISTS team_player_document (" +
                     "source_path TEXT PRIMARY KEY NOT NULL, tid INTEGER NOT NULL, " +
