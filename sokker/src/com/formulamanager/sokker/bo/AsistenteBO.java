@@ -835,7 +835,7 @@ if (nuevo.getLesion() > 0) {
 					int separator = serialized.indexOf(',');
 					if (separator >= 0 && !nombres.contains(serialized.substring(0, separator))) continue;
 				}
-				juveniles.add(new Juvenil(record.getKey(), Arrays.asList(serialized.split(",")), true, null, usuario));
+				juveniles.add(new Juvenil(record.getKey(), Arrays.asList(serialized.split(",", -1)), true, null, usuario));
 			}
 			return juveniles;
 		} catch (SQLException e) {
