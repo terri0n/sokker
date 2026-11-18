@@ -80,7 +80,9 @@ public final class UserDAO {
                         while (er.next()) extensions.setProperty(er.getString(1), er.getString(2));
                     }
                 }
-                return new UserRecord(r.getString("serialized_data"), r.getString("notes"),
+                String serialized = r.getString("serialized_data");
+                if (serialized == null) return null;
+                return new UserRecord(serialized, r.getString("notes"),
                         deletion, training, extensions, r.getLong("updated_at"));
             }
         }
@@ -170,7 +172,7 @@ public final class UserDAO {
     public List<String> listLogins() throws SQLException {
         List<String> logins = new ArrayList<String>();
         try (Connection c = database.openConnection();
-             PreparedStatement q = c.prepareStatement("SELECT login FROM app_user WHERE login NOT LIKE 'prueba/%' ORDER BY login");
+             PreparedStatement q = c.prepareStatement("SELECT login FROM app_user WHERE serialized_data IS NOT NULL AND login NOT LIKE 'prueba/%' ORDER BY login");
              ResultSet r = q.executeQuery()) {
             while (r.next()) logins.add(r.getString(1));
         }
@@ -181,7 +183,7 @@ public final class UserDAO {
         List<String> logins = new ArrayList<String>();
         try (Connection c = database.openConnection();
              PreparedStatement q = c.prepareStatement(
-                 "SELECT login FROM app_user WHERE login NOT LIKE 'prueba/%' AND updated_at>? ORDER BY updated_at DESC,login")) {
+                 "SELECT login FROM app_user WHERE serialized_data IS NOT NULL AND login NOT LIKE 'prueba/%' AND updated_at>? ORDER BY updated_at DESC,login")) {
             q.setLong(1, since);
             try (ResultSet r = q.executeQuery()) { while (r.next()) logins.add(r.getString(1)); }
         }
@@ -190,7 +192,7 @@ public final class UserDAO {
 
     public int count() throws SQLException {
         try (Connection c = database.openConnection();
-             PreparedStatement q = c.prepareStatement("SELECT count(*) FROM app_user WHERE login NOT LIKE 'prueba/%'");
+             PreparedStatement q = c.prepareStatement("SELECT count(*) FROM app_user WHERE serialized_data IS NOT NULL AND login NOT LIKE 'prueba/%'");
              ResultSet r = q.executeQuery()) { return r.next() ? r.getInt(1) : 0; }
     }
 
