@@ -110,6 +110,45 @@ public class SystemUtil {
 		return logs.getAbsolutePath() + File.separator;
 	}
 
+	public static void migrateLegacyLogs() throws IOException {
+		File dataDirectory = new File(getVar(PATH)).getAbsoluteFile();
+		File legacyDirectory = new File(dataDirectory, "logs");
+		if (!legacyDirectory.isDirectory()) return;
+		File targetDirectory = new File(getLogsPath());
+		moveLogContents(legacyDirectory, targetDirectory);
+		if (legacyDirectory.exists() && !legacyDirectory.delete()) {
+			throw new IOException("Cannot remove empty legacy log directory: " + legacyDirectory);
+		}
+	}
+
+	private static void moveLogContents(File sourceDirectory, File targetDirectory) throws IOException {
+		File[] children = sourceDirectory.listFiles();
+		if (children == null) throw new IOException("Cannot list legacy log directory: " + sourceDirectory);
+		if (!targetDirectory.isDirectory() && !targetDirectory.mkdirs() && !targetDirectory.isDirectory()) {
+			throw new IOException("Cannot create log directory: " + targetDirectory);
+		}
+		for (File source : children) {
+			File target = new File(targetDirectory, source.getName());
+			if (source.isDirectory()) {
+				moveLogContents(source, target);
+				if (!source.delete()) throw new IOException("Cannot remove legacy log directory: " + source);
+				continue;
+			}
+			if (target.exists()) {
+				if (java.util.Arrays.equals(java.nio.file.Files.readAllBytes(source.toPath()),
+						java.nio.file.Files.readAllBytes(target.toPath()))) {
+					if (!source.delete()) throw new IOException("Cannot remove duplicate legacy log: " + source);
+					continue;
+				}
+				String base = target.getName() + ".legacy-" + System.currentTimeMillis();
+				target = new File(targetDirectory, base);
+				int suffix = 1;
+				while (target.exists()) target = new File(targetDirectory, base + "-" + suffix++);
+			}
+			java.nio.file.Files.move(source.toPath(), target.toPath());
+		}
+	}
+
 	public static String getVar(String variable) {
         String tomcatPath = new File(REAL_PATH).getParentFile().getParent();
 
