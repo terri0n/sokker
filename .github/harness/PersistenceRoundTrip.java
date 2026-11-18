@@ -99,10 +99,10 @@ public final class PersistenceRoundTrip {
             require(dao.load(123, "PLAYER", 0).size() == 2 && dao.load(123, "PLAYER", 0).containsKey(0),
                     "Managed player rows, including the synthetic test player, were not persisted in SQLite");
             require(dao.load(124, "PLAYER", 0).size() == 1, "Same PID in a different tid was not isolated");
-            require(dao.load(123, "PLAYER_HISTORY", 0).size() == 1, "Player history was not migrated");
+            require(dao.load(123, "PLAYER_HISTORY", 0).size() == 2 && dao.load(123, "PLAYER_HISTORY", 0).containsKey(0), "Player history was not migrated");
             require(dao.load(123, "JUVENILE", 0).size() == 1, "Juveniles were not migrated");
             require(dao.load(123, "JUVENILE_HISTORY", 0).size() == 1, "Juvenile history was not migrated");
-            require(dao.load(123, "PLAYER", 1200).size() == 1, "Round snapshot was not migrated");
+            require(dao.load(123, "PLAYER", 1200).size() == 2 && dao.load(123, "PLAYER", 1200).containsKey(0), "Round snapshot was not migrated");
             require(AsistenteBO.obtener_equipos().length == 2, "Team listing did not use migrated team documents");
             require(AsistenteBO.obtener_ultimos_equipos().length == 2, "Recent team listing lost migrated timestamps");
             require(Arrays.asList(UsuarioBO.obtener_backups(123)).contains("123_1200.properties"),
@@ -127,7 +127,7 @@ public final class PersistenceRoundTrip {
             }
 
             List<Jugador> loadedAgain = AsistenteBO.leer_jugadores(123, "Team", false, usuario);
-            require(loadedAgain.size() == 1 && Integer.valueOf(42).equals(loadedAgain.get(0).getPid()),
+            require(loadedAgain.size() == 2 && loadedAgain.stream().anyMatch(j -> Integer.valueOf(42).equals(j.getPid())),
                     "Player database could not be re-read after saving to SQLite");
         } finally {
             SqlitePersistence.shutdown();
