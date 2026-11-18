@@ -28,6 +28,8 @@ import com.formulamanager.sokker.entity.Jugador;
 import com.formulamanager.sokker.entity.Jugador.DEMARCACION;
 import com.formulamanager.sokker.entity.Usuario;
 import com.formulamanager.sokker.persistence.SqlitePersistence;
+import com.formulamanager.sokker.persistence.SqliteDatabase;
+import com.formulamanager.sokker.persistence.UserDAO;
 
 public class UsuarioBO {
 	public static final String ACCOUNT_DELETION_REQUESTED_AT = "account_deletion_requested_at";
@@ -37,39 +39,42 @@ public class UsuarioBO {
 		return SystemUtil.getVar("path") + (loginNormalizado.startsWith("prueba/") ? "" : "_") + loginNormalizado + ".properties";
 	}
 
-	private static Properties cargar_properties_usuario(String login) throws IOException {
-		String ruta = ruta_usuario(login);
-		File file = new File(ruta);
-		Properties prop = Util.cargar_properties(file);
-		if (prop == null) throw new IOException("Usuario no encontrado: " + login);
-		return prop;
+	private static UserDAO user_dao() throws IOException {
+		File database = SqlitePersistence.getAsistenteDatabaseFile();
+		if (database == null) throw new IOException("SQLite Asistente database is not initialized");
+		return new UserDAO(new SqliteDatabase(database, true));
 	}
 
-	private static Properties cargar_properties_usuario_sin_excepcion(String login) {
+	private static UserDAO.UserRecord load_user_record(String login) throws IOException {
 		try {
-			Properties properties = Util.cargar_properties(new File(ruta_usuario(login)));
-			return properties == null ? new Properties() : properties;
-		} catch (IOException e) {
-			throw new IllegalStateException("Error leyendo el usuario " + login, e);
+			return user_dao().load(login);
+		} catch (java.sql.SQLException e) {
+			throw new IOException("Error leyendo usuario " + login + " desde SQLite", e);
+		}
+	}
+
+	private static void save_user_record(String login, String serialized, String notes, Long deletion,
+			java.util.Map<Integer, String> training, Properties extensions) throws IOException {
+		try {
+			user_dao().save(login, serialized, notes, deletion, training, extensions);
+		} catch (java.sql.SQLException e) {
+			throw new IOException("Error guardando usuario " + login + " en SQLite", e);
 		}
 	}
 
 	public static void solicitar_borrado(String login, long timestamp) throws IOException {
-		Properties prop = cargar_properties_usuario(login);
-		prop.setProperty(ACCOUNT_DELETION_REQUESTED_AT, String.valueOf(timestamp));
-		Util.guardar_properties(prop, ruta_usuario(login));
+		UserDAO.UserRecord record = load_user_record(login);
+		if (record == null) throw new IOException("Usuario no encontrado: " + login);
+		save_user_record(login, record.getSerialized(), record.getNotes(), Long.valueOf(timestamp),
+			record.getTraining(), record.getExtensions());
 	}
 
 	public static Long obtener_fecha_solicitud_borrado(String login) {
-		Properties prop = cargar_properties_usuario_sin_excepcion(login);
-		String value = prop.getProperty(ACCOUNT_DELETION_REQUESTED_AT);
-		if (value == null || value.trim().isEmpty()) {
-			return null;
-		}
 		try {
-			return Long.valueOf(value);
-		} catch (NumberFormatException e) {
-			return null;
+			UserDAO.UserRecord record = load_user_record(login);
+			return record == null ? null : record.getDeletionRequestedAt();
+		} catch (IOException e) {
+			throw new IllegalStateException("Error leyendo solicitud de borrado para " + login, e);
 		}
 	}
 
@@ -102,73 +107,36 @@ public class UsuarioBO {
 
 	public static Usuario leer_usuario (String login, boolean leer_scouts) {
 		try {
-			String BD = ruta_usuario(login);
-			File file = new File(BD);
-			Properties prop = Util.cargar_properties(file);
-			if (prop == null) return null;
-			String linea = prop.getProperty("usuario");
-			Usuario usuario = new Usuario(Arrays.asList(linea.split(",")));
-			usuario.setNotas(prop.getProperty("notas", ""));
-			
-			// ENTRENAMIENTO
+			UserDAO.UserRecord record = load_user_record(login);
+			if (record == null) return null;
+			Usuario usuario = new Usuario(Arrays.asList(record.getSerialized().split(",", -1)));
+			usuario.setNotas(record.getNotes());
 
-			for (Entry<Object, Object> e : prop.entrySet()) {
-				String key = e.getKey().toString();
-				if (key.matches("entrenamiento[0-9]+")) {
-					int jornada = Integer.valueOf(key.substring("entrenamiento".length()));
-					String[] split = e.getValue().toString().split(",");
-					
-					if (!split[0].contains("-")) {
-						// Sistema de entrenamiento antiguo
-						if (Util.nnvl(split[0]) != null) {
-							usuario.getTipo_entrenamiento(0).put(jornada, TIPO_ENTRENAMIENTO.valueOf(split[0]));
-						}
-						if (Util.nnvl(split[1]) != null) {
-							usuario.getDemarcacion().put(jornada, DEMARCACION.valueOf(split[1]));
-						}
-					} else {
-						// Sistema de entrenamiento nuevo
-						// NOTA: si los últimos entrenamientos no están definidos, el array creado por split tiene menos elementos. Añado un elemento extra para evitarlo
-						String[] tipo_entrenamiento = (split[0] + "-*").split("-");
-						if (Util.nnvl(tipo_entrenamiento[0]) != null) {
-							usuario.getTipo_entrenamiento(0).put(jornada, TIPO_ENTRENAMIENTO.valueOf(tipo_entrenamiento[0]));
-						}
-						if (Util.nnvl(tipo_entrenamiento[1]) != null) {
-							usuario.getTipo_entrenamiento(1).put(jornada, TIPO_ENTRENAMIENTO.valueOf(tipo_entrenamiento[1]));
-						}
-						if (Util.nnvl(tipo_entrenamiento[2]) != null) {
-							usuario.getTipo_entrenamiento(2).put(jornada, TIPO_ENTRENAMIENTO.valueOf(tipo_entrenamiento[2]));
-						}
-						if (Util.nnvl(tipo_entrenamiento[3]) != null) {
-							usuario.getTipo_entrenamiento(3).put(jornada, TIPO_ENTRENAMIENTO.valueOf(tipo_entrenamiento[3]));
-						}
-					}
-
-					if (split.length > 2 && split[2].length() > 0) {
-						usuario.getEntrenador_principal().put(jornada, new Jugador(split[2]));
-						usuario.getNivel_asistentes().put(jornada, Util.stringToBigDecimal(split[3]));
-						if (split.length > 4) {
-							usuario.getNivel_juveniles().put(jornada, Util.stringToBigDecimal(split[4]));
-						}
-					}
+			for (Entry<Integer, String> e : record.getTraining().entrySet()) {
+				int jornada = e.getKey().intValue();
+				String[] split = e.getValue().split(",");
+				if (split.length < 2) throw new IOException("Entrenamiento inválido para " + login + " jornada " + jornada);
+				if (!split[0].contains("-")) {
+					if (Util.nnvl(split[0]) != null) usuario.getTipo_entrenamiento(0).put(jornada, TIPO_ENTRENAMIENTO.valueOf(split[0]));
+					if (Util.nnvl(split[1]) != null) usuario.getDemarcacion().put(jornada, DEMARCACION.valueOf(split[1]));
+				} else {
+					String[] tipos = (split[0] + "-*").split("-");
+					for (int i = 0; i < 4; i++) if (Util.nnvl(tipos[i]) != null)
+						usuario.getTipo_entrenamiento(i).put(jornada, TIPO_ENTRENAMIENTO.valueOf(tipos[i]));
+				}
+				if (split.length > 2 && split[2].length() > 0) {
+					usuario.getEntrenador_principal().put(jornada, new Jugador(split[2]));
+					if (split.length > 3) usuario.getNivel_asistentes().put(jornada, Util.stringToBigDecimal(split[3]));
+					if (split.length > 4) usuario.getNivel_juveniles().put(jornada, Util.stringToBigDecimal(split[4]));
 				}
 			}
-
-			// Los datos de scouts se cargan bajo demanda para no ralentizar la autenticación.
-			if (leer_scouts) {
-				cargar_scouts(usuario);
-			}
-			
+			if (leer_scouts) cargar_scouts(usuario);
 			return usuario;
 		} catch (IOException ex) {
-			try {
-				SERVLET_ASISTENTE._log_linea(login, "Error al leer usuario: " + ex);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			try { SERVLET_ASISTENTE._log_linea(login, "Error al leer usuario: " + ex); }
+			catch (IOException e) { e.printStackTrace(); }
 			throw new IllegalStateException("Error al leer usuario " + login, ex);
 		}
-		
 	}
 
 	/**
@@ -236,119 +204,72 @@ public class UsuarioBO {
 	}
 
 	public static void grabar_usuario(Usuario usuario) throws IOException {
-		// El usuario de prueba tiene "prueba/" como prefijo
-		String ruta = ruta_usuario(usuario.getLogin());
-		File file = new File(ruta);
-		Properties prop = Util.cargar_properties(file);
-		if (prop == null) prop = new Properties();
+		String login = usuario.getLogin();
+		UserDAO.UserRecord previous = load_user_record(login);
+		String usuarioAnterior = previous == null ? null : previous.getSerialized();
+		String serialized = purgar_secreto_actualizacion_automatica(usuario.serializar());
+		serialized = conservar_valores_usuario_desconocidos(usuarioAnterior, serialized);
 
-		String usuario_anterior = prop.getProperty("usuario");
-		HashMap<String, String> entrenamientos_anteriores = new HashMap<String, String>();
-
-		// Solo reconstruimos las claves que gestiona UsuarioBO. Las demás pueden pertenecer a versiones más nuevas.
-		for (String key : new ArrayList<String>(prop.stringPropertyNames())) {
-			if (key.matches("entrenamiento[0-9]+")) {
-				entrenamientos_anteriores.put(key, prop.getProperty(key));
-				prop.remove(key);
-			}
-		}
-		
-		String usuario_serializado = purgar_secreto_actualizacion_automatica(usuario.serializar());
-		prop.setProperty("usuario", conservar_valores_usuario_desconocidos(usuario_anterior, usuario_serializado));
-		prop.setProperty("notas", Util.nvl(usuario.getNotas()));
-
-		// Entrenamiento
+		java.util.Map<Integer, String> training = new java.util.TreeMap<Integer, String>();
+		Properties extensions = previous == null ? new Properties() : previous.getExtensions();
 		for (Integer jornada : usuario.getTipo_entrenamiento(0).keySet()) {
-			String tipo_entrenamiento;
-			String entrenamiento_serializado;
-			if (jornada < AsistenteBO.JORNADA_NUEVO_ENTRENO) {
-				tipo_entrenamiento = Util.nvl(usuario.getTipo_entrenamiento(0).get(jornada));
-				entrenamiento_serializado = tipo_entrenamiento + "," + Util.nvl(usuario.getDemarcacion().get(jornada)) + "," + (usuario.getEntrenador_principal().get(jornada) == null ? "" : usuario.getEntrenador_principal().get(jornada).serializar_entrenador()) + "," + Util.nvl(usuario.getNivel_asistentes().get(jornada)) + "," + Util.nvl(usuario.getNivel_juveniles().get(jornada)) + ",*";
+			String tipo;
+			String value;
+			if (jornada.intValue() < AsistenteBO.JORNADA_NUEVO_ENTRENO) {
+				tipo = Util.nvl(usuario.getTipo_entrenamiento(0).get(jornada));
+				value = tipo + "," + Util.nvl(usuario.getDemarcacion().get(jornada)) + "," +
+					(usuario.getEntrenador_principal().get(jornada) == null ? "" : usuario.getEntrenador_principal().get(jornada).serializar_entrenador()) + "," +
+					Util.nvl(usuario.getNivel_asistentes().get(jornada)) + "," + Util.nvl(usuario.getNivel_juveniles().get(jornada)) + ",*";
 			} else {
-				tipo_entrenamiento = Util.nvl(usuario.getTipo_entrenamiento(0).get(jornada)) + "-" +
-									Util.nvl(usuario.getTipo_entrenamiento(1).get(jornada)) + "-" +
-									Util.nvl(usuario.getTipo_entrenamiento(2).get(jornada)) + "-" +
-									Util.nvl(usuario.getTipo_entrenamiento(3).get(jornada));
-				// Aquí dejo en blanco la demarcación
-				entrenamiento_serializado = tipo_entrenamiento + ",," + (usuario.getEntrenador_principal().get(jornada) == null ? "" : usuario.getEntrenador_principal().get(jornada).serializar_entrenador()) + "," + Util.nvl(usuario.getNivel_asistentes().get(jornada)) + "," + Util.nvl(usuario.getNivel_juveniles().get(jornada)) + ",*";
+				tipo = Util.nvl(usuario.getTipo_entrenamiento(0).get(jornada)) + "-" +
+					Util.nvl(usuario.getTipo_entrenamiento(1).get(jornada)) + "-" +
+					Util.nvl(usuario.getTipo_entrenamiento(2).get(jornada)) + "-" +
+					Util.nvl(usuario.getTipo_entrenamiento(3).get(jornada));
+				value = tipo + ",," + (usuario.getEntrenador_principal().get(jornada) == null ? "" : usuario.getEntrenador_principal().get(jornada).serializar_entrenador()) + "," +
+					Util.nvl(usuario.getNivel_asistentes().get(jornada)) + "," + Util.nvl(usuario.getNivel_juveniles().get(jornada)) + ",*";
 			}
-
 			String key = "entrenamiento" + jornada;
-			prop.setProperty(key, conservar_valores_usuario_desconocidos(entrenamientos_anteriores.get(key), entrenamiento_serializado));
+			String old = previous == null ? null : previous.getTraining().get(jornada);
+			training.put(jornada, conservar_valores_usuario_desconocidos(old, value));
 		}
-
-		Util.guardar_properties(prop, ruta);
-
-//		ruta = AsistenteBO.PATH_BACKUP + "_" + usuario.getLogin() + ".properties";
-//		Util.guardar_properties(prop, ruta);
+		save_user_record(login, serialized, Util.nvl(usuario.getNotas()),
+			previous == null ? null : previous.getDeletionRequestedAt(), training, extensions);
 	}
 
 	public static void borrar_usuario(String login) throws IOException {
-		String ruta = SystemUtil.getVar("path") + "_" + login + ".properties";
-		Util.borrar_properties(ruta);
+		try {
+			if (!user_dao().delete(login)) throw new IOException("Usuario no encontrado: " + login);
+		} catch (java.sql.SQLException e) {
+			throw new IOException("Error borrando usuario " + login, e);
+		}
 	}
 
 	public static String[] obtener_usuarios() {
 		try {
-			File root = new File(SystemUtil.getVar(SystemUtil.PATH));
-			List<String> paths = SqlitePersistence.list(root, "_", ".properties");
-			if (paths != null) {
-				List<String> names = new ArrayList<String>();
-				for (String path : paths) {
-					if (path.indexOf('/') < 0) names.add(path);
-				}
-				return names.toArray(new String[names.size()]);
-			}
-			String[] archivos = root.list(new FilenameFilter() {
-				@Override public boolean accept(File dir, String name) { return name.startsWith("_"); }
-			});
-			return archivos == null ? new String[0] : archivos;
+			List<String> logins = user_dao().listLogins();
+			List<String> files = new ArrayList<String>();
+			for (String login : logins) files.add("_" + login + ".properties");
+			return files.toArray(new String[files.size()]);
 		} catch (Exception e) {
-			throw new IllegalStateException("Error leyendo usuarios desde SQLite", e);
+			throw new IllegalStateException("Error listando usuarios desde SQLite", e);
 		}
 	}
 
 	public static int contar_usuarios() {
-		try {
-			File root = new File(SystemUtil.getVar(SystemUtil.PATH));
-			List<String> paths = SqlitePersistence.list(root, "_", ".properties");
-			if (paths != null) {
-				int count = 0;
-				for (String path : paths) if (path.indexOf('/') < 0) count++;
-				return count;
-			}
-			int total = 0;
-			try (DirectoryStream<Path> archivos = Files.newDirectoryStream(root.toPath())) {
-				for (Path archivo : archivos) {
-					if (archivo.getFileName().toString().startsWith("_") && Files.isRegularFile(archivo)) total++;
-				}
-			}
-			return total;
-		} catch (IOException e) {
-			throw new IllegalStateException("Error contando usuarios", e);
-		}
+		try { return user_dao().count(); }
+		catch (Exception e) { throw new IllegalStateException("Error contando usuarios desde SQLite", e); }
 	}
 
 	public static String[] obtener_ultimos_usuarios(int dias) {
+		Calendar limite = Calendar.getInstance();
+		limite.add(Calendar.DAY_OF_MONTH, -dias);
 		try {
-			File root = new File(SystemUtil.getVar(SystemUtil.PATH));
-			List<String> paths = SqlitePersistence.list(root, "_", ".properties");
-			Calendar limite = Calendar.getInstance();
-			limite.add(Calendar.DAY_OF_MONTH, -dias);
-			List<String> recientes = new ArrayList<String>();
-			if (paths != null) {
-				for (String path : paths) {
-					if (path.indexOf('/') < 0 && SqlitePersistence.lastModified(new File(root, path)) > limite.getTimeInMillis()) recientes.add(path);
-				}
-				return recientes.toArray(new String[recientes.size()]);
-			}
-			File[] files = root.listFiles();
-			if (files != null) for (File file : files) {
-				if (file.isFile() && file.getName().startsWith("_") && file.lastModified() > limite.getTimeInMillis()) recientes.add(file.getName());
-			}
-			return recientes.toArray(new String[recientes.size()]);
-		} catch (IOException e) {
-			throw new IllegalStateException("Error buscando usuarios recientes", e);
+			List<String> logins = user_dao().listRecentLogins(limite.getTimeInMillis());
+			List<String> files = new ArrayList<String>();
+			for (String login : logins) files.add("_" + login + ".properties");
+			return files.toArray(new String[files.size()]);
+		} catch (Exception e) {
+			throw new IllegalStateException("Error buscando usuarios recientes en SQLite", e);
 		}
 	}
 
