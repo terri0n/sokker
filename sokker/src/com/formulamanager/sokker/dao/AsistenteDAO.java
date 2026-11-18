@@ -76,10 +76,10 @@ public class AsistenteDAO {
 	public static Jugador leer_jugador(Integer pid, boolean nt, int jornada_actual, boolean incrementar_edad, Usuario usuario, LinkedHashMap<String, Object> jugador) throws IOException {
 		String nombre = JSONUtil.getString(jugador, "info.name.full");
 		// NOTA: el jueves de la jornada 0 el jugador todavía no ha cumplido años. Le sumamos un año
-		Integer edad = JSONUtil.getInteger(jugador, "info.characteristics.age") + (incrementar_edad ? 1 : 0);
+		Integer edad = Integer.valueOf(requiredInteger(jugador, "info.characteristics.age").intValue() + (incrementar_edad ? 1 : 0));
 		// NOTA: con la api, el valor viene en la moneda del usuario. La guardamos en euros para compatibilizar los valores anteriores
-		Integer value = usuario.convertir_euros(JSONUtil.getInteger(jugador, "info.value.value"));
-		Integer tid = JSONUtil.getInteger(jugador, "info.team.id");
+		Integer value = usuario.convertir_euros(requiredInteger(jugador, "info.value.value"));
+		Integer tid = requiredInteger(jugador, "info.team.id");
 		
 		Jugador j = new Jugador(pid, nombre, edad, value, tid, usuario);
 
@@ -221,11 +221,11 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 	public static Jugador leer_jugador_entrenamiento(boolean avanzado, int jornada_actual, boolean incrementar_edad, Usuario usuario, LinkedHashMap<String, Object> jugador) throws IOException {
 		String nombre = JSONUtil.getString(jugador, "info.name.full");
 		// NOTA: el jueves de la jornada 0 el jugador todavía no ha cumplido años. Le sumamos un año
-		Integer edad = JSONUtil.getInteger(jugador, "info.characteristics.age") + (incrementar_edad ? 1 : 0);
+		Integer edad = Integer.valueOf(requiredInteger(jugador, "info.characteristics.age").intValue() + (incrementar_edad ? 1 : 0));
 		// NOTA: con la api, el valor viene en la moneda del usuario. La guardamos en euros para compatibilizar los valores anteriores
-		Integer value = usuario.convertir_euros(JSONUtil.getInteger(jugador, "info.value.value"));
-		Integer tid = JSONUtil.getInteger(jugador, "info.team.id");
-		Integer pid = JSONUtil.getInteger(jugador, "id");
+		Integer value = usuario.convertir_euros(requiredInteger(jugador, "info.value.value"));
+		Integer tid = requiredInteger(jugador, "info.team.id");
+		Integer pid = requiredInteger(jugador, "id");
 		
 		Jugador j = new Jugador(pid, nombre, edad, value, tid, usuario);
 
@@ -274,7 +274,7 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 			// En las NTs no tendremos las habilidades
 		}
 		
-		j.setMinutos((float)JSONUtil.getInteger(jugador, "effectiveness"));	// Tb "intensity", tiene el mismo valor
+		j.setMinutos(requiredInteger(jugador, "effectiveness").floatValue());	// Tb "intensity", tiene el mismo valor
 		j.setEntrenamiento_avanzado(avanzado);
 		
 		return j;
@@ -318,10 +318,10 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 					// NOTA: Sokker le suma 1 a la semana del entrenamiento
 					// En realidad los datos corresponden al momento justo después del entrenamiento, incluida la jornada
 					// Pero nosotros tenemos que asignar los datos del entrenamiento a la semana anterior y a las habilidades restarles las subidas
-					int week = JSONUtil.getInteger(entrenamiento, "week") - 1;
+					int week = requiredInteger(entrenamiento, "week") - 1;
 //System.out.println(week);
 					// Este es el valor después del entrenamiento -> no hay una forma fácil de saber cuál era el valor antes
-					int valor = usuario.convertir_euros(JSONUtil.getInteger(entrenamiento, "playerValue.value"));
+					int valor = usuario.convertir_euros(requiredInteger(entrenamiento, "playerValue.value"));
 	
 					// Buscamos al jugador de la semana del entrenamiento
 					Jugador jug_semana = j.buscar_jornada(week);
@@ -336,18 +336,21 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 					if (cod_dem != null) {
 						DEMARCACION dem = DEMARCACION.values()[cod_dem];
 						jug_semana.setDemarcacion_entrenamiento(dem);
-						int tipo = JSONUtil.getInteger(entrenamiento, "type.code") - 1;
+						Integer tipoCodigo = JSONUtil.getInteger(entrenamiento, "type.code");
 						// Ha habido un caso en que el tipo era 0 (General): ¿aún no efectuado?
-						if (tipo >= 0) {
-							TIPO_ENTRENAMIENTO ent = TIPO_ENTRENAMIENTO.values()[tipo];
-							usuario.getTipo_entrenamiento(cod_dem).put(week, ent);
-						}
+						if (tipoCodigo != null && tipoCodigo.intValue() > 0) {
+							int tipo = tipoCodigo.intValue() - 1;
+						if (tipo >= TIPO_ENTRENAMIENTO.values().length) throw new IOException("Invalid Sokker training type: " + tipoCodigo);
+						usuario.getTipo_entrenamiento(cod_dem).put(week, TIPO_ENTRENAMIENTO.values()[tipo]);
+					}
 					}
 					
-					jug_semana.setMinutos(JSONUtil.getDouble(entrenamiento, "intensity").floatValue());
-					jug_semana.setEntrenamiento_avanzado(JSONUtil.getInteger(entrenamiento, "kind.code") == 1);	// 0 = General (aún no efectuado, creo), 1 = Avanzado, 2 = formación
+					Double intensity = JSONUtil.getDouble(entrenamiento, "intensity");
+					if (intensity == null) throw new IOException("Incomplete training report: missing intensity");
+					jug_semana.setMinutos(intensity.floatValue());
+					jug_semana.setEntrenamiento_avanzado(Integer.valueOf(1).equals(JSONUtil.getInteger(entrenamiento, "kind.code")));	// 0 = General (aún no efectuado, creo), 1 = Avanzado, 2 = formación
 					jug_semana.setLesion(JSONUtil.getInteger(entrenamiento, "injury.daysRemaining"));
-					if (JSONUtil.getBoolean(entrenamiento, "injury.severe") && jug_semana.getLesion() == 7) {
+					if (Boolean.TRUE.equals(JSONUtil.getBoolean(entrenamiento, "injury.severe")) && Integer.valueOf(7).equals(jug_semana.getLesion())) {
 						// Como para mí 7 significa que la lesión ya no es severa, le sumo 1
 						jug_semana.setLesion(8);
 					}
@@ -389,9 +392,9 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 		//juvenil.setOriginal(null);
 		
 		for (LinkedHashMap<String, Object> dato : datos) {
-			Integer week = JSONUtil.getInteger(dato, "x") - 1;
+			Integer week = Integer.valueOf(requiredInteger(dato, "x").intValue() - 1);
 			if (week < juvenil.getJornada() && juvenil.buscar_jornada(week) == null) {
-				Integer nivel = JSONUtil.getInteger(dato, "y");
+				Integer nivel = requiredInteger(dato, "y");
 				Juvenil j = new Juvenil(juvenil.getPid(), juvenil.getNombre(), week, juvenil.getEdad(), nivel, juvenil.getSemanas() + juvenil.getJornada() - week, juvenil.isJugador_campo(), juvenil.getUsuario());
 				//juvenil.anyadir_original(j);
 				juvenil.insertar_jornada(j);
@@ -403,11 +406,14 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 		Object document = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/team/" + palmares.getTid() + "/trophies");
 		List<LinkedHashMap<String, Object>> trofeos = readRequiredObjectList(document, "$.trophies");
 		for (LinkedHashMap<String, Object> trofeo : trofeos) {
-			 int posicion = JSONUtil.getInteger(trofeo, "position");
-			 int nivel = JSONUtil.getInteger(trofeo, "level");
-			 int ocurrencias = JSONUtil.getInteger(trofeo, "occurrences");
+			 int posicion = requiredInteger(trofeo, "position");
+			 int nivel = requiredInteger(trofeo, "level");
+			 int ocurrencias = requiredInteger(trofeo, "occurrences");
 			 String tipo = JSONUtil.getString(trofeo, "type");
-			 if (nivel == 1 && tipo.equals(competicion)) {
+			 if (posicion < 1 || posicion > palmares.getPosicion().length) {
+				 throw new IOException("Invalid trophy position: " + posicion);
+			 }
+			 if (nivel == 1 && competicion.equals(tipo)) {
 				 palmares.getPosicion()[posicion - 1] = ocurrencias;
 			}
 		}
