@@ -6,6 +6,8 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
 
+import com.formulamanager.sokker.bo.JugadorBO;
+
 /**
  * Owns the two independent persistence domains used by the application.
  * The Asistente and FactorX stores must never share a database.
@@ -37,7 +39,10 @@ public final class SqlitePersistence {
 
         // Import both domains before publishing either store. The importer is
         // idempotent and does not modify or delete the legacy source files.
-        new LegacyPropertiesImporter(asistenteDatabase, asistenteRoot).importAll();
+        LegacyPropertiesImporter asistenteImporter = new LegacyPropertiesImporter(asistenteDatabase, asistenteRoot);
+        File legacyIberica = new File(JugadorBO.PATH_BASE, "iberica.properties");
+        asistenteImporter.importExternal(legacyIberica, "iberica.properties");
+        asistenteImporter.importAll();
         new LegacyPropertiesImporter(factorxDatabase, factorxRoot).importAll();
 
         SqlitePropertiesStore newAsistente = new SqlitePropertiesStore(asistenteDatabase, asistenteRoot);
@@ -51,6 +56,7 @@ public final class SqlitePersistence {
         // remaining source files only after every migration has committed.
         retireImportedSources(newAsistente, asistenteRoot);
         retireImportedSources(factorxMigrationSource, factorxRoot);
+        asistenteImporter.retireExternal(legacyIberica, "iberica.properties");
 
         asistente = newAsistente;
         SqlitePersistence.factorxRoot = factorxRoot;
