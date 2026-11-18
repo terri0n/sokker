@@ -30,6 +30,7 @@ public final class AsistenteUpdateAtomicityHarness {
         players.save(123, "JUVENILE", 0, oldJuniors);
         players.save(123, "JUVENILE_HISTORY", 0, oldJuniorHistory);
         users.save("atomic", "old-user,*", "old-notes", null, Collections.<Integer, String>emptyMap(), new Properties());
+        long expectedUserUpdatedAt = users.load("atomic").getUpdatedAt();
 
         Map<Integer, String> newPlayers = singleton(20, "new-player");
         Map<Integer, String> newHistory = singleton(21, "new-history");
@@ -39,9 +40,10 @@ public final class AsistenteUpdateAtomicityHarness {
 
         boolean failed = false;
         try {
-            update.save(123, newPlayers, newHistory, newJuniors, newJuniorHistory,
+            update.save(123, oldPlayers, oldHistory, oldJuniors, oldJuniorHistory,
+                    newPlayers, newHistory, newJuniors, newJuniorHistory,
                     new UserDAO.SaveData("atomic", null, "must-rollback", null,
-                            Collections.<Integer, String>emptyMap(), new Properties()));
+                            Collections.<Integer, String>emptyMap(), new Properties()), expectedUserUpdatedAt);
         } catch (IllegalArgumentException expected) {
             failed = true;
         }
@@ -52,11 +54,46 @@ public final class AsistenteUpdateAtomicityHarness {
         require("old-junior-history".equals(players.load(123, "JUVENILE_HISTORY", 0).get(13)), "Junior history was partially committed");
         require("old-user,*".equals(users.load("atomic").getSerialized()), "User jornada/settings were partially committed");
 
+        players.save(123, "PLAYER", 0, singleton(99, "concurrent-player"));
+        boolean teamConflictRejected = false;
+        try {
+            update.save(123, oldPlayers, oldHistory, oldJuniors, oldJuniorHistory,
+                    newPlayers, newHistory, newJuniors, newJuniorHistory,
+                    new UserDAO.SaveData("atomic", "stale-user,*", "stale", null,
+                            Collections.<Integer, String>emptyMap(), new Properties()), expectedUserUpdatedAt);
+        } catch (SQLException expected) {
+            teamConflictRejected = true;
+        }
+        require(teamConflictRejected, "A stale update overwrote concurrent team changes");
+        require("concurrent-player".equals(players.load(123, "PLAYER", 0).get(99)),
+                "Concurrent player changes were lost after conflict detection");
+        require("old-user,*".equals(users.load("atomic").getSerialized()),
+                "Team conflict changed the user record");
+
+        Map<Integer, String> expectedCurrentAfterConcurrent = players.load(123, "PLAYER", 0);
+        long staleUserVersion = users.load("atomic").getUpdatedAt();
+        users.setUpdatedAt("atomic", staleUserVersion + 1000L);
+        boolean userConflictRejected = false;
+        try {
+            update.save(123, expectedCurrentAfterConcurrent, oldHistory, oldJuniors, oldJuniorHistory,
+                    newPlayers, newHistory, newJuniors, newJuniorHistory,
+                    new UserDAO.SaveData("atomic", "stale-user,*", "stale", null,
+                            Collections.<Integer, String>emptyMap(), new Properties()), staleUserVersion);
+        } catch (SQLException expected) {
+            userConflictRejected = true;
+        }
+        require(userConflictRejected, "A stale update overwrote concurrent account changes");
+        require("concurrent-player".equals(players.load(123, "PLAYER", 0).get(99)),
+                "User conflict changed team data");
+
+        long currentUserVersion = users.load("atomic").getUpdatedAt();
         Map<Integer, String> training = singleton(1200, "DEFENSA,,,,,*");
         Properties extensions = new Properties();
         extensions.setProperty("future-field", "preserved");
-        update.save(123, newPlayers, newHistory, newJuniors, newJuniorHistory,
-                new UserDAO.SaveData("atomic", "new-user,*", "new-notes", null, training, extensions));
+        update.save(123, expectedCurrentAfterConcurrent, oldHistory, oldJuniors, oldJuniorHistory,
+                newPlayers, newHistory, newJuniors, newJuniorHistory,
+                new UserDAO.SaveData("atomic", "new-user,*", "new-notes", null, training, extensions),
+                currentUserVersion);
         require("new-player".equals(players.load(123, "PLAYER", 0).get(20)), "Current players were not committed");
         require("new-history".equals(players.load(123, "PLAYER_HISTORY", 0).get(21)), "Player history was not committed");
         require("new-junior".equals(players.load(123, "JUVENILE", 0).get(22)), "Juniors were not committed");
