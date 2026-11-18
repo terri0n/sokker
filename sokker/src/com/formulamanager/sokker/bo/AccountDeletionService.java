@@ -15,6 +15,8 @@ import com.formulamanager.sokker.auxiliares.SystemUtil;
 import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.entity.Usuario;
 import com.formulamanager.sokker.persistence.SqlitePersistence;
+import com.formulamanager.sokker.persistence.SqliteDatabase;
+import com.formulamanager.sokker.persistence.TeamPlayerDAO;
 
 /**
  * Borrado definitivo de una cuenta del Asistente.
@@ -26,13 +28,21 @@ public final class AccountDeletionService {
 
     interface FileOperations {
         void deleteIfExists(File file) throws IOException;
+        default void deleteTeamData(int tid) throws IOException {
+            if (!SqlitePersistence.isInitialized()) return;
+            try {
+                new TeamPlayerDAO(new SqliteDatabase(SqlitePersistence.getAsistenteDatabaseFile(), true)).deleteTeam(tid);
+            } catch (java.sql.SQLException e) {
+                throw new IOException("No se pudieron borrar los datos del equipo " + tid, e);
+            }
+        }
     }
 
     private static final FileOperations REAL_FILE_OPERATIONS = new FileOperations() {
         @Override
         public void deleteIfExists(File file) throws IOException {
             if (file.getName().endsWith(".properties")
-                    && SqlitePersistence.forFile(file) != null) {
+                    && (SqlitePersistence.isManagedPlayerFile(file) || SqlitePersistence.forFile(file) != null)) {
                 Util.borrar_properties(file.getPath());
             } else {
                 Files.deleteIfExists(file.toPath());
@@ -156,6 +166,7 @@ public final class AccountDeletionService {
     }
 
     private static void addIfExists(List<File> files, File file) throws IOException {
+        if (SqlitePersistence.isManagedPlayerFile(file)) return;
         if (Util.existe_properties(file)) files.add(file);
     }
 
@@ -232,6 +243,9 @@ public final class AccountDeletionService {
 
         cleanNtdbReferences(manifest.getLogin());
 
+        if (manifest.deleteTeamData && manifest.tid != null) {
+            files.deleteTeamData(manifest.tid.intValue());
+        }
         for (File file : manifest.teamFiles) {
             files.deleteIfExists(file);
         }
