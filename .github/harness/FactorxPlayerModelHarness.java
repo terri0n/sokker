@@ -60,6 +60,16 @@ public final class FactorxPlayerModelHarness {
                 require(!Files.exists(factorxDirectory.resolve("historico.properties30"+type.getSufijo())),"Legacy history file was not retired for "+type);
                 require(!Files.exists(factorxDirectory.resolve("config.properties1100"+type.getSufijo())),"Legacy snapshot file was not retired for "+type);
                 require(!Files.exists(factorxDirectory.resolve("factorx.properties"+type.getSufijo())),"Legacy formation file was not retired for "+type);
+                try (Connection connection = DriverManager.getConnection("jdbc:sqlite:"
+                        + SqlitePersistence.getFactorxDatabaseFile().getAbsolutePath());
+                     PreparedStatement snapshot = connection.prepareStatement(
+                        "SELECT COUNT(*) FROM factorx_player WHERE scope=? AND record_type='SNAPSHOT' AND snapshot_round=1100")) {
+                    snapshot.setString(1, type.name());
+                    try (ResultSet result = snapshot.executeQuery()) {
+                        require(result.next() && result.getInt(1) == 1,
+                                "Legacy Factor X round snapshot was not migrated for " + type);
+                    }
+                }
 
                 FactorxJugadorBO.grabar_jugadores(Collections.singletonList(player),type,1100,false);
                 File database=SqlitePersistence.getFactorxDatabaseFile();
