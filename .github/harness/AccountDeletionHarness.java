@@ -67,6 +67,7 @@ public final class AccountDeletionHarness {
         seedUser(data, "other", 123, null, false);
         seedTeamFiles(data, 123);
         touch(data.resolve("logs/_alice.log"));
+        initializeSqlite(data);
 
         AccountDeletionService.DeletionManifest manifest = AccountDeletionService.buildManifest("alice");
         require(!manifest.isDeleteTeamData(), "Shared TID was treated as exclusive");
