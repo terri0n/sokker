@@ -944,8 +944,7 @@ protected static List<Juvenil> obtener_juveniles(int jornada_actual, boolean inc
 			try {
 				String usuario = s.split(".properties")[0].substring(1);
 				if (pendientesSet.contains(usuario)) continue;
-				File fUsuario = new File(SystemUtil.getVar(SystemUtil.PATH), s);
-				Date fecha = new Date(com.formulamanager.sokker.persistence.SqlitePersistence.lastModified(fUsuario));
+				Date fecha = new Date(UsuarioBO.obtener_ultima_actualizacion(usuario));
 				Usuario usr = UsuarioBO.leer_usuario(usuario, false);
 				salida += Util.dateToString(fecha)
 						+ " <a href='javascript:void(0)' onclick=\"location.href='asistente/login_como?usuario=" + URLEncoder.encode(usuario, "UTF-8") + "&reset_intentos=' + $('#reset_intentos').val()\">" + usuario + "</a> ";
@@ -1476,16 +1475,14 @@ System.out.print("Actualizaciones automáticas...");
 							@Override
 							protected void execute(WebClient navegadorXML) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {
 								// Me guardo la fecha de modificación para restaurarla después de la actualización
-								String ruta = SystemUtil.getVar(SystemUtil.PATH) + "_" + usuario.getLogin() + ".properties";
-								File file = new File(ruta);
-								long lastModified = file.lastModified();
+								long lastModified = UsuarioBO.obtener_ultima_actualizacion(usuario.getLogin());
 
 								new Navegador(false, usuario.getLogin_sokker(), usuario.getActualizacion_automatica(), null) {
 									@Override
 									protected void execute(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {
 										SERVLET_ASISTENTE._log_linea(usuario.getLogin(), "Actualización automática");
 										actualizar_equipo(usuario, jornada_actual[0], ajuste_edad[0], false, navegadorXML, navegador);
-										file.setLastModified(lastModified);
+										UsuarioBO.restaurar_ultima_actualizacion(usuario.getLogin(), lastModified);
 									}
 								};
 							}
