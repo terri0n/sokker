@@ -13,7 +13,6 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 import com.formulamanager.sokker.auxiliares.SERVLET_ASISTENTE;
-import com.formulamanager.sokker.auxiliares.SystemUtil;
 import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.bo.EquipoBO.TIPO_ENTRENAMIENTO;
 import com.formulamanager.sokker.entity.Jugador;
