@@ -78,56 +78,42 @@ public final class TeamPlayerDAO {
     }
 
     public Map<Integer,String> load(int tid,String recordType,int snapshotRound) throws SQLException {
+        try (Connection c = database.openConnection()) {
+            return loadWithinTransaction(c, tid, recordType, snapshotRound);
+        }
+    }
+
+    public Map<Integer,String> loadWithinTransaction(Connection c,int tid,String recordType,int snapshotRound)
+            throws SQLException {
         validate(tid,recordType,snapshotRound);
-        try(Connection c=database.openConnection();
-            PreparedStatement q=c.prepareStatement(
+        Map<Integer,String> result=new LinkedHashMap<Integer,String>();
+        try(PreparedStatement q=c.prepareStatement(
                 "SELECT pid,serialized_data FROM team_player WHERE tid=? AND record_type=? AND snapshot_round=? ORDER BY pid")) {
-            q.setInt(1,tid); q.setString(2,recordType); q.setInt(3,snapshotRound);
-            Map<Integer,String> records=new LinkedHashMap<Integer,String>();
-            try(ResultSet r=q.executeQuery()){while(r.next())records.put(r.getInt(1),r.getString(2));}
-            return Collections.unmodifiableMap(records);
+            q.setInt(1,tid);q.setString(2,recordType);q.setInt(3,snapshotRound);
+            try(ResultSet r=q.executeQuery()){while(r.next())result.put(r.getInt(1),r.getString(2));}
         }
+        return result;
     }
 
-    public List<String> listBackupFiles(int tid) throws SQLException {
-        if (tid <= 0) throw new IllegalArgumentException("tid must be positive");
-        List<String> paths = new ArrayList<String>();
-        try (Connection c = database.openConnection();
-             PreparedStatement q = c.prepareStatement(
-                 "SELECT source_path FROM team_player_document WHERE tid=? AND snapshot_round>0 AND source_path LIKE 'backup/%' ORDER BY snapshot_round,source_path")) {
-            q.setInt(1, tid);
-            try (ResultSet r = q.executeQuery()) {
-                while (r.next()) {
-                    String source = r.getString(1);
-                    paths.add(source.substring("backup/".length()));
-                }
-            }
-        }
-        return Collections.unmodifiableList(paths);
-    }
-
-    public void deleteTeam(int tid) throws SQLException {
-        if (tid <= 0) throw new IllegalArgumentException("tid must be positive");
+    public boolean replacePlayersIfUnchanged(int tid,Map<Integer,String> expected,Map<Integer,String> updated)
+            throws SQLException {
+        if (expected == null || updated == null) throw new IllegalArgumentException("Player maps are required");
         try (Connection c = database.openConnection()) {
             c.setAutoCommit(false);
             try {
-                String[] tables = {"team_player", "team_player_extension", "team_player_document", "player_group_assignment"};
-                for (String table : tables) {
-                    try (PreparedStatement d = c.prepareStatement("DELETE FROM " + table + " WHERE tid=?")) {
-                        d.setInt(1, tid);
-                        d.executeUpdate();
-                    }
+                Map<Integer,String> current = loadWithinTransaction(c, tid, "PLAYER", 0);
+                if (!current.equals(expected)) {
+                    c.rollback();
+                    return false;
                 }
-                // Test-user accounts are scoped to this team and must follow
-                // the same shared-team ownership decision as its player data.
-                try (PreparedStatement d = c.prepareStatement("DELETE FROM app_user WHERE login=?")) {
-                    d.setString(1, "prueba/" + tid);
-                    d.executeUpdate();
-                }
+                saveWithinTransaction(c, tid, "PLAYER", 0, updated);
                 c.commit();
-            } catch (SQLException e) {
+                return true;
+            } catch (Exception e) {
                 c.rollback();
-                throw e;
+                if (e instanceof SQLException) throw (SQLException)e;
+                if (e instanceof IllegalArgumentException) throw (IllegalArgumentException)e;
+                throw new SQLException("Cannot safely replace player data for tid " + tid, e);
             } finally {
                 c.setAutoCommit(true);
             }
