@@ -18,9 +18,9 @@ import java.util.Properties;
 /**
  * Properties-compatible persistence over a single SQLite database.
  *
- * Each legacy document is stored once as its original Properties byte stream.
- * The parsed key/value table is maintained as an index for compatibility and
- * diagnostics; callers continue to work with java.util.Properties.
+ * Each legacy document is stored as key/value rows. The SHA-256 column records
+ * the original imported source version and is intentionally immutable after
+ * import, so startup can detect a changed source before retiring it.
  */
 public final class SqlitePropertiesStore {
     private final SqliteDatabase database;
