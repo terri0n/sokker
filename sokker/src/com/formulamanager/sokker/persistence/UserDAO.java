@@ -273,11 +273,6 @@ public final class UserDAO {
                         i.setString(1, "users_legacy_imported"); i.setLong(2, System.currentTimeMillis()); i.executeUpdate();
                     }
                 }
-                for (String path : paths) {
-                    try (PreparedStatement d = c.prepareStatement("DELETE FROM legacy_properties_file WHERE path=?")) {
-                        d.setString(1, path); d.executeUpdate();
-                    }
-                }
                 c.commit();
             } catch (Exception e) {
                 c.rollback();
@@ -288,7 +283,7 @@ public final class UserDAO {
         }
         for (String path : paths) {
             File source = new File(root, path.replace('/', File.separatorChar));
-            if (source.exists() && !source.delete()) throw new IOException("Cannot remove migrated user file: " + source);
+            legacy.retireImportedSource(source, path);
         }
     }
 
