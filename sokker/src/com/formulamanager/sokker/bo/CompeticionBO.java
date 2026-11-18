@@ -1,9 +1,7 @@
 package com.formulamanager.sokker.bo;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -12,6 +10,7 @@ import java.util.List;
 import java.util.Properties;
 
 import com.formulamanager.sokker.auxiliares.Util;
+import com.formulamanager.sokker.auxiliares.SystemUtil;
 import com.formulamanager.sokker.entity.Competicion;
 import com.formulamanager.sokker.entity.Equipo;
 import com.formulamanager.sokker.entity.Equipo.TIPO_COMPETICION;
@@ -25,14 +24,19 @@ import com.gargoylesoftware.htmlunit.html.DomText;
 import com.gargoylesoftware.htmlunit.xml.XmlPage;
 
 public class CompeticionBO {
-	public static String IBERICA = JugadorBO.PATH_BASE + "iberica.properties";
+	private static File getIbericaFile() {
+		return new File(SystemUtil.getVar(SystemUtil.PATH), "iberica.properties");
+	}
 	
 	//---------
 	// Guardar
 	//---------
 	
 	public static void guardar(Competicion competicion) throws IOException {
-		Properties prop = new Properties();
+		File file = getIbericaFile();
+		Properties prop = Util.cargar_properties(file);
+		if (prop == null) prop = new Properties();
+		prop.keySet().removeIf(key -> isManagedPropertyKey(String.valueOf(key)));
 
 		if (competicion != null) {
 			prop.setProperty("competicion_equipos_champions", competicion.getEquipos_champions()+"");
@@ -52,7 +56,7 @@ public class CompeticionBO {
 			}
 		}
 		
-		Util.guardar_properties(prop, IBERICA);
+		Util.guardar_properties(prop, file.getPath());
 	}
 
 	public static void guardar(Properties prop, String prefijo, Grupo grupo) {
@@ -99,45 +103,36 @@ public class CompeticionBO {
 	//------
 	
 	public static Competicion leer() throws IOException {
-		Properties prop = new Properties();
+		Properties prop = Util.cargar_properties(getIbericaFile());
+		if (prop == null || !prop.containsKey("competicion_num_grupos")) return null;
 
-		File file = new File(IBERICA);
+		Competicion competicion = new Competicion();
+		competicion.setEquipos_champions(Integer.valueOf(prop.getProperty("competicion_equipos_champions")));
+		competicion.setEquipos_uefa(Integer.valueOf(prop.getProperty("competicion_equipos_uefa")));
+		competicion.setEquipos_cp(Util.invl(Util.stringToInteger(prop.getProperty("competicion_equipos_cp"))));
+		int num_grupos = Integer.valueOf(prop.getProperty("competicion_num_grupos"));
 
-		if (!file.exists()) {
-			return null;
+		for (int i = 1; i <= num_grupos; i++) {
+			competicion.getGrupos().add(leer_grupo(prop, "grupo" + i + "_", i));
 		}
-		
-		InputStream input = new FileInputStream(file);
-		
-		// load a properties file
-		prop.load(input);
 
-		if (prop.size() > 0) {
-			Competicion competicion = new Competicion();
-			competicion.setEquipos_champions(Integer.valueOf(prop.getProperty("competicion_equipos_champions")));
-			competicion.setEquipos_uefa(Integer.valueOf(prop.getProperty("competicion_equipos_uefa")));
-			competicion.setEquipos_cp(Util.invl(Util.stringToInteger(prop.getProperty("competicion_equipos_cp"))));
-			int num_grupos = Integer.valueOf(prop.getProperty("competicion_num_grupos"));
-	
-			for (int i = 1; i <= num_grupos; i++) {
-				competicion.getGrupos().add(leer_grupo(prop, "grupo" + i + "_", i));
+		int num_competiciones = Integer.valueOf(prop.getProperty("competicion_num_competiciones", "0"));
+		if (num_competiciones > 0) {
+			int i = 1;
+			for (TIPO_COMPETICION tipo : TIPO_COMPETICION.values()) {
+				competicion.getCompeticiones().add(leer_grupo(prop, tipo + "_", i++));
 			}
-			
-			int num_competiciones = Integer.valueOf(prop.getProperty("competicion_num_competiciones"));
-	
-			if (num_competiciones > 0) {
-				int i = 1;
-				for (TIPO_COMPETICION tipo : TIPO_COMPETICION.values()) {
-					competicion.getCompeticiones().add(leer_grupo(prop, tipo + "_", i++));
-				}
-			}
-			
-			competicion.actualizar_clasificaciones();
-	
-			return competicion;
-		} else {
-			return null;
 		}
+		competicion.actualizar_clasificaciones();
+		return competicion;
+	}
+
+	private static boolean isManagedPropertyKey(String key) {
+		if (key.startsWith("competicion_") || key.startsWith("grupo")) return true;
+		for (TIPO_COMPETICION tipo : TIPO_COMPETICION.values()) {
+			if (key.startsWith(tipo.name() + "_")) return true;
+		}
+		return false;
 	}
 
 	public static void buscar_arcades(Competicion competicion, WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
@@ -156,7 +151,7 @@ public class CompeticionBO {
 					for (DomNode partido : partidos) {
 						int tid_visitante = Integer.valueOf(((DomText) partido.getFirstByXPath("awayTeamID/text()")).asText());
 						if (tid_visitante == p.getVisitante().getTid().intValue()) {
-							// ¿Es un partido tipo Arcade / Arcade Cup?
+							// Â¿Es un partido tipo Arcade / Arcade Cup?
 							int leagueID = Integer.valueOf(((DomText) partido.getFirstByXPath("leagueID/text()")).asText()).intValue();
 							if (leagueID == 51530 || leagueID == 51531) {
 								// Fecha
@@ -175,7 +170,7 @@ public class CompeticionBO {
 									p.setGoles_v(Integer.valueOf(((DomText) partido.getFirstByXPath("awayTeamScore/text()")).asText()));
 								}
 								
-								// NOTA: no rompemos el for para que el resultado que quede sea el último
+								// NOTA: no rompemos el for para que el resultado que quede sea el Ãºltimo
 							}
 						}
 					}
@@ -199,7 +194,7 @@ public class CompeticionBO {
 		for (int i = 1; i <= grupo.getNum_jornadas(); i++) {
 			Jornada j = leer_jornada(prop, prefijo + "jornada" + i + "_", i, grupo.getEquipos(), tipo_competicion == null ? Equipo.DESCANSO : Equipo.VACIO);
 			if (j != null) {
-				// Si la liga es de tipo juveniles, pueden no haberse generado aún todas las jornadas
+				// Si la liga es de tipo juveniles, pueden no haberse generado aÃºn todas las jornadas
 				grupo.getJornadas().add(j);
 			}
 		}
