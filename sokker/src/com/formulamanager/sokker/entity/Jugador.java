@@ -1973,6 +1973,10 @@ public class Jugador implements Comparable<Jugador> {
 		this.campos_extra_serializacion = campos == null ? new ArrayList<String>() : new ArrayList<String>(campos);
 	}
 
+	protected List<String> getCamposExtraSerializacion() {
+		return new ArrayList<String>(campos_extra_serializacion);
+	}
+
 	protected boolean tiene_campos_extra_serializacion() {
 		return !campos_extra_serializacion.isEmpty()
 				|| (original != null && original.tiene_campos_extra_serializacion());
