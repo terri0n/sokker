@@ -192,7 +192,11 @@ public final class UserDAO {
     public void migrateLegacy(SqlitePropertiesStore legacy, File root) throws IOException, SQLException {
         List<String> paths = new ArrayList<String>();
         for (String path : legacy.list(null, ".properties")) {
-            if (path.matches("_[^/]+\\.properties") || path.matches("prueba/[^/]+\\.properties")) paths.add(path);
+            if (!path.matches("_[^/]+\\.properties") && !path.matches("prueba/[^/]+\\.properties")) continue;
+            Properties candidate = legacy.load(path);
+            // The prueba directory also contains test-team/player documents.
+            // Only a document with the account payload is a serialized user.
+            if (candidate != null && candidate.getProperty("usuario") != null) paths.add(path);
         }
         try (Connection c = database.openConnection()) {
             c.setAutoCommit(false);
