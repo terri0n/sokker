@@ -39,8 +39,19 @@ public class Ver extends SERVLET_ASISTENTE {
 			_log(request, "");
 
 			//File f = new File(AsistenteBO.PATH_BASE + "/logs/_BLOQUEO.log");
-			File f = new File(SystemUtil.getVar(SystemUtil.PATH) + request.getQueryString());
-			try (FileInputStream bis = new FileInputStream(f)) {
+			String requested = request.getQueryString();
+            if (requested != null && requested.startsWith("logs/")) requested = requested.substring("logs/".length());
+            if (requested == null || !requested.matches("_[A-Za-z0-9._-]+\\.log|_NTDB\\.log")) {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+            File logDirectory = new File(SystemUtil.getLogsPath()).getCanonicalFile();
+            File f = new File(logDirectory, requested).getCanonicalFile();
+            if (!f.getPath().startsWith(logDirectory.getPath() + File.separator) || !f.isFile()) {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
+            try (FileInputStream bis = new FileInputStream(f)) {
 				BufferedReader br = new BufferedReader(new InputStreamReader(bis));
 		        String linea;
 				response.getWriter().println("<pre>");

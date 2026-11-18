@@ -101,7 +101,7 @@ public abstract class SERVLET_SETE extends HttpServlet {
 	public static void _log_linea(String login, String linea) throws IOException {
 		linea = new SimpleDateFormat("dd/MM/yy HH:mm").format(new Date()) + "\t" + linea + "\r\n";
 
-		String LOG = SystemUtil.getVar(SystemUtil.PATH) + "logs/_" + login + ".log";
+		String LOG = SystemUtil.getLogsPath() + "_" + login + ".log";
 		
 		File file = new File(LOG);
 		if (!file.exists()) {

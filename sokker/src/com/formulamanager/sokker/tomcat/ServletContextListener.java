@@ -76,6 +76,11 @@ public class ServletContextListener implements javax.servlet.ServletContextListe
 		
 		SystemUtil.saveRealPath(event.getServletContext());
 		try {
+			SystemUtil.migrateLegacyLogs();
+		} catch (IOException e) {
+			throw new IllegalStateException("No se pudieron migrar los logs antiguos", e);
+		}
+		try {
 			File asistenteDirectory = new File(SystemUtil.getVar(SystemUtil.PATH));
 			File factorxDirectory = new File(FactorxJugadorBO.PATH_BASE, "factorx");
 			SqlitePersistence.initialize(asistenteDirectory, factorxDirectory);
