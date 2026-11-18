@@ -34,7 +34,10 @@ public final class SqliteSchemaUpgradeHarness {
         TeamPlayerDAO dao = new TeamPlayerDAO(database);
         if (!"old-player".equals(dao.load(123, "PLAYER", 0).get(42)))
             throw new AssertionError("Schema upgrade lost an existing player row");
-        dao.save(123, "PLAYER", 0, Collections.singletonMap(Integer.valueOf(0), "test-player"));
+        java.util.Map<Integer, String> upgradedPlayers = new java.util.LinkedHashMap<Integer, String>();
+        upgradedPlayers.put(Integer.valueOf(42), "old-player");
+        upgradedPlayers.put(Integer.valueOf(0), "test-player");
+        dao.save(123, "PLAYER", 0, upgradedPlayers);
         if (!"test-player".equals(dao.load(123, "PLAYER", 0).get(0)))
             throw new AssertionError("Upgraded schema does not accept synthetic PID zero");
         if (!"old-player".equals(dao.load(123, "PLAYER", 0).get(42)))
