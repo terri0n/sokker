@@ -793,12 +793,14 @@ if (nuevo.getLesion() > 0) {
 
 		File database = SqlitePersistence.getAsistenteDatabaseFile();
 		if (database == null) throw new IOException("Asistente SQLite no está inicializado");
-		try {
-			new AsistenteUpdateDAO(new SqliteDatabase(database, true)).save(tid,
-				currentPlayers, historicalPlayers, currentJuniors, historicalJuniors,
-				UsuarioBO.preparar_guardado(_usuario));
-		} catch (SQLException e) {
-			throw new IOException("No se pudo confirmar la actualización completa del equipo " + tid, e);
+		synchronized (UsuarioBO.class) {
+			try {
+				new AsistenteUpdateDAO(new SqliteDatabase(database, true)).save(tid,
+					currentPlayers, historicalPlayers, currentJuniors, historicalJuniors,
+					UsuarioBO.preparar_guardado(_usuario));
+			} catch (SQLException e) {
+				throw new IOException("No se pudo confirmar la actualización completa del equipo " + tid, e);
+			}
 		}
 		
 		// Envío jugadores a las NTDB
