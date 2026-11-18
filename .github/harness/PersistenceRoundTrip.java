@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import com.formulamanager.sokker.auxiliares.SystemUtil;
+import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.bo.AsistenteBO;
 import com.formulamanager.sokker.bo.UsuarioBO;
 import com.formulamanager.sokker.entity.Jugador;
@@ -114,6 +115,26 @@ public final class PersistenceRoundTrip {
 
         try {
             SqlitePersistence.initialize(data.toFile(), factorx.toFile());
+            Path outsideProperties = Files.createTempFile(data.getParent(), "outside-properties-", ".properties");
+            byte[] outsideBytes = "legacy=must-not-be-read\\n".getBytes(StandardCharsets.ISO_8859_1);
+            Files.write(outsideProperties, outsideBytes);
+            boolean outsideReadRejected = false;
+            try {
+                Util.cargar_properties(outsideProperties.toFile());
+            } catch (IOException expected) {
+                outsideReadRejected = true;
+            }
+            require(outsideReadRejected, "Properties reader retained a file-based fallback outside SQLite");
+            boolean outsideWriteRejected = false;
+            try {
+                Util.guardar_properties(new Properties(), outsideProperties.toString());
+            } catch (IOException expected) {
+                outsideWriteRejected = true;
+            }
+            require(outsideWriteRejected, "Properties writer retained a file-based fallback outside SQLite");
+            require(Arrays.equals(outsideBytes, Files.readAllBytes(outsideProperties)),
+                    "Rejected legacy properties access modified the external file");
+            Files.deleteIfExists(outsideProperties);
             require(!genericProperties.exists(), "Imported generic properties source was not retired");
             require("bob".equals(SqlitePersistence.load(genericProperties).getProperty("alice")),
                     "Generic properties data was not retained in SQLite");
