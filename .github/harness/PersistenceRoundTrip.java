@@ -12,6 +12,7 @@ import com.formulamanager.sokker.auxiliares.SystemUtil;
 import com.formulamanager.sokker.bo.AsistenteBO;
 import com.formulamanager.sokker.bo.UsuarioBO;
 import com.formulamanager.sokker.entity.Jugador;
+import com.formulamanager.sokker.entity.Juvenil;
 import com.formulamanager.sokker.entity.Usuario;
 import com.formulamanager.sokker.persistence.SqlitePersistence;
 import com.formulamanager.sokker.persistence.TeamPlayerDAO;
