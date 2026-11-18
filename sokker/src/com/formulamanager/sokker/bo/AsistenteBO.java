@@ -119,7 +119,7 @@ public static List<Jugador> leer_jugadores (Integer tid, String equipo, boolean 
 		int snapshotRound = jornada == null ? 0 : jornada;
 		try {
 			for (Entry<Integer, String> record : team_player_dao().load(tid, tipo, snapshotRound).entrySet()) {
-				Jugador jugador = new Jugador(record.getKey(), Arrays.asList(record.getValue().split(",")),
+				Jugador jugador = new Jugador(record.getKey(), Arrays.asList(record.getValue().split(",", -1)),
 						true, null, null, usuario, null, null);
 				if (equipo != null) jugador.setEquipo(equipo);
 				jugadores.add(jugador);
@@ -136,7 +136,7 @@ public static List<Jugador> leer_jugadores (Integer tid, String equipo, boolean 
 		try {
 			String serialized = team_player_dao().load(tid, pid, historico ? "PLAYER_HISTORY" : "PLAYER");
 			if (serialized == null) return null;
-			Jugador jugador = new Jugador(pid, Arrays.asList(serialized.split(",")), true, null, null, usuario, null, null);
+			Jugador jugador = new Jugador(pid, Arrays.asList(serialized.split(",", -1)), true, null, null, usuario, null, null);
 			if (equipo != null) jugador.setEquipo(equipo);
 			return jugador;
 		} catch (SQLException e) {
