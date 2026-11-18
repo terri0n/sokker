@@ -31,6 +31,84 @@ public final class LegacyPropertiesImporter {
         this.sourceDirectory = sourceDirectory.getAbsoluteFile();
     }
 
+    /**
+     * Imports a single legacy document that lived outside the configured data
+     * root. The original path is kept out of the database; the supplied
+     * relative path becomes its permanent SQLite identity.
+     */
+    public void importExternal(File source, String relativePath) throws IOException, SQLException {
+        if (source == null || !source.isFile()) return;
+        File canonicalSource = source.getCanonicalFile();
+        if (canonicalSource.toPath().startsWith(sourceDirectory.getCanonicalFile().toPath())) return;
+        String path = normalizeRelativePath(relativePath);
+        byte[] bytes = Files.readAllBytes(canonicalSource.toPath());
+        String checksum = sha256(bytes);
+        database.initialize();
+        try (Connection connection = database.openConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                String existingChecksum = importedChecksum(connection, path);
+                if (existingChecksum != null) {
+                    if (!existingChecksum.equals(checksum)) {
+                        throw new SQLException("Legacy properties changed after import; refusing to overwrite SQLite data: " + path);
+                    }
+                } else {
+                    Properties properties = new Properties();
+                    properties.load(new ByteArrayInputStream(bytes));
+                    storeFile(connection, path, checksum, canonicalSource.lastModified());
+                    storeEntries(connection, path, properties);
+                }
+                connection.commit();
+            } catch (Exception e) {
+                connection.rollback();
+                if (e instanceof SQLException) throw (SQLException)e;
+                if (e instanceof IOException) throw (IOException)e;
+                throw new SQLException("Cannot import external properties document " + canonicalSource, e);
+            } finally {
+                connection.setAutoCommit(true);
+            }
+        }
+    }
+
+    /**
+     * Deletes an external source only when SQLite still contains the exact
+     * source version imported earlier. This is deliberately a separate step
+     * so callers can wait until all other migrations have committed.
+     */
+    public void retireExternal(File source, String relativePath) throws IOException, SQLException {
+        if (source == null || !source.exists()) return;
+        File canonicalSource = source.getCanonicalFile();
+        if (canonicalSource.toPath().startsWith(sourceDirectory.getCanonicalFile().toPath())) return;
+        String checksum = sha256(Files.readAllBytes(canonicalSource.toPath()));
+        try (Connection connection = database.openConnection()) {
+            String imported = importedChecksum(connection, normalizeRelativePath(relativePath));
+            if (imported == null || !imported.equals(checksum)) {
+                throw new IOException("Refusing to delete an external properties file not verified in SQLite: " + canonicalSource);
+            }
+        }
+        Files.delete(canonicalSource.toPath());
+    }
+
+    private String importedChecksum(Connection connection, String path) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(
+                "SELECT sha256 FROM legacy_properties_file WHERE path=?")) {
+            statement.setString(1, path);
+            try (java.sql.ResultSet result = statement.executeQuery()) {
+                return result.next() ? result.getString(1) : null;
+            }
+        }
+    }
+
+    private String normalizeRelativePath(String path) {
+        if (path == null || path.trim().isEmpty()) throw new IllegalArgumentException("relativePath is required");
+        String normalized = path.replace('\\\\', '/');
+        while (normalized.startsWith("/")) normalized = normalized.substring(1);
+        if (normalized.contains("../") || normalized.equals("..")) {
+            throw new IllegalArgumentException("Path traversal is not allowed: " + path);
+        }
+        return normalized;
+    }
+
     public ImportReport importAll() throws IOException, SQLException {
         if (!sourceDirectory.isDirectory()) {
             throw new IOException("Legacy data directory does not exist: " + sourceDirectory);
