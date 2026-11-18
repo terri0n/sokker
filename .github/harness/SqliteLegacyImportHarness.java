@@ -76,6 +76,31 @@ public class SqliteLegacyImportHarness {
         require(java.util.Arrays.equals(original, Files.readAllBytes(fixture.toPath())),
                 "Source file was modified");
 
+        File external = new File(root, "outside/iberica.properties");
+        if (!external.getParentFile().mkdirs()) throw new IllegalStateException("Cannot create external fixture");
+        byte[] externalBytes = "competicion_num_grupos=2\\nfuture_iberia_key=preserve\\n"
+                .getBytes(StandardCharsets.ISO_8859_1);
+        Files.write(external.toPath(), externalBytes);
+        importer.importExternal(external, "iberica.properties");
+        require("2".equals(readProperty(database, "iberica.properties", "competicion_num_grupos")),
+                "External legacy properties were not imported");
+        require("preserve".equals(readProperty(database, "iberica.properties", "future_iberia_key")),
+                "Unknown external properties key was not preserved");
+        require(external.isFile(), "External source was deleted before migration completion");
+        boolean changedSourceRejected = false;
+        Files.write(external.toPath(), "competicion_num_grupos=3\\n".getBytes(StandardCharsets.ISO_8859_1));
+        try {
+            importer.importExternal(external, "iberica.properties");
+        } catch (java.sql.SQLException expected) {
+            changedSourceRejected = true;
+        }
+        require(changedSourceRejected, "Changed external source overwrote an existing SQLite document");
+        require("2".equals(readProperty(database, "iberica.properties", "competicion_num_grupos")),
+                "Rejected external import changed SQLite data");
+        Files.write(external.toPath(), externalBytes);
+        importer.retireExternal(external, "iberica.properties");
+        require(!external.exists(), "Verified external source was not retired");
+
         verifyVersionOneMigration(root);
         System.out.println("SqliteLegacyImportHarness: OK");
     }
