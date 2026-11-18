@@ -136,7 +136,7 @@ jobs:
             .github/harness/SqlitePlayerGroupHarness.java \
             .github/harness/FactorxPlayerModelHarness.java \
             .github/harness/SqliteBackupHarness.java \
-            .github/harness/SqliteUserRoundTripHarness.java \\
+            .github/harness/SqliteUserRoundTripHarness.java \
             .github/harness/AccountDeletionHarness.java \
             .github/harness/CredentialHygieneHarness.java \
             .github/harness/AccountDeletionUiHarness.java \
