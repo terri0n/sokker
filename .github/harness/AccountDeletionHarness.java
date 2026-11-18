@@ -14,7 +14,7 @@ import com.formulamanager.sokker.auxiliares.SystemUtil;
 import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.persistence.SqlitePersistence;
 import com.formulamanager.sokker.persistence.SqliteDatabase;
-import com.formulamanager.sokker.persistence.TeamPlayerDAO;
+import com.formulamanager.sokker.entity.Usuario;
 
 public final class AccountDeletionHarness {
     private AccountDeletionHarness() {}
@@ -50,7 +50,7 @@ public final class AccountDeletionHarness {
         require(UsuarioBO.leer_usuario("alice", false) == null, "Account row still exists in SQLite");
         require(!Files.exists(data.getParent().resolve("asistente-logs/_alice.log")), "Personal log still exists");
         require(!hasTeamData(123), "Team-owned SQLite data still exists");
-        require(!Files.exists(data.resolve("prueba/123.properties")), "Test-user data still exists");
+        require(!hasTestUser(123), "Team-scoped test account still exists");
         require(!Files.exists(data.resolve("backup/123_1199.properties")), "Team backup still exists");
         require(!Files.exists(data.resolve("backup/123_1199_historico.properties")), "Historical team backup still exists");
         require(hasTeamData(999), "Unrelated team backup data was deleted");
@@ -76,6 +76,7 @@ public final class AccountDeletionHarness {
         require(UsuarioBO.leer_usuario("alice", false) == null, "Deleted account remains in SQLite");
         require(UsuarioBO.leer_usuario("other", false) != null, "Other account was deleted");
         require(hasTeamData(123), "Shared team data or backup was deleted");
+        require(hasTestUser(123), "Shared team-scoped test account was deleted");
     }
 
     private static void nationalTeamReferencePreservesTeamData() throws Exception {
@@ -90,6 +91,7 @@ public final class AccountDeletionHarness {
                 "A team referenced as another account's national team was treated as exclusive");
         AccountDeletionService.execute(manifest);
         require(hasTeamData(123), "Team data referenced through tid_nt was deleted");
+        require(hasTestUser(123), "Team-scoped test account referenced through tid_nt was deleted");
     }
 
     private static void nationalTeamDataIsPreserved() throws Exception {
@@ -103,6 +105,7 @@ public final class AccountDeletionHarness {
         AccountDeletionService.execute(AccountDeletionService.buildManifest("alice"));
 
         require(hasTeamData(34), "National-team data was deleted");
+        require(!hasTestUser(123), "Deleted team's test account was retained");
     }
 
     private static void configuredAdminCannotBeDeleted() throws Exception {
@@ -154,11 +157,16 @@ public final class AccountDeletionHarness {
         require(failed, "Injected deletion failure did not propagate");
         require(UsuarioBO.obtener_fecha_solicitud_borrado("alice") != null,
                 "Pending deletion marker disappeared after a prior failure");
+        require(hasTestUser(123), "Test account was deleted despite team-data deletion failure");
     }
 
     private static void initializeSqlite(Path data) throws Exception {
         Path factorx = Files.createTempDirectory("sokker-delete-factorx-");
         SqlitePersistence.initialize(data.toFile(), factorx.toFile());
+    }
+
+    private static boolean hasTestUser(int tid) {
+        return UsuarioBO.leer_usuario("prueba/" + tid, false) != null;
     }
 
     private static boolean hasTeamData(int tid) throws Exception {
@@ -211,7 +219,14 @@ public final class AccountDeletionHarness {
         touch(data.resolve(tid + "_historico.properties"));
         touch(data.resolve(tid + "_juveniles.properties"));
         touch(data.resolve(tid + "_juveniles_historico.properties"));
-        touch(data.resolve("prueba/" + tid + ".properties"));
+        Properties testProperties = new Properties();
+        Usuario testUser = new Usuario("prueba/" + tid, new Usuario(Integer.valueOf(tid), "Team " + tid));
+        testProperties.setProperty("usuario", testUser.serializar());
+        File testAccount = data.resolve("prueba/" + tid + ".properties").toFile();
+        Files.createDirectories(testAccount.toPath().getParent());
+        try (FileOutputStream output = new FileOutputStream(testAccount)) {
+            testProperties.store(output, null);
+        }
         touch(data.resolve("backup/" + tid + "_1199.properties"));
         touch(data.resolve("backup/" + tid + "_1199_historico.properties"));
     }
