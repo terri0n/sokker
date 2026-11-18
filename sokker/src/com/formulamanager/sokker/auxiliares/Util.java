@@ -1,10 +1,7 @@
 package com.formulamanager.sokker.auxiliares;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -174,23 +171,19 @@ public class Util {
 		return lista;
 	}
 	
-	/**
-	 * Lee una base Properties desde SQLite cuando su ruta pertenece a uno de
-	 * los dominios migrados. Antes de inicializar SQLite conserva el acceso
-	 * legacy para los harnesses y herramientas de migración.
-	 */
+	/** Reads and writes application properties exclusively through the Asistente SQLite store. */
 	public static Properties cargar_properties(File file) throws IOException {
 		if (file == null) throw new IllegalArgumentException("file is required");
-		if (SqlitePersistence.forFile(file) != null) return SqlitePersistence.load(file);
-		if (!file.isFile()) return null;
-		Properties properties = new Properties();
-		try (InputStream input = new FileInputStream(file)) {
-			properties.load(input);
+		if (SqlitePersistence.forFile(file) == null) {
+			throw new IOException("Properties file is outside the Asistente SQLite store: " + file);
 		}
-		return properties;
+		return SqlitePersistence.load(file);
 	}
 
 	public static boolean existe_properties(File file) throws IOException {
+		if (file == null || SqlitePersistence.forFile(file) == null) {
+			throw new IOException("Properties file is outside the Asistente SQLite store: " + file);
+		}
 		return SqlitePersistence.exists(file);
 	}
 
@@ -198,24 +191,21 @@ public class Util {
 		if (ruta == null) throw new IllegalArgumentException("ruta is required");
 		synchronized (ruta.intern()) {
 			File file = new File(ruta);
-			if (SqlitePersistence.forFile(file) != null) {
-				SqlitePersistence.save(file, prop);
-				return;
+			if (SqlitePersistence.forFile(file) == null) {
+				throw new IOException("Properties file is outside the Asistente SQLite store: " + file);
 			}
-			File parent = file.getAbsoluteFile().getParentFile();
-			if (parent != null && !parent.isDirectory() && !parent.mkdirs() && !parent.isDirectory()) {
-				throw new IOException("No se pudo crear el directorio " + parent);
-			}
-			try (FileOutputStream fos = new FileOutputStream(file)) {
-				prop.store(fos, null);
-			}
+			SqlitePersistence.save(file, prop);
 		}
 	}
 
 	public static void borrar_properties(String ruta) {
 		synchronized (ruta.intern()) {
 			try {
-				SqlitePersistence.delete(new File(ruta));
+				File file = new File(ruta);
+				if (SqlitePersistence.forFile(file) == null) {
+					throw new IOException("Properties file is outside the Asistente SQLite store: " + file);
+				}
+				SqlitePersistence.delete(file);
 			} catch (IOException e) {
 				throw new RuntimeException("No se pudo borrar " + ruta, e);
 			}
