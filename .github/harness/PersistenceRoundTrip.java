@@ -49,6 +49,7 @@ public final class PersistenceRoundTrip {
 
         Properties initial = new Properties();
         initial.setProperty("42", PLAYER_RECORD);
+        initial.setProperty("0", PLAYER_RECORD.replace("Player", "Test player"));
         initial.setProperty(orphan, "");
         try (FileOutputStream output = new FileOutputStream(playerFile)) {
             initial.store(output, null);
@@ -88,13 +89,15 @@ public final class PersistenceRoundTrip {
                     "Generic properties data was not retained in SQLite");
             Usuario usuario = new Usuario(123, "Team");
             List<Jugador> loaded = AsistenteBO.leer_jugadores(123, "Team", false, usuario);
-            require(loaded.size() == 1 && Integer.valueOf(42).equals(loaded.get(0).getPid()),
-                    "Unmanaged player entry was interpreted as a PID");
+            require(loaded.size() == 2, "Test player PID zero was not loaded");
+            require(loaded.stream().anyMatch(j -> Integer.valueOf(0).equals(j.getPid())),
+                    "Synthetic test player was not preserved");
 
             AsistenteBO.grabar_jugadores(loaded, 123, 1200, false);
             require(!playerFile.exists(), "Legacy player file was not retired after migration");
             TeamPlayerDAO dao = new TeamPlayerDAO(new SqliteDatabase(SqlitePersistence.getAsistenteDatabaseFile(), true));
-            require(dao.load(123, "PLAYER", 0).size() == 1, "Managed player row was not persisted in SQLite");
+            require(dao.load(123, "PLAYER", 0).size() == 2 && dao.load(123, "PLAYER", 0).containsKey(0),
+                    "Managed player rows, including the synthetic test player, were not persisted in SQLite");
             require(dao.load(124, "PLAYER", 0).size() == 1, "Same PID in a different tid was not isolated");
             require(dao.load(123, "PLAYER_HISTORY", 0).size() == 1, "Player history was not migrated");
             require(dao.load(123, "JUVENILE", 0).size() == 1, "Juveniles were not migrated");
