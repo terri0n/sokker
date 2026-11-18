@@ -74,8 +74,18 @@ public final class PersistenceRoundTrip {
             initial.store(output, null);
         }
 
+        File genericProperties = data.resolve("NTDB.properties").toFile();
+        Properties generic = new Properties();
+        generic.setProperty("alice", "bob");
+        try (FileOutputStream output = new FileOutputStream(genericProperties)) {
+            generic.store(output, null);
+        }
+
         try {
             SqlitePersistence.initialize(data.toFile(), factorx.toFile());
+            require(!genericProperties.exists(), "Imported generic properties source was not retired");
+            require("bob".equals(SqlitePersistence.load(genericProperties).getProperty("alice")),
+                    "Generic properties data was not retained in SQLite");
             Usuario usuario = new Usuario(123, "Team");
             List<Jugador> loaded = AsistenteBO.leer_jugadores(123, "Team", false, usuario);
             require(loaded.size() == 1 && Integer.valueOf(42).equals(loaded.get(0).getPid()),
