@@ -44,6 +44,7 @@ public final class AccountDeletionService {
             if (file.getName().endsWith(".properties")
                     && (SqlitePersistence.isManagedPlayerFile(file) || SqlitePersistence.forFile(file) != null)) {
                 Util.borrar_properties(file.getPath());
+                Files.deleteIfExists(file.toPath());
             } else {
                 Files.deleteIfExists(file.toPath());
             }
