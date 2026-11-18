@@ -1003,48 +1003,24 @@ protected static List<Juvenil> obtener_juveniles(int jornada_actual, boolean inc
 
 	public static String[] obtener_equipos() {
 		try {
-			File root = new File(SystemUtil.getVar(SystemUtil.PATH));
-			List<String> paths = com.formulamanager.sokker.persistence.SqlitePersistence.list(root, null, ".properties");
+			List<Integer> tids = team_player_dao().listTeamIds();
 			List<String> equipos = new ArrayList<String>();
-			if (paths != null) {
-				for (String path : paths) {
-					if (path.indexOf('/') < 0 && path.matches("[0-9]+\\.properties")) equipos.add(path);
-				}
-				return equipos.toArray(new String[equipos.size()]);
-			}
-			File[] files = root.listFiles();
-			if (files != null) for (File file : files) {
-				if (file.isFile() && file.getName().matches("[0-9]+\\.properties")) equipos.add(file.getName());
-			}
+			for (Integer tid : tids) equipos.add(tid + ".properties");
 			return equipos.toArray(new String[equipos.size()]);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			throw new IllegalStateException("No se pueden listar equipos desde SQLite", e);
 		}
 	}
 
 	public static String[] obtener_ultimos_equipos() {
+		Calendar limite = Calendar.getInstance();
+		limite.add(Calendar.DAY_OF_MONTH, -7);
 		try {
-			File root = new File(SystemUtil.getVar(SystemUtil.PATH));
-			List<String> paths = com.formulamanager.sokker.persistence.SqlitePersistence.list(root, null, ".properties");
+			List<Integer> tids = team_player_dao().listRecentTeamIds(limite.getTimeInMillis());
 			List<String> equipos = new ArrayList<String>();
-			Calendar limite = Calendar.getInstance();
-			limite.add(Calendar.DAY_OF_MONTH, -7);
-			if (paths != null) {
-				for (String path : paths) {
-					if (path.indexOf('/') < 0 && path.matches("[0-9]+\\.properties")
-							&& com.formulamanager.sokker.persistence.SqlitePersistence.lastModified(new File(root, path)) > limite.getTimeInMillis()) {
-						equipos.add(path);
-					}
-				}
-				return equipos.toArray(new String[equipos.size()]);
-			}
-			File[] files = root.listFiles();
-			if (files != null) for (File file : files) {
-				if (file.isFile() && file.getName().matches("[0-9]+\\.properties")
-						&& file.lastModified() > limite.getTimeInMillis()) equipos.add(file.getName());
-			}
+			for (Integer tid : tids) equipos.add(tid + ".properties");
 			return equipos.toArray(new String[equipos.size()]);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			throw new IllegalStateException("No se pueden listar equipos recientes desde SQLite", e);
 		}
 	}
