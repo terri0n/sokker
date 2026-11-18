@@ -16,6 +16,7 @@ import com.formulamanager.sokker.entity.Usuario;
 import com.formulamanager.sokker.persistence.SqlitePersistence;
 import com.formulamanager.sokker.persistence.TeamPlayerDAO;
 import com.formulamanager.sokker.persistence.SqliteDatabase;
+import com.formulamanager.sokker.persistence.UserDAO;
 
 public final class PersistenceRoundTrip {
     private static final String PLAYER_RECORD = "Player,123,DEF,1,18/09/2026 12:00,true,0,,,,note,-1000,180,75,23,-1.5,false,#,-,-false,1200,25,100000,10,11,12,13,14,15,16,17,-0,10,MID,90.0,-5,6,7,true,*";
@@ -135,6 +136,7 @@ public final class PersistenceRoundTrip {
         try (FileOutputStream output = new FileOutputStream(userFile)) {
             initial.store(output, null);
         }
+        initializeSqlite(data);
 
         Usuario loaded = UsuarioBO.leer_usuario("alice", false);
         require(loaded != null, "Usuario could not be read");
@@ -160,14 +162,15 @@ public final class PersistenceRoundTrip {
         try (FileOutputStream output = new FileOutputStream(userFile)) {
             initial.store(output, null);
         }
+        initializeSqlite(data);
 
         for (int pass = 0; pass < 2; pass++) {
             Usuario loaded = UsuarioBO.leer_usuario("alice", false);
             require(loaded != null, "Usuario with deletion marker could not be read");
             UsuarioBO.grabar_usuario(loaded);
-            Properties saved = load(userFile);
-            require("future-value".equals(saved.getProperty("future.key")), "Unknown key was lost with deletion marker");
-            require("1727186400000".equals(saved.getProperty("account_deletion_requested_at")),
+            UserDAO.UserRecord saved = userDao().load("alice");
+            require("future-value".equals(saved.getExtensions().getProperty("future.key")), "Unknown key was lost with deletion marker");
+            require(Long.valueOf(1727186400000L).equals(saved.getDeletionRequestedAt()),
                     "Deletion request marker was lost on save");
             require(Long.valueOf(1727186400000L).equals(UsuarioBO.obtener_fecha_solicitud_borrado("alice")),
                     "Deletion request timestamp helper returned a different value");
@@ -192,16 +195,16 @@ public final class PersistenceRoundTrip {
             initial.store(output, null);
         }
 
+        initializeSqlite(data);
         Usuario loaded = UsuarioBO.leer_usuario("alice", false);
         require(loaded != null, "Usuario with retired secret could not be read");
         UsuarioBO.grabar_usuario(loaded);
 
-        Properties saved = load(userFile);
-        String savedUsuario = saved.getProperty("usuario");
+        String savedUsuario = userDao().load("alice").getSerialized();
         require(savedUsuario != null, "Usuario record disappeared while purging retired secret");
         require(!savedUsuario.contains("bGVnYWN5LXNlY3JldA=="), "Retired automatic-update secret survived save");
         require(savedUsuario.endsWith(",future-one,future-two,*"), "Future usuario fields were lost while purging secret");
-        require("future-value".equals(saved.getProperty("future.key")), "Unknown property was lost while purging retired secret");
+        require("future-value".equals(userDao().load("alice").getExtensions().getProperty("future.key")), "Unknown property was lost while purging retired secret");
     }
 
     private static Path configureTempDataPath(String prefix) throws Exception {
@@ -221,14 +224,27 @@ public final class PersistenceRoundTrip {
         return data;
     }
 
+    private static void initializeSqlite(Path data) throws Exception {
+        Path factorx = Files.createTempDirectory("sokker-factorx-user-");
+        SqlitePersistence.initialize(data.toFile(), factorx.toFile());
+    }
+
+    private static UserDAO userDao() throws Exception {
+        return new UserDAO(new SqliteDatabase(SqlitePersistence.getAsistenteDatabaseFile(), true));
+    }
+
     private static void assertUserFutureData(File userFile) throws Exception {
-        Properties saved = load(userFile);
-        require("future-value".equals(saved.getProperty("future.key")), "Unknown Usuario.properties key was lost");
-        String usuario = saved.getProperty("usuario");
-        require(usuario != null && usuario.endsWith(",future-one,future-two,*"), "Future usuario= fields were lost");
-        String entrenamiento = saved.getProperty("entrenamiento1200");
+        UserDAO.UserRecord saved = userDao().load("alice");
+        require(saved != null, "Migrated user row is missing");
+        require("future-value".equals(saved.getExtensions().getProperty("future.key")),
+                "Unknown Usuario.properties key was lost");
+        String usuario = saved.getSerialized();
+        require(usuario != null && usuario.endsWith(",future-one,future-two,*"),
+                "Future usuario= fields were lost");
+        String entrenamiento = saved.getTraining().get(1200);
         require(entrenamiento != null && entrenamiento.endsWith(",future-training,*"),
                 "Future entrenamiento fields were lost");
+        require(!userFile.exists(), "Legacy user file was not retired after SQLite migration");
     }
 
     private static Properties load(File file) throws Exception {
