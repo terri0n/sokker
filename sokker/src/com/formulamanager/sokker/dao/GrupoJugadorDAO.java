@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import com.formulamanager.sokker.entity.GrupoJugador;
@@ -88,7 +89,7 @@ public final class GrupoJugadorDAO {
                      "UPDATE player_group SET name=? WHERE group_id=? AND user_id=(SELECT user_id FROM app_user WHERE login=?)")) {
             statement.setString(1, cleanName);
             statement.setInt(2, groupId);
-            statement.setString(3, login);
+            statement.setString(3, normalizeLogin(login));
             if (statement.executeUpdate() != 1) throw new IllegalArgumentException("Group does not belong to this user");
         }
     }
@@ -98,7 +99,7 @@ public final class GrupoJugadorDAO {
              PreparedStatement statement = connection.prepareStatement(
                      "DELETE FROM player_group WHERE group_id=? AND user_id=(SELECT user_id FROM app_user WHERE login=?)")) {
             statement.setInt(1, groupId);
-            statement.setString(2, login);
+            statement.setString(2, normalizeLogin(login));
             if (statement.executeUpdate() != 1) throw new IllegalArgumentException("Custom group does not belong to this user");
         }
     }
@@ -194,11 +195,11 @@ public final class GrupoJugadorDAO {
     private static int obtenerOCrearUsuario(Connection connection, String login) throws SQLException {
         if (login == null || login.trim().isEmpty()) throw new IllegalArgumentException("login is required");
         try (PreparedStatement insert = connection.prepareStatement("INSERT OR IGNORE INTO app_user(login) VALUES(?)")) {
-            insert.setString(1, login.trim());
+            insert.setString(1, normalizeLogin(login));
             insert.executeUpdate();
         }
         try (PreparedStatement query = connection.prepareStatement("SELECT user_id FROM app_user WHERE login=?")) {
-            query.setString(1, login.trim());
+            query.setString(1, normalizeLogin(login));
             try (ResultSet result = query.executeQuery()) {
                 if (!result.next()) throw new SQLException("Cannot resolve user id for " + login);
                 return result.getInt(1);
@@ -235,6 +236,11 @@ public final class GrupoJugadorDAO {
         Integer userId = result.wasNull() ? null : Integer.valueOf(owner);
         return new GrupoJugador(result.getInt(1), userId, result.getString(3),
                 result.getString(4), result.getInt(5));
+    }
+
+    private static String normalizeLogin(String login) {
+        if (login == null || login.trim().isEmpty()) throw new IllegalArgumentException("login is required");
+        return login.trim().toLowerCase(Locale.ROOT);
     }
 
     private static String validateName(String name) {
