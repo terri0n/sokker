@@ -57,7 +57,7 @@ public class Actualizar extends SERVLET_ASISTENTE {
 				String ilogin = tid_actualizacion < NtdbBO.MAX_ID_SELECCION && !Util.getBoolean(request, "confirmed") ? SystemUtil.getVar(SystemUtil.LOGIN) : request.getParameter("ilogin");
 				String ipassword = tid_actualizacion < NtdbBO.MAX_ID_SELECCION && !Util.getBoolean(request, "confirmed") ? SystemUtil.getVar(SystemUtil.PASSWORD) : request.getParameter("ipassword");
 	
-				new Navegador(false, ilogin, ipassword, request) {
+				new Navegador(true, ilogin, ipassword, request) {
 					@Override
 					protected void execute(WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException, ParseException {
 						try {						

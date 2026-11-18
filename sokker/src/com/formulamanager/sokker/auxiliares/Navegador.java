@@ -94,13 +94,6 @@ public abstract class Navegador {
 			throw e;
 		}
 
-		try {
-			startXmlSession(navegador, AsistenteBO.SOKKER_URL, login, password);
-		} catch (IOException | LoginException e) {
-			navegador.close();
-			throw e;
-		}
-
 		return navegador;
 	}
 
@@ -194,13 +187,18 @@ public abstract class Navegador {
 	}
 	
 	/**
-	 * Compatibilidad para los llamadores antiguos que pedían login XML.
-	 * La autenticación se realiza con la API JSON actual y se mantiene el mismo
-	 * contrato de getUsuario()/request para no obligar a migrar todos los llamadores a la vez.
+	 * Abre primero la sesión JSON para obtener el contexto actual y después autentica XML de forma independiente.
 	 */
 	@SuppressWarnings("unchecked")
 	public WebClient hacer_login_xml(String login, String password) throws FailingHttpStatusCodeException, MalformedURLException, IOException, LoginException {
 		WebClient navegador = hacer_login(login, password);
+		try {
+			// La sesión XML es independiente de la autenticación JSON y debe abrirse explícitamente.
+			startXmlSession(navegador, AsistenteBO.SOKKER_URL, login, password);
+		} catch (IOException | LoginException e) {
+			navegador.close();
+			throw e;
+		}
 		LinkedHashMap<String, Object> actual = (LinkedHashMap<String, Object>) JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/current");
 		Integer tid = JSONUtil.getInteger(actual, "team.id");
 		if (tid == null) {
