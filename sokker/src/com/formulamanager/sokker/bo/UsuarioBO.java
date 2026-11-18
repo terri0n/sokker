@@ -65,6 +65,23 @@ public class UsuarioBO {
 		}
 	}
 
+	public static long obtener_ultima_actualizacion(String login) {
+		try {
+			UserDAO.UserRecord record = load_user_record(login);
+			return record == null ? 0L : record.getUpdatedAt();
+		} catch (IOException e) {
+			throw new IllegalStateException("Error leyendo la última actividad de " + login, e);
+		}
+	}
+
+	public static void restaurar_ultima_actualizacion(String login, long timestamp) throws IOException {
+		try {
+			user_dao().setUpdatedAt(login, timestamp);
+		} catch (java.sql.SQLException e) {
+			throw new IOException("Error restaurando la última actividad de " + login, e);
+		}
+	}
+
 	public static List<String> obtener_usuarios_con_borrado_solicitado() {
 		String[] archivos = obtener_usuarios();
 		final HashMap<String, Long> fechas = new HashMap<String, Long>();
