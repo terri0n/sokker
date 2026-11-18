@@ -155,7 +155,7 @@ public class EquipoBO {
 
 				// La API moderna solo describe el sistema actual de cuatro demarcaciones.
 				// No inventamos valores históricos anteriores al cambio de entrenamiento.
-				for (int j = Math.max(jornada_anterior, AsistenteBO.JORNADA_NUEVO_ENTRENO); j <= usuario.getDef_jornada(); j++) {
+				for (int j = Math.max(jornada_anterior, AsistenteBO.JORNADA_NUEVO_ENTRENO); j <= jornada_actual; j++) {
 					for (int i = 0; i < entrenamientos.length; i++) {
 						if (usuario.getTipo_entrenamiento(i).get(j) == null || j == jornada_actual) {
 							usuario.getTipo_entrenamiento(i).put(j, entrenamientos[i]);
