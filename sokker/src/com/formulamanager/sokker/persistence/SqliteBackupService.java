@@ -52,6 +52,11 @@ public final class SqliteBackupService {
             Files.delete(snapshot.toPath());
             createSnapshot(databaseFile, snapshot);
             verifyIntegrity(snapshot);
+            long snapshotLength = snapshot.length();
+            int totalParts = (int)((snapshotLength + MAX_EMAIL_PART_BYTES - 1L) / MAX_EMAIL_PART_BYTES);
+            if (totalParts < 1 || totalParts > 9999) {
+                throw new IOException("SQLite backup requires an unsupported number of email fragments: " + totalParts);
+            }
 
             byte[] buffer = new byte[BUFFER_SIZE];
             try (InputStream input = new FileInputStream(snapshot)) {
@@ -72,7 +77,7 @@ public final class SqliteBackupService {
                         if (written == 0L) break;
 
                         File part = new File(destinationDirectory,
-                                generation + ".part" + String.format(Locale.ROOT, "%04d", partNumber++));
+                                generation + ".part" + String.format(Locale.ROOT, "%04dof%04d", partNumber++, totalParts));
                         moveAtomically(staging, part);
                         if (part.length() > MAX_EMAIL_PART_BYTES) {
                             Files.deleteIfExists(part.toPath());
@@ -104,7 +109,7 @@ public final class SqliteBackupService {
         for (File file : files) {
             if (file.isFile() && file.getName().startsWith(prefix)
                     && file.getName().matches(java.util.regex.Pattern.quote(prefix)
-                            + "[0-9]{8}T[0-9]{6}Z\\.part[0-9]{4}")) {
+                            + "[0-9]{8}T[0-9]{6}Z\\.part[0-9]{4}of[0-9]{4}")) {
                 if (file.length() > MAX_EMAIL_PART_BYTES) {
                     throw new IOException("Existing backup part exceeds 10 MB: " + file);
                 }
@@ -123,16 +128,24 @@ public final class SqliteBackupService {
         Collections.sort(ordered);
         String generation = null;
         int expectedPart = 1;
-        java.util.regex.Pattern partPattern = java.util.regex.Pattern.compile("^([a-zA-Z0-9_-]+-[0-9]{8}T[0-9]{6}Z)\\.part([0-9]{4})$");
+        java.util.regex.Pattern partPattern = java.util.regex.Pattern.compile("^([a-zA-Z0-9_-]+-[0-9]{8}T[0-9]{6}Z)\\.part([0-9]{4})of([0-9]{4})$");
+        int totalParts = -1;
         for (File part : ordered) {
             java.util.regex.Matcher matcher = partPattern.matcher(part.getName());
             if (!matcher.matches()) throw new IOException("Invalid SQLite backup part name: " + part);
             if (generation == null) generation = matcher.group(1);
             if (!generation.equals(matcher.group(1))) throw new IOException("Cannot mix SQLite backup generations");
             int partNumber = Integer.parseInt(matcher.group(2));
+            int declaredTotal = Integer.parseInt(matcher.group(3));
+            if (totalParts < 0) totalParts = declaredTotal;
+            if (declaredTotal != totalParts || totalParts < 1)
+                throw new IOException("Inconsistent SQLite backup fragment count: " + part);
             if (partNumber != expectedPart++) throw new IOException("Missing or duplicated SQLite backup part: " + part);
             if (!part.isFile() || part.length() > MAX_EMAIL_PART_BYTES)
                 throw new IOException("Invalid SQLite backup part size: " + part);
+        }
+        if (ordered.size() != totalParts) {
+            throw new IOException("Incomplete SQLite backup: expected " + totalParts + " fragments, received " + ordered.size());
         }
         File temporary = File.createTempFile("sokker-restore-", ".db", destination.getAbsoluteFile().getParentFile());
         boolean completed = false;
