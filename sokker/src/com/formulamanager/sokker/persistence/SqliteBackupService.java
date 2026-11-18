@@ -104,17 +104,56 @@ public final class SqliteBackupService {
     public static List<File> listParts(File directory, String databasePrefix) throws IOException {
         File[] files = directory.listFiles();
         if (files == null) throw new IOException("Cannot list backup directory: " + directory);
-        List<File> parts = new ArrayList<File>();
         String prefix = databasePrefix + "-";
+        java.util.regex.Pattern partPattern = java.util.regex.Pattern.compile(
+                "^" + java.util.regex.Pattern.quote(prefix)
+                + "([0-9]{8}T[0-9]{6}Z)\\.part([0-9]{4})of([0-9]{4})$");
+        java.util.Map<String, java.util.Map<Integer, File>> generations =
+                new java.util.TreeMap<String, java.util.Map<Integer, File>>();
+        java.util.Map<String, Integer> expectedCounts = new java.util.HashMap<String, Integer>();
+        java.util.Set<String> invalidGenerations = new java.util.HashSet<String>();
         for (File file : files) {
-            if (file.isFile() && file.getName().startsWith(prefix)
-                    && file.getName().matches(java.util.regex.Pattern.quote(prefix)
-                            + "[0-9]{8}T[0-9]{6}Z\\.part[0-9]{4}of[0-9]{4}")) {
-                if (file.length() > MAX_EMAIL_PART_BYTES) {
-                    throw new IOException("Existing backup part exceeds 10 MB: " + file);
-                }
-                parts.add(file);
+            if (!file.isFile() || !file.getName().startsWith(prefix)) continue;
+            java.util.regex.Matcher matcher = partPattern.matcher(file.getName());
+            if (!matcher.matches()) continue;
+            if (file.length() > MAX_EMAIL_PART_BYTES) {
+                throw new IOException("Existing backup part exceeds 10 MB: " + file);
             }
+            String generation = matcher.group(1);
+            int partNumber = Integer.parseInt(matcher.group(2));
+            int total = Integer.parseInt(matcher.group(3));
+            if (total < 1 || partNumber < 1 || partNumber > total) {
+                invalidGenerations.add(generation);
+                continue;
+            }
+            Integer previousTotal = expectedCounts.put(generation, Integer.valueOf(total));
+            if (previousTotal != null && previousTotal.intValue() != total) {
+                invalidGenerations.add(generation);
+            }
+            java.util.Map<Integer, File> generationParts = generations.get(generation);
+            if (generationParts == null) {
+                generationParts = new java.util.TreeMap<Integer, File>();
+                generations.put(generation, generationParts);
+            }
+            if (generationParts.put(Integer.valueOf(partNumber), file) != null) {
+                invalidGenerations.add(generation);
+            }
+        }
+
+        List<File> parts = new ArrayList<File>();
+        for (java.util.Map.Entry<String, java.util.Map<Integer, File>> generation : generations.entrySet()) {
+            String key = generation.getKey();
+            int total = expectedCounts.get(key).intValue();
+            java.util.Map<Integer, File> generationParts = generation.getValue();
+            if (invalidGenerations.contains(key) || generationParts.size() != total) continue;
+            boolean complete = true;
+            for (int partNumber = 1; partNumber <= total; partNumber++) {
+                if (!generationParts.containsKey(Integer.valueOf(partNumber))) {
+                    complete = false;
+                    break;
+                }
+            }
+            if (complete) parts.addAll(generationParts.values());
         }
         Collections.sort(parts);
         return parts;
