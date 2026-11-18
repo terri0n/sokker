@@ -14,6 +14,9 @@ import java.util.Properties;
 import java.util.Set;
 
 import com.formulamanager.sokker.bo.AsistenteBO;
+import com.formulamanager.sokker.persistence.SqliteDatabase;
+import com.formulamanager.sokker.persistence.SqlitePersistence;
+import com.formulamanager.sokker.persistence.TeamPlayerDAO;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.xml.XmlPage;
@@ -84,10 +87,32 @@ public final class SokkerJuniorsXmlCompat {
     }
 
     private static Map<Integer, Boolean> loadSavedPositions(int tid) throws IOException {
-        File file = new File(SystemUtil.getVar(SystemUtil.PATH) + tid + "_juveniles.properties");
-        Properties properties = Util.cargar_properties(file);
-        if (properties == null) return Collections.emptyMap();
-        return readSavedPositions(properties);
+        File database = SqlitePersistence.getAsistenteDatabaseFile();
+        if (database == null) throw new IOException("Asistente SQLite database is not initialized");
+        try {
+            Map<Integer, String> juniors = new TeamPlayerDAO(new SqliteDatabase(database, true))
+                    .load(tid, "JUVENILE", 0);
+            return readSavedPositions(juniors);
+        } catch (java.sql.SQLException e) {
+            throw new IOException("Error leyendo posiciones guardadas de juveniles del equipo " + tid, e);
+        }
+    }
+
+    public static Map<Integer, Boolean> readSavedPositions(Map<Integer, String> juniors) {
+        Map<Integer, Boolean> result = new HashMap<Integer, Boolean>();
+        for (Map.Entry<Integer, String> entry : juniors.entrySet()) {
+            String serialized = entry.getValue();
+            if (serialized == null) continue;
+            String[] fields = serialized.split(",", 3);
+            if (fields.length < 2) continue;
+            String position = fields[1];
+            if ("true".equalsIgnoreCase(position) || "false".equalsIgnoreCase(position)) {
+                result.put(entry.getKey(), Boolean.valueOf(position));
+            } else {
+                result.put(entry.getKey(), null);
+            }
+        }
+        return result;
     }
 
     private static Map<Integer, String> loadNewsPositions(WebClient navegador, Set<Integer> pending)
