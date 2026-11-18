@@ -53,6 +53,7 @@ import com.formulamanager.sokker.persistence.SqliteBackupService;
 import com.formulamanager.sokker.persistence.SqlitePersistence;
 import com.formulamanager.sokker.persistence.SqliteDatabase;
 import com.formulamanager.sokker.persistence.AsistenteUpdateDAO;
+import com.formulamanager.sokker.persistence.UserDAO;
 import com.formulamanager.sokker.persistence.TeamPlayerDAO;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.StringWebResponse;
@@ -793,10 +794,18 @@ if (nuevo.getLesion() > 0) {
 		File database = SqlitePersistence.getAsistenteDatabaseFile();
 		if (database == null) throw new IOException("Asistente SQLite no está inicializado");
 		synchronized (UsuarioBO.class) {
+			int jornada_anterior = _usuario.getDef_jornada();
+			UserDAO.SaveData userData;
+			_usuario.setDef_jornada(jornada_actual);
+			try {
+				userData = UsuarioBO.preparar_guardado(_usuario);
+			} finally {
+				_usuario.setDef_jornada(jornada_anterior);
+			}
 			try {
 				new AsistenteUpdateDAO(new SqliteDatabase(database, true)).save(tid,
-					currentPlayers, historicalPlayers, currentJuniors, historicalJuniors,
-					UsuarioBO.preparar_guardado(_usuario));
+					currentPlayers, historicalPlayers, currentJuniors, historicalJuniors, userData);
+				_usuario.setDef_jornada(jornada_actual);
 			} catch (SQLException e) {
 				throw new IOException("No se pudo confirmar la actualización completa del equipo " + tid, e);
 			}
