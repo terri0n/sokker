@@ -68,7 +68,7 @@ public final class TeamPlayerDAO {
         try(PreparedStatement i=c.prepareStatement(
                 "INSERT INTO team_player(tid,pid,record_type,snapshot_round,serialized_data) VALUES(?,?,?,?,?)")) {
             for(Map.Entry<Integer,String> player:players.entrySet()) {
-                if(player.getKey()==null || player.getKey().intValue()<=0 || player.getValue()==null)
+                if(player.getKey()==null || player.getKey().intValue()<0 || player.getValue()==null)
                     throw new IllegalArgumentException("Invalid player record");
                 i.setInt(1,tid); i.setInt(2,player.getKey()); i.setString(3,recordType);
                 i.setInt(4,snapshotRound); i.setString(5,player.getValue()); i.addBatch();
@@ -191,7 +191,7 @@ public final class TeamPlayerDAO {
         for(String key:properties.stringPropertyNames()) {
             if(PID.matcher(key).matches()) {
                 int pid=Integer.parseInt(key);
-                if(pid<=0)throw new SQLException("Invalid player PID in "+path+": "+key);
+                if(pid<0)throw new SQLException("Invalid player PID in "+path+": "+key);
                 players.put(pid,properties.getProperty(key));
             } else {
                 try(PreparedStatement extension=c.prepareStatement(
