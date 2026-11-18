@@ -150,6 +150,15 @@ public final class UserDAO {
         }
     }
 
+    public void setUpdatedAt(String login, long updatedAt) throws SQLException {
+        try (Connection c = database.openConnection();
+             PreparedStatement u = c.prepareStatement("UPDATE app_user SET updated_at=? WHERE login=?")) {
+            u.setLong(1, updatedAt);
+            u.setString(2, normalizeLogin(login));
+            if (u.executeUpdate() == 0) throw new SQLException("User not found: " + login);
+        }
+    }
+
     public boolean delete(String login) throws SQLException {
         try (Connection c = database.openConnection();
              PreparedStatement d = c.prepareStatement("DELETE FROM app_user WHERE login=?")) {
