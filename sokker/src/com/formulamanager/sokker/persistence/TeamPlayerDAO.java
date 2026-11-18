@@ -120,6 +120,52 @@ public final class TeamPlayerDAO {
         }
     }
 
+    public List<String> listBackupFiles(int tid) throws SQLException {
+        if (tid <= 0) throw new IllegalArgumentException("tid must be positive");
+        List<String> paths = new ArrayList<String>();
+        try (Connection c = database.openConnection();
+             PreparedStatement q = c.prepareStatement(
+                 "SELECT source_path FROM team_player_document WHERE tid=? AND snapshot_round>0 AND source_path LIKE 'backup/%' ORDER BY snapshot_round,source_path")) {
+            q.setInt(1, tid);
+            try (ResultSet r = q.executeQuery()) {
+                while (r.next()) {
+                    String source = r.getString(1);
+                    paths.add(source.substring("backup/".length()));
+                }
+            }
+        }
+        return Collections.unmodifiableList(paths);
+    }
+
+    public void deleteTeam(int tid) throws SQLException {
+        if (tid <= 0) throw new IllegalArgumentException("tid must be positive");
+        try (Connection c = database.openConnection()) {
+            c.setAutoCommit(false);
+            try {
+                String[] tables = {"team_player", "team_player_extension", "team_player_document", "player_group_assignment"};
+                for (String table : tables) {
+                    try (PreparedStatement d = c.prepareStatement("DELETE FROM " + table + " WHERE tid=?")) {
+                        d.setInt(1, tid);
+                        d.executeUpdate();
+                    }
+                }
+                // Test-user accounts are scoped to this team and must follow
+                // the same shared-team ownership decision as its player data.
+                try (PreparedStatement d = c.prepareStatement("DELETE FROM app_user WHERE login=?")) {
+                    d.setString(1, "prueba/" + tid);
+                    d.executeUpdate();
+                }
+                c.commit();
+            } catch (SQLException e) {
+                c.rollback();
+                throw e;
+            } finally {
+                c.setAutoCommit(true);
+            }
+        }
+    }
+
+
     public String load(int tid,int pid,String recordType) throws SQLException {
         validate(tid,recordType,0);
         try(Connection c=database.openConnection();
