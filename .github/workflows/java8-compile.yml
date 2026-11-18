@@ -165,6 +165,7 @@ jobs:
             .github/harness/ColorAssignmentHarness.java \
             .github/harness/ServletContextLifecycleHarness.java
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" PersistenceRoundTrip
+          java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" SqliteLegacyImportHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" SqlitePlayerGroupHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" FactorxPlayerModelHarness
           java -cp "/tmp/compat-harness:/tmp/sokker-classes:${CP}" SqliteBackupHarness
