@@ -2,7 +2,6 @@ package com.formulamanager.sokker.bo;
 
 import java.io.File;
 import java.sql.SQLException;
-import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
