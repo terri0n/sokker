@@ -215,7 +215,7 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 	}
 
 	public static Jugador leer_jugador_entrenamiento(boolean avanzado, int jornada_actual, boolean incrementar_edad, Usuario usuario, LinkedHashMap<String, Object> jugador) throws IOException {
-		String nombre = JSONUtil.getString(jugador, "info.name.full");
+		String nombre = requiredString(jugador, "info.name.full");
 		// NOTA: el jueves de la jornada 0 el jugador todavía no ha cumplido años. Le sumamos un año
 		Integer edad = Integer.valueOf(requiredInteger(jugador, "info.characteristics.age").intValue() + (incrementar_edad ? 1 : 0));
 		// NOTA: con la api, el valor viene en la moneda del usuario. La guardamos en euros para compatibilizar los valores anteriores
