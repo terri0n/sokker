@@ -134,6 +134,12 @@ public final class SqlitePersistence {
         }
     }
 
+    public static boolean isManagedPlayerFile(File file) throws IOException {
+        SqlitePropertiesStore current = asistente;
+        return current != null && file != null
+                && TeamPlayerDAO.isManagedPath(current.relativePath(file));
+    }
+
     public static boolean isInitialized() {
         return asistente != null && factorxDatabaseFile != null;
     }
