@@ -134,6 +134,37 @@ public final class SqlitePropertiesStore {
         }
     }
 
+    /**
+     * Retires a migrated source only if its bytes still match the original
+     * import. The database marker is removed after the filesystem deletion,
+     * making retries safe if the process stops between the two operations.
+     */
+    public void retireImportedSource(File source, String relativePath) throws IOException, SQLException {
+        String path = normalize(relativePath);
+        if (source != null && source.exists()) {
+            String sourceChecksum = sha256(Files.readAllBytes(source.toPath()));
+            try (Connection connection = database.openConnection();
+                 PreparedStatement query = connection.prepareStatement(
+                         "SELECT sha256 FROM legacy_properties_file WHERE path=?")) {
+                query.setString(1, path);
+                try (ResultSet result = query.executeQuery()) {
+                    if (!result.next() || !sourceChecksum.equals(result.getString(1))) {
+                        throw new IOException("Refusing to delete changed or unverified legacy source: " + source);
+                    }
+                }
+            }
+            if (!source.delete() && source.exists()) {
+                throw new IOException("Cannot retire migrated legacy source: " + source);
+            }
+        }
+        try (Connection connection = database.openConnection();
+             PreparedStatement delete = connection.prepareStatement(
+                     "DELETE FROM legacy_properties_file WHERE path=?")) {
+            delete.setString(1, path);
+            delete.executeUpdate();
+        }
+    }
+
     public boolean delete(String relativePath) throws SQLException {
         String path = normalize(relativePath);
         if (database.isPlayerGroupsEnabled() && path.matches("_[^/]+\\.properties")) {
