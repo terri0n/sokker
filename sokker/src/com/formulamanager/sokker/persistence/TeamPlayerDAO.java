@@ -31,41 +31,49 @@ public final class TeamPlayerDAO {
     }
 
     public void save(int tid,String recordType,int snapshotRound,Map<Integer,String> players) throws SQLException {
-        validate(tid,recordType,snapshotRound);
-        try(Connection c=database.openConnection()) {
+        try (Connection c = database.openConnection()) {
             c.setAutoCommit(false);
             try {
-                try(PreparedStatement d=c.prepareStatement(
-                        "DELETE FROM team_player WHERE tid=? AND record_type=? AND snapshot_round=?")) {
-                    d.setInt(1,tid); d.setString(2,recordType); d.setInt(3,snapshotRound); d.executeUpdate();
-                }
-                try(PreparedStatement d=c.prepareStatement(
-                        "DELETE FROM team_player_document WHERE tid=? AND record_type=? AND snapshot_round=?")) {
-                    d.setInt(1,tid); d.setString(2,recordType); d.setInt(3,snapshotRound); d.executeUpdate();
-                }
-                try(PreparedStatement doc=c.prepareStatement(
-                        "INSERT INTO team_player_document(source_path,tid,record_type,snapshot_round,updated_at) VALUES(?,?,?,?,?)")) {
-                    doc.setString(1,canonicalPath(tid,recordType,snapshotRound));
-                    doc.setInt(2,tid); doc.setString(3,recordType); doc.setInt(4,snapshotRound);
-                    doc.setLong(5,System.currentTimeMillis()); doc.executeUpdate();
-                }
-                try(PreparedStatement i=c.prepareStatement(
-                        "INSERT INTO team_player(tid,pid,record_type,snapshot_round,serialized_data) VALUES(?,?,?,?,?)")) {
-                    for(Map.Entry<Integer,String> player:players.entrySet()) {
-                        if(player.getKey()==null || player.getKey().intValue()<=0 || player.getValue()==null)
-                            throw new IllegalArgumentException("Invalid player record");
-                        i.setInt(1,tid); i.setInt(2,player.getKey()); i.setString(3,recordType);
-                        i.setInt(4,snapshotRound); i.setString(5,player.getValue()); i.addBatch();
-                    }
-                    i.executeBatch();
-                }
+                saveWithinTransaction(c, tid, recordType, snapshotRound, players);
                 c.commit();
-            } catch(Exception e) {
+            } catch (Exception e) {
                 c.rollback();
-                if(e instanceof SQLException)throw (SQLException)e;
-                if(e instanceof IllegalArgumentException)throw (IllegalArgumentException)e;
-                throw new SQLException("Cannot save team players for tid "+tid,e);
-            } finally { c.setAutoCommit(true); }
+                if (e instanceof SQLException) throw (SQLException)e;
+                if (e instanceof IllegalArgumentException) throw (IllegalArgumentException)e;
+                throw new SQLException("Cannot save team players for tid " + tid, e);
+            } finally {
+                c.setAutoCommit(true);
+            }
+        }
+    }
+
+    public void saveWithinTransaction(Connection c,int tid,String recordType,int snapshotRound,
+            Map<Integer,String> players) throws SQLException {
+        validate(tid,recordType,snapshotRound);
+        if (c == null || c.getAutoCommit()) throw new IllegalArgumentException("An active transaction is required");
+        try(PreparedStatement d=c.prepareStatement(
+                "DELETE FROM team_player WHERE tid=? AND record_type=? AND snapshot_round=?")) {
+            d.setInt(1,tid); d.setString(2,recordType); d.setInt(3,snapshotRound); d.executeUpdate();
+        }
+        try(PreparedStatement d=c.prepareStatement(
+                "DELETE FROM team_player_document WHERE tid=? AND record_type=? AND snapshot_round=?")) {
+            d.setInt(1,tid); d.setString(2,recordType); d.setInt(3,snapshotRound); d.executeUpdate();
+        }
+        try(PreparedStatement doc=c.prepareStatement(
+                "INSERT INTO team_player_document(source_path,tid,record_type,snapshot_round,updated_at) VALUES(?,?,?,?,?)")) {
+            doc.setString(1,canonicalPath(tid,recordType,snapshotRound));
+            doc.setInt(2,tid); doc.setString(3,recordType); doc.setInt(4,snapshotRound);
+            doc.setLong(5,System.currentTimeMillis()); doc.executeUpdate();
+        }
+        try(PreparedStatement i=c.prepareStatement(
+                "INSERT INTO team_player(tid,pid,record_type,snapshot_round,serialized_data) VALUES(?,?,?,?,?)")) {
+            for(Map.Entry<Integer,String> player:players.entrySet()) {
+                if(player.getKey()==null || player.getKey().intValue()<=0 || player.getValue()==null)
+                    throw new IllegalArgumentException("Invalid player record");
+                i.setInt(1,tid); i.setInt(2,player.getKey()); i.setString(3,recordType);
+                i.setInt(4,snapshotRound); i.setString(5,player.getValue()); i.addBatch();
+            }
+            i.executeBatch();
         }
     }
 
