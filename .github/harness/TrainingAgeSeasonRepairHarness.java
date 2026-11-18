@@ -16,7 +16,7 @@ public final class TrainingAgeSeasonRepairHarness {
 
         require(!Files.exists(HELPER),
                 "the one-off correction must live in the JSP, not in permanent Java application code");
-        require(jsp.contains("private RepairSummary repairDirectory(File directory)"),
+        require(jsp.contains("private RepairSummary repairDatabase(File databaseFile)"),
                 "the JSP must contain the repair implementation it executes manually");
         require(jsp.contains("private Integer expectedAge(int latestWeek, int latestAge, int snapshotWeek)"),
                 "the JSP must derive historical age from the latest valid snapshot");
