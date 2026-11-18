@@ -67,9 +67,7 @@ public final class SqlitePersistence {
             throws IOException, SQLException {
         for (String path : store.list(null, ".properties")) {
             File source = new File(root, path.replace('/', File.separatorChar));
-            if (source.exists() && !source.delete()) {
-                throw new IOException("Cannot retire imported properties source: " + source);
-            }
+            store.retireImportedSource(source, path);
         }
     }
 
