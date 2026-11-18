@@ -110,6 +110,12 @@ public final class TeamPlayerDAO {
                         d.executeUpdate();
                     }
                 }
+                // Test-user accounts are scoped to this team and must follow
+                // the same shared-team ownership decision as its player data.
+                try (PreparedStatement d = c.prepareStatement("DELETE FROM app_user WHERE login=?")) {
+                    d.setString(1, "prueba/" + tid);
+                    d.executeUpdate();
+                }
                 c.commit();
             } catch (SQLException e) {
                 c.rollback();
