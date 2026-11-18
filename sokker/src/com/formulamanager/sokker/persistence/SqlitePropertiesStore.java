@@ -77,7 +77,8 @@ public final class SqlitePropertiesStore {
             connection.setAutoCommit(false);
             try {
                 try (PreparedStatement statement = connection.prepareStatement(
-                        "INSERT OR REPLACE INTO legacy_properties_file(path,sha256,imported_at) VALUES(?,?,?)")) {
+                        "INSERT INTO legacy_properties_file(path,sha256,imported_at) VALUES(?,?,?) " +
+                        "ON CONFLICT(path) DO UPDATE SET imported_at=excluded.imported_at")) {
                     statement.setString(1, path);
                     statement.setString(2, checksum);
                     statement.setLong(3, System.currentTimeMillis());
