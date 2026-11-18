@@ -794,7 +794,6 @@ if (nuevo.getLesion() > 0) {
 		File database = SqlitePersistence.getAsistenteDatabaseFile();
 		if (database == null) throw new IOException("Asistente SQLite no está inicializado");
 		synchronized (UsuarioBO.class) {
-			int jornada_anterior = _usuario.getDef_jornada();
 			UserDAO.SaveData userData;
 			_usuario.setDef_jornada(jornada_actual);
 			try {
