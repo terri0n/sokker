@@ -59,28 +59,30 @@ public final class SqliteBackupService {
                 while (true) {
                     File staging = Files.createTempFile("sokker-part-", ".tmp").toFile();
                     long written = 0L;
-                    try (OutputStream output = new FileOutputStream(staging)) {
-                        while (written < MAX_EMAIL_PART_BYTES) {
-                            int requested = (int)Math.min(buffer.length, MAX_EMAIL_PART_BYTES - written);
-                            int count = input.read(buffer, 0, requested);
-                            if (count < 0) break;
-                            output.write(buffer, 0, count);
-                            written += count;
+                    try {
+                        try (OutputStream output = new FileOutputStream(staging)) {
+                            while (written < MAX_EMAIL_PART_BYTES) {
+                                int requested = (int)Math.min(buffer.length, MAX_EMAIL_PART_BYTES - written);
+                                int count = input.read(buffer, 0, requested);
+                                if (count < 0) break;
+                                output.write(buffer, 0, count);
+                                written += count;
+                            }
                         }
-                    }
-                    if (written == 0L) {
-                        Files.deleteIfExists(staging.toPath());
-                        break;
-                    }
+                        if (written == 0L) break;
 
-                    File part = new File(destinationDirectory,
-                            generation + ".part" + String.format(Locale.ROOT, "%04d", partNumber++));
-                    moveAtomically(staging, part);
-                    if (part.length() > MAX_EMAIL_PART_BYTES) {
-                        throw new IOException("Backup part exceeds email size limit: " + part);
+                        File part = new File(destinationDirectory,
+                                generation + ".part" + String.format(Locale.ROOT, "%04d", partNumber++));
+                        moveAtomically(staging, part);
+                        if (part.length() > MAX_EMAIL_PART_BYTES) {
+                            Files.deleteIfExists(part.toPath());
+                            throw new IOException("Backup part exceeds email size limit: " + part);
+                        }
+                        created.add(part);
+                        if (written < MAX_EMAIL_PART_BYTES) break;
+                    } finally {
+                        Files.deleteIfExists(staging.toPath());
                     }
-                    created.add(part);
-                    if (written < MAX_EMAIL_PART_BYTES) break;
                 }
             }
             if (created.isEmpty()) throw new IOException("SQLite backup produced no data");
@@ -117,11 +119,24 @@ public final class SqliteBackupService {
         if (parts == null || parts.isEmpty() || destination == null) {
             throw new IllegalArgumentException("Backup parts and destination are required");
         }
+        List<File> ordered = new ArrayList<File>(parts);
+        Collections.sort(ordered);
+        String generation = null;
+        int expectedPart = 1;
+        java.util.regex.Pattern partPattern = java.util.regex.Pattern.compile("^([a-zA-Z0-9_-]+-[0-9]{8}T[0-9]{6}Z)\\.part([0-9]{4})$");
+        for (File part : ordered) {
+            java.util.regex.Matcher matcher = partPattern.matcher(part.getName());
+            if (!matcher.matches()) throw new IOException("Invalid SQLite backup part name: " + part);
+            if (generation == null) generation = matcher.group(1);
+            if (!generation.equals(matcher.group(1))) throw new IOException("Cannot mix SQLite backup generations");
+            int partNumber = Integer.parseInt(matcher.group(2));
+            if (partNumber != expectedPart++) throw new IOException("Missing or duplicated SQLite backup part: " + part);
+            if (!part.isFile() || part.length() > MAX_EMAIL_PART_BYTES)
+                throw new IOException("Invalid SQLite backup part size: " + part);
+        }
         File temporary = File.createTempFile("sokker-restore-", ".db", destination.getAbsoluteFile().getParentFile());
         boolean completed = false;
         try (OutputStream output = new FileOutputStream(temporary)) {
-            List<File> ordered = new ArrayList<File>(parts);
-            Collections.sort(ordered);
             byte[] buffer = new byte[BUFFER_SIZE];
             for (File part : ordered) {
                 try (InputStream input = new FileInputStream(part)) {
