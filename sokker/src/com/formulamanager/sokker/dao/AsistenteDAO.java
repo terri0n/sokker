@@ -5,7 +5,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -30,25 +29,8 @@ import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
 
 public class AsistenteDAO {
-	@SuppressWarnings("unchecked")
-	private static List<LinkedHashMap<String, Object>> readObjectList(Object document, String path) throws IOException {
-		Object value;
-		try {
-			value = JsonPath.read(document, path);
-		} catch (PathNotFoundException missingOptionalList) {
-			return Collections.emptyList();
-		}
-		if (value == null) return Collections.emptyList();
-		if (!(value instanceof List)) throw new IOException("Expected JSON list at " + path);
-		List<?> values = (List<?>) value;
-		List<LinkedHashMap<String, Object>> result = new ArrayList<LinkedHashMap<String, Object>>(values.size());
-		for (Object item : values) {
-			if (!(item instanceof LinkedHashMap)) throw new IOException("Expected JSON object in " + path);
-			result.add((LinkedHashMap<String, Object>) item);
-		}
-		return result;
-	}
 
+	@SuppressWarnings("unchecked")
 	private static List<LinkedHashMap<String, Object>> readRequiredObjectList(Object document, String path) throws IOException {
 		try {
 			Object value = JsonPath.read(document, path);
@@ -106,7 +88,9 @@ public class AsistenteDAO {
 
 		// Solo aparece en el json del jugador
 		Integer dem = JSONUtil.getInteger(jugador, "info.formation.code");
-		j.setDemarcacion_entrenamiento(dem == null ? null : DEMARCACION.values()[dem]);
+		if (dem != null && (dem.intValue() < 0 || dem.intValue() >= DEMARCACION.values().length))
+			throw new IOException("Invalid player formation code: " + dem);
+		j.setDemarcacion_entrenamiento(dem == null ? null : DEMARCACION.values()[dem.intValue()]);
 		
 		Integer condicion = JSONUtil.getInteger(jugador, "info.skills.stamina");
 		Integer rapidez = JSONUtil.getInteger(jugador, "info.skills.pace");
@@ -179,7 +163,7 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 		List<LinkedHashMap<String, Object>> jugadores = readRequiredObjectList(pagina, "$.players.*");
 		for (LinkedHashMap<String, Object> jugador : jugadores) {
 
-			Integer id = JSONUtil.getInteger(jugador, "id");
+			Integer id = requiredInteger(jugador, "id");
 			Jugador j;
 			
 			if (tid > NtdbBO.MAX_ID_SELECCION) {
@@ -254,7 +238,9 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 		j.setIMC(imc == null ? null : (int)(imc * 100D));	// Multiplico por 100 porque antes era un entero y al mostrarlo lo divido
 
 		Integer dem = JSONUtil.getInteger(jugador, "formation.code");
-		j.setDemarcacion_entrenamiento(dem == null ? null : DEMARCACION.values()[dem]);
+		if (dem != null && (dem.intValue() < 0 || dem.intValue() >= DEMARCACION.values().length))
+			throw new IOException("Invalid training formation code: " + dem);
+		j.setDemarcacion_entrenamiento(dem == null ? null : DEMARCACION.values()[dem.intValue()]);
 		if (j.getDemarcacion() == null) {
 			j.setDemarcacion(j.getDemarcacion_entrenamiento());
 		}
@@ -334,7 +320,9 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 	
 					Integer cod_dem = JSONUtil.getInteger(entrenamiento, "formation.code");
 					if (cod_dem != null) {
-						DEMARCACION dem = DEMARCACION.values()[cod_dem];
+						if (cod_dem.intValue() < 0 || cod_dem.intValue() >= DEMARCACION.values().length)
+							throw new IOException("Invalid training formation code: " + cod_dem);
+						DEMARCACION dem = DEMARCACION.values()[cod_dem.intValue()];
 						jug_semana.setDemarcacion_entrenamiento(dem);
 						Integer tipoCodigo = JSONUtil.getInteger(entrenamiento, "type.code");
 						// Ha habido un caso en que el tipo era 0 (General): ¿aún no efectuado?
@@ -413,7 +401,7 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 			 if (posicion < 1 || posicion > palmares.getPosicion().length) {
 				 throw new IOException("Invalid trophy position: " + posicion);
 			 }
-			 if (nivel == 1 && competicion.equals(tipo)) {
+			 if (nivel == 1 && competicion != null && competicion.equals(tipo)) {
 				 palmares.getPosicion()[posicion - 1] = ocurrencias;
 			}
 		}
