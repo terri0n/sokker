@@ -63,6 +63,25 @@ public final class SqliteBackupHarness {
                     "Asistente backup restored FactorX or corrupted data");
         }
         require(!parts.equals(asistenteParts),"Asistente and FactorX backups share fragment files");
+
+        boolean mixedRejected = false;
+        List<File> mixedParts = new ArrayList<File>(parts);
+        mixedParts.addAll(asistenteParts);
+        try {
+            SqliteBackupService.restoreParts(mixedParts, restoreRoot.resolve("mixed.db").toFile());
+        } catch (IOException expected) {
+            mixedRejected = true;
+        }
+        require(mixedRejected, "Restore accepted fragments from different database generations");
+
+        boolean gapRejected = false;
+        try {
+            SqliteBackupService.restoreParts(parts.subList(1, parts.size()),
+                    restoreRoot.resolve("incomplete.db").toFile());
+        } catch (IOException expected) {
+            gapRejected = true;
+        }
+        require(gapRejected, "Restore accepted a backup with a missing first fragment");
         System.out.println("SqliteBackupHarness: OK");
     }
     private static void require(boolean condition,String message) {
