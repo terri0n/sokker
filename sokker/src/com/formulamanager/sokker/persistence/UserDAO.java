@@ -28,6 +28,37 @@ public final class UserDAO {
         this.database = database;
     }
 
+    public static final class SaveData {
+        private final String login;
+        private final String serialized;
+        private final String notes;
+        private final Long deletionRequestedAt;
+        private final Map<Integer, String> training;
+        private final Properties extensions;
+
+        public SaveData(String login, String serialized, String notes, Long deletionRequestedAt,
+                Map<Integer, String> training, Properties extensions) {
+            this.login = normalizeLogin(login);
+            this.serialized = serialized;
+            this.notes = notes == null ? "" : notes;
+            this.deletionRequestedAt = deletionRequestedAt;
+            this.training = training == null ? Collections.<Integer, String>emptyMap()
+                    : Collections.unmodifiableMap(new TreeMap<Integer, String>(training));
+            this.extensions = new Properties();
+            if (extensions != null) this.extensions.putAll(extensions);
+        }
+        public String getLogin() { return login; }
+        public String getSerialized() { return serialized; }
+        public String getNotes() { return notes; }
+        public Long getDeletionRequestedAt() { return deletionRequestedAt; }
+        public Map<Integer, String> getTraining() { return training; }
+        public Properties getExtensions() {
+            Properties copy = new Properties();
+            copy.putAll(extensions);
+            return copy;
+        }
+    }
+
     public static final class UserRecord {
         private final String serialized;
         private final String notes;
@@ -91,64 +122,71 @@ public final class UserDAO {
     public void save(String login, String serialized, String notes,
             Long deletionRequestedAt, Map<Integer, String> training, Properties extensions)
             throws SQLException {
-        String normalized = normalizeLogin(login);
-        if (serialized == null) throw new IllegalArgumentException("serialized user is required");
+        SaveData data = new SaveData(login, serialized, notes, deletionRequestedAt, training, extensions);
         try (Connection c = database.openConnection()) {
             c.setAutoCommit(false);
             try {
-                long id;
-                try (PreparedStatement upsert = c.prepareStatement(
-                        "INSERT INTO app_user(login,serialized_data,notes,account_deletion_requested_at,updated_at) " +
-                        "VALUES(?,?,?,?,?) ON CONFLICT(login) DO UPDATE SET serialized_data=excluded.serialized_data," +
-                        "notes=excluded.notes,account_deletion_requested_at=excluded.account_deletion_requested_at," +
-                        "updated_at=excluded.updated_at")) {
-                    upsert.setString(1, normalized);
-                    upsert.setString(2, serialized);
-                    upsert.setString(3, notes == null ? "" : notes);
-                    if (deletionRequestedAt == null) upsert.setNull(4, java.sql.Types.BIGINT);
-                    else upsert.setLong(4, deletionRequestedAt.longValue());
-                    upsert.setLong(5, System.currentTimeMillis());
-                    upsert.executeUpdate();
-                }
-                try (PreparedStatement q = c.prepareStatement("SELECT user_id FROM app_user WHERE login=?")) {
-                    q.setString(1, normalized);
-                    try (ResultSet r = q.executeQuery()) {
-                        if (!r.next()) throw new SQLException("User upsert did not produce a row: " + normalized);
-                        id = r.getLong(1);
-                    }
-                }
-                try (PreparedStatement d = c.prepareStatement("DELETE FROM user_training WHERE user_id=?")) {
-                    d.setLong(1, id); d.executeUpdate();
-                }
-                if (training != null) try (PreparedStatement t = c.prepareStatement(
-                        "INSERT INTO user_training(user_id,round_no,serialized_data) VALUES(?,?,?)")) {
-                    for (Map.Entry<Integer, String> entry : training.entrySet()) {
-                        if (entry.getKey() == null || entry.getValue() == null)
-                            throw new IllegalArgumentException("Invalid training record");
-                        t.setLong(1, id); t.setInt(2, entry.getKey().intValue());
-                        t.setString(3, entry.getValue()); t.addBatch();
-                    }
-                    t.executeBatch();
-                }
-                try (PreparedStatement d = c.prepareStatement("DELETE FROM user_property_extension WHERE user_id=?")) {
-                    d.setLong(1, id); d.executeUpdate();
-                }
-                if (extensions != null) try (PreparedStatement e = c.prepareStatement(
-                        "INSERT INTO user_property_extension(user_id,property_key,property_value) VALUES(?,?,?)")) {
-                    for (String key : extensions.stringPropertyNames()) {
-                        e.setLong(1, id); e.setString(2, key); e.setString(3, extensions.getProperty(key)); e.addBatch();
-                    }
-                    e.executeBatch();
-                }
+                saveWithinTransaction(c, data);
                 c.commit();
             } catch (Exception e) {
                 c.rollback();
                 if (e instanceof SQLException) throw (SQLException)e;
                 if (e instanceof IllegalArgumentException) throw (IllegalArgumentException)e;
-                throw new SQLException("Cannot save user " + normalized, e);
+                throw new SQLException("Cannot save user " + data.getLogin(), e);
             } finally {
                 c.setAutoCommit(true);
             }
+        }
+    }
+
+    public void saveWithinTransaction(Connection c, SaveData data) throws SQLException {
+        if (c == null || c.getAutoCommit()) throw new IllegalArgumentException("An active transaction is required");
+        if (data == null || data.getSerialized() == null)
+            throw new IllegalArgumentException("serialized user is required");
+        long id;
+        try (PreparedStatement upsert = c.prepareStatement(
+                "INSERT INTO app_user(login,serialized_data,notes,account_deletion_requested_at,updated_at) " +
+                "VALUES(?,?,?,?,?) ON CONFLICT(login) DO UPDATE SET serialized_data=excluded.serialized_data," +
+                "notes=excluded.notes,account_deletion_requested_at=excluded.account_deletion_requested_at," +
+                "updated_at=excluded.updated_at")) {
+            upsert.setString(1, data.getLogin());
+            upsert.setString(2, data.getSerialized());
+            upsert.setString(3, data.getNotes());
+            if (data.getDeletionRequestedAt() == null) upsert.setNull(4, java.sql.Types.BIGINT);
+            else upsert.setLong(4, data.getDeletionRequestedAt().longValue());
+            upsert.setLong(5, System.currentTimeMillis());
+            upsert.executeUpdate();
+        }
+        try (PreparedStatement q = c.prepareStatement("SELECT user_id FROM app_user WHERE login=?")) {
+            q.setString(1, data.getLogin());
+            try (ResultSet r = q.executeQuery()) {
+                if (!r.next()) throw new SQLException("User upsert did not produce a row: " + data.getLogin());
+                id = r.getLong(1);
+            }
+        }
+        try (PreparedStatement d = c.prepareStatement("DELETE FROM user_training WHERE user_id=?")) {
+            d.setLong(1, id); d.executeUpdate();
+        }
+        if (!data.getTraining().isEmpty()) try (PreparedStatement t = c.prepareStatement(
+                "INSERT INTO user_training(user_id,round_no,serialized_data) VALUES(?,?,?)")) {
+            for (Map.Entry<Integer, String> entry : data.getTraining().entrySet()) {
+                if (entry.getKey() == null || entry.getValue() == null)
+                    throw new IllegalArgumentException("Invalid training record");
+                t.setLong(1, id); t.setInt(2, entry.getKey().intValue());
+                t.setString(3, entry.getValue()); t.addBatch();
+            }
+            t.executeBatch();
+        }
+        try (PreparedStatement d = c.prepareStatement("DELETE FROM user_property_extension WHERE user_id=?")) {
+            d.setLong(1, id); d.executeUpdate();
+        }
+        Properties extensions = data.getExtensions();
+        if (!extensions.isEmpty()) try (PreparedStatement e = c.prepareStatement(
+                "INSERT INTO user_property_extension(user_id,property_key,property_value) VALUES(?,?,?)")) {
+            for (String key : extensions.stringPropertyNames()) {
+                e.setLong(1, id); e.setString(2, key); e.setString(3, extensions.getProperty(key)); e.addBatch();
+            }
+            e.executeBatch();
         }
     }
 
