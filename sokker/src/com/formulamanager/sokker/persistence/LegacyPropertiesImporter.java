@@ -101,7 +101,7 @@ public final class LegacyPropertiesImporter {
 
     private String normalizeRelativePath(String path) {
         if (path == null || path.trim().isEmpty()) throw new IllegalArgumentException("relativePath is required");
-        String normalized = path.replace('\\\\', '/');
+        String normalized = path.replace('\\', '/');
         while (normalized.startsWith("/")) normalized = normalized.substring(1);
         if (normalized.contains("../") || normalized.equals("..")) {
             throw new IllegalArgumentException("Path traversal is not allowed: " + path);
