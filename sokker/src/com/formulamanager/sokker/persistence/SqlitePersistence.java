@@ -67,7 +67,7 @@ public final class SqlitePersistence {
             throws IOException, SQLException {
         for (String path : store.list(null, ".properties")) {
             File source = new File(root, path.replace('/', File.separatorChar));
-            store.retireImportedSource(source, path);
+            store.retireImportedSourceFile(source, path);
         }
     }
 
