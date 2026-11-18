@@ -241,7 +241,9 @@ public final class UserDAO {
         }
         long id;
         try (PreparedStatement i = c.prepareStatement(
-                "INSERT INTO app_user(login,serialized_data,notes,account_deletion_requested_at,updated_at) VALUES(?,?,?,?,?)")) {
+                "INSERT INTO app_user(login,serialized_data,notes,account_deletion_requested_at,updated_at) VALUES(?,?,?,?,?) " +
+                "ON CONFLICT(login) DO UPDATE SET serialized_data=excluded.serialized_data,notes=excluded.notes," +
+                "account_deletion_requested_at=excluded.account_deletion_requested_at,updated_at=excluded.updated_at")) {
             i.setString(1, login); i.setString(2, p.getProperty("usuario")); i.setString(3, p.getProperty("notas", ""));
             if (deletion == null) i.setNull(4, java.sql.Types.BIGINT); else i.setLong(4, deletion.longValue());
             i.setLong(5, updatedAt); i.executeUpdate();
