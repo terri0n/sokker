@@ -127,7 +127,7 @@ public class SqliteLegacyImportHarness {
         try (Connection c = upgraded.openConnection();
              Statement statement = c.createStatement();
              ResultSet result = statement.executeQuery("SELECT version FROM schema_version")) {
-            require(result.next() && result.getInt(1) == 2, "Schema version was not upgraded to 2");
+            require(result.next() && result.getInt(1) == 7, "Schema version was not upgraded to 7");
         }
     }
 
