@@ -43,6 +43,26 @@ public final class SqliteBackupHarness {
         for(File file:contents) {
             require(file.equals(database)||parts.contains(file),"Unexpected temporary file in database directory: "+file);
         }
+        Path asistenteRoot=Files.createTempDirectory("sqlite-asistente-backup-");
+        File asistenteDatabase=asistenteRoot.resolve("asistente.db").toFile();
+        new SqliteDatabase(asistenteDatabase,true).initialize();
+        try(Connection connection=DriverManager.getConnection("jdbc:sqlite:"+asistenteDatabase.getAbsolutePath());
+            Statement statement=connection.createStatement()) {
+            statement.execute("CREATE TABLE backup_payload(id INTEGER PRIMARY KEY, data TEXT NOT NULL)");
+            statement.execute("INSERT INTO backup_payload(id,data) VALUES(1,'asistente-only')");
+        }
+        List<File> asistenteParts=SqliteBackupService.createParts(
+                asistenteDatabase,asistenteRoot.toFile(),"asistente-backup");
+        require(asistenteParts.size()==1,"Asistente backup fragments were not created independently");
+        File restoredAsistente=restoreRoot.resolve("restored-asistente.db").toFile();
+        SqliteBackupService.restoreParts(asistenteParts,restoredAsistente);
+        try(Connection connection=DriverManager.getConnection("jdbc:sqlite:"+restoredAsistente.getAbsolutePath());
+            Statement statement=connection.createStatement();
+            ResultSet result=statement.executeQuery("SELECT data FROM backup_payload WHERE id=1")) {
+            require(result.next() && "asistente-only".equals(result.getString(1)),
+                    "Asistente backup restored FactorX or corrupted data");
+        }
+        require(!parts.equals(asistenteParts),"Asistente and FactorX backups share fragment files");
         System.out.println("SqliteBackupHarness: OK");
     }
     private static void require(boolean condition,String message) {
