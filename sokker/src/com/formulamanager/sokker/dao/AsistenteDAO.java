@@ -54,6 +54,12 @@ public class AsistenteDAO {
 		return value;
 	}
 
+	private static String requiredString(LinkedHashMap<String, Object> object, String path) throws IOException {
+		String value = JSONUtil.getString(object, path);
+		if (value == null || value.trim().isEmpty()) throw new IOException("Incomplete Sokker JSON payload: missing " + path);
+		return value;
+	}
+
 	private static Integer requiredInteger(LinkedHashMap<String, Object> object, String path) throws IOException {
 		Integer value = JSONUtil.getInteger(object, path);
 		if (value == null) throw new IOException("Incomplete Sokker JSON payload: missing " + path);
@@ -62,7 +68,7 @@ public class AsistenteDAO {
 
 	// Leemos los datos de un jugador a partir de un JSON, tanto si viene de la página del jugador como de la del equipo
 	public static Jugador leer_jugador(Integer pid, boolean nt, int jornada_actual, boolean incrementar_edad, Usuario usuario, LinkedHashMap<String, Object> jugador) throws IOException {
-		String nombre = JSONUtil.getString(jugador, "info.name.full");
+		String nombre = requiredString(jugador, "info.name.full");
 		// NOTA: el jueves de la jornada 0 el jugador todavía no ha cumplido años. Le sumamos un año
 		Integer edad = Integer.valueOf(requiredInteger(jugador, "info.characteristics.age").intValue() + (incrementar_edad ? 1 : 0));
 		// NOTA: con la api, el valor viene en la moneda del usuario. La guardamos en euros para compatibilizar los valores anteriores
