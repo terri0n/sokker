@@ -39,6 +39,16 @@ public final class TeamPlayerDAO {
                         "DELETE FROM team_player WHERE tid=? AND record_type=? AND snapshot_round=?")) {
                     d.setInt(1,tid); d.setString(2,recordType); d.setInt(3,snapshotRound); d.executeUpdate();
                 }
+                try(PreparedStatement d=c.prepareStatement(
+                        "DELETE FROM team_player_document WHERE tid=? AND record_type=? AND snapshot_round=?")) {
+                    d.setInt(1,tid); d.setString(2,recordType); d.setInt(3,snapshotRound); d.executeUpdate();
+                }
+                try(PreparedStatement doc=c.prepareStatement(
+                        "INSERT INTO team_player_document(source_path,tid,record_type,snapshot_round,updated_at) VALUES(?,?,?,?,?)")) {
+                    doc.setString(1,canonicalPath(tid,recordType,snapshotRound));
+                    doc.setInt(2,tid); doc.setString(3,recordType); doc.setInt(4,snapshotRound);
+                    doc.setLong(5,System.currentTimeMillis()); doc.executeUpdate();
+                }
                 try(PreparedStatement i=c.prepareStatement(
                         "INSERT INTO team_player(tid,pid,record_type,snapshot_round,serialized_data) VALUES(?,?,?,?,?)")) {
                     for(Map.Entry<Integer,String> player:players.entrySet()) {
@@ -74,19 +84,14 @@ public final class TeamPlayerDAO {
     public List<String> listBackupFiles(int tid) throws SQLException {
         if (tid <= 0) throw new IllegalArgumentException("tid must be positive");
         List<String> paths = new ArrayList<String>();
-        String sql = "SELECT DISTINCT record_type,snapshot_round FROM team_player WHERE tid=? AND snapshot_round>0 " +
-                "UNION SELECT DISTINCT record_type,snapshot_round FROM team_player_extension WHERE tid=? AND snapshot_round>0 " +
-                "ORDER BY snapshot_round,record_type";
-        try (Connection c = database.openConnection(); PreparedStatement q = c.prepareStatement(sql)) {
-            q.setInt(1, tid); q.setInt(2, tid);
+        try (Connection c = database.openConnection();
+             PreparedStatement q = c.prepareStatement(
+                 "SELECT source_path FROM team_player_document WHERE tid=? AND snapshot_round>0 AND source_path LIKE 'backup/%' ORDER BY snapshot_round,source_path")) {
+            q.setInt(1, tid);
             try (ResultSet r = q.executeQuery()) {
                 while (r.next()) {
-                    String type = r.getString(1);
-                    int round = r.getInt(2);
-                    String suffix = "PLAYER".equals(type) ? ""
-                            : "PLAYER_HISTORY".equals(type) ? "_historico"
-                            : "JUVENILE".equals(type) ? "_juveniles" : "_historico_juveniles";
-                    paths.add(tid + "_" + round + suffix + ".properties");
+                    String source = r.getString(1);
+                    paths.add(source.substring("backup/".length()));
                 }
             }
         }
@@ -98,7 +103,7 @@ public final class TeamPlayerDAO {
         try (Connection c = database.openConnection()) {
             c.setAutoCommit(false);
             try {
-                String[] tables = {"team_player", "team_player_extension", "player_group_assignment"};
+                String[] tables = {"team_player", "team_player_extension", "team_player_document", "player_group_assignment"};
                 for (String table : tables) {
                     try (PreparedStatement d = c.prepareStatement("DELETE FROM " + table + " WHERE tid=?")) {
                         d.setInt(1, tid);
@@ -138,7 +143,7 @@ public final class TeamPlayerDAO {
                     try(ResultSet r=q.executeQuery()){done=r.next();}
                 }
                 for(String path:documents) {
-                    if(!done)migrateDocument(c,path,legacy.load(path));
+                    if(!done)migrateDocument(c,path,legacy.load(path),legacy.lastModified(path));
                     try(PreparedStatement d=c.prepareStatement("DELETE FROM legacy_properties_file WHERE path=?")) {
                         d.setString(1,path);d.executeUpdate();
                     }
@@ -160,7 +165,7 @@ public final class TeamPlayerDAO {
         }
     }
 
-    private void migrateDocument(Connection c,String path,Properties properties) throws SQLException {
+    private void migrateDocument(Connection c,String path,Properties properties,long updatedAt) throws SQLException {
         if(properties==null)throw new SQLException("Missing imported team player file: "+path);
         Matcher m=PATH.matcher(path.replace('\\','/'));
         if(!m.matches())return;
@@ -182,6 +187,11 @@ public final class TeamPlayerDAO {
                 }
             }
         }
+        try(PreparedStatement document=c.prepareStatement(
+                "INSERT OR REPLACE INTO team_player_document(source_path,tid,record_type,snapshot_round,updated_at) VALUES(?,?,?,?,?)")) {
+            document.setString(1,path); document.setInt(2,tid); document.setString(3,type);
+            document.setInt(4,round); document.setLong(5,updatedAt); document.executeUpdate();
+        }
         try(PreparedStatement insert=c.prepareStatement(
                 "INSERT INTO team_player(tid,pid,record_type,snapshot_round,serialized_data) VALUES(?,?,?,?,?)")) {
             for(Map.Entry<Integer,String> player:players.entrySet()) {
@@ -190,6 +200,37 @@ public final class TeamPlayerDAO {
             }
             insert.executeBatch();
         }
+    }
+
+    public List<Integer> listTeamIds() throws SQLException {
+        List<Integer> tids = new ArrayList<Integer>();
+        try (Connection c = database.openConnection();
+             PreparedStatement q = c.prepareStatement(
+                 "SELECT DISTINCT tid FROM team_player_document WHERE record_type='PLAYER' AND snapshot_round=0 ORDER BY tid");
+             ResultSet r = q.executeQuery()) {
+            while (r.next()) tids.add(Integer.valueOf(r.getInt(1)));
+        }
+        return Collections.unmodifiableList(tids);
+    }
+
+    public List<Integer> listRecentTeamIds(long since) throws SQLException {
+        List<Integer> tids = new ArrayList<Integer>();
+        try (Connection c = database.openConnection();
+             PreparedStatement q = c.prepareStatement(
+                 "SELECT DISTINCT tid FROM team_player_document WHERE record_type='PLAYER' AND snapshot_round=0 AND updated_at>? ORDER BY updated_at DESC,tid")) {
+            q.setLong(1, since);
+            try (ResultSet r = q.executeQuery()) { while (r.next()) tids.add(Integer.valueOf(r.getInt(1))); }
+        }
+        return Collections.unmodifiableList(tids);
+    }
+
+    private static String canonicalPath(int tid,String type,int round) {
+        String prefix = round > 0 ? "backup/" : "";
+        String number = String.valueOf(tid) + (round > 0 ? "_" + round : "");
+        String suffix = "PLAYER".equals(type) ? ""
+                : "PLAYER_HISTORY".equals(type) ? "_historico"
+                : "JUVENILE".equals(type) ? "_juveniles" : "_historico_juveniles";
+        return prefix + number + suffix + ".properties";
     }
 
     private static void validate(int tid,String type,int round) {
