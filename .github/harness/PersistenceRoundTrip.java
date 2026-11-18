@@ -90,6 +90,10 @@ public final class PersistenceRoundTrip {
             require(dao.load(123, "JUVENILE", 0).size() == 1, "Juveniles were not migrated");
             require(dao.load(123, "JUVENILE_HISTORY", 0).size() == 1, "Juvenile history was not migrated");
             require(dao.load(123, "PLAYER", 1200).size() == 1, "Round snapshot was not migrated");
+            require(AsistenteBO.obtener_equipos().length == 2, "Team listing did not use migrated team documents");
+            require(AsistenteBO.obtener_ultimos_equipos().length == 2, "Recent team listing lost migrated timestamps");
+            require(Arrays.asList(UsuarioBO.obtener_backups(123)).contains("123_1200.properties"),
+                    "Migrated team backup was not listed");
             require(AsistenteBO.leer_juveniles(123, false, usuario).size() == 1, "Juvenile DAO read failed");
             require(AsistenteBO.leer_juveniles(123, true, usuario).size() == 1, "Historical juvenile DAO read failed");
             require(!data.resolve("124.properties").toFile().exists(), "Second legacy team file was not retired");
