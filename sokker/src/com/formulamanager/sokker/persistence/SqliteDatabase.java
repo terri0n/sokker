@@ -15,7 +15,7 @@ import java.sql.Statement;
  * rows; the importer does not retain a second copy of each file's bytes.
  */
 public final class SqliteDatabase {
-    private static final int SCHEMA_VERSION = 5;
+    private static final int SCHEMA_VERSION = 6;
     private final File databaseFile;
     private final boolean playerGroupsEnabled;
 
@@ -159,6 +159,12 @@ public final class SqliteDatabase {
                     "snapshot_round INTEGER NOT NULL DEFAULT 0, serialized_data TEXT NOT NULL," +
                     "PRIMARY KEY(tid,pid,record_type,snapshot_round))");
             statement.execute("CREATE INDEX IF NOT EXISTS idx_team_player_lookup ON team_player(tid,record_type,snapshot_round,pid)");
+            statement.execute("CREATE TABLE IF NOT EXISTS team_player_document (" +
+                    "source_path TEXT PRIMARY KEY NOT NULL, tid INTEGER NOT NULL, " +
+                    "record_type TEXT NOT NULL CHECK(record_type IN ('PLAYER','PLAYER_HISTORY','JUVENILE','JUVENILE_HISTORY')), " +
+                    "snapshot_round INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL)");
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_team_player_document_lookup " +
+                    "ON team_player_document(tid,record_type,snapshot_round,updated_at)");
             statement.execute("CREATE TABLE IF NOT EXISTS team_player_extension (" +
                     "tid INTEGER NOT NULL, record_type TEXT NOT NULL, snapshot_round INTEGER NOT NULL," +
                     "property_key TEXT NOT NULL, property_value TEXT NOT NULL," +
