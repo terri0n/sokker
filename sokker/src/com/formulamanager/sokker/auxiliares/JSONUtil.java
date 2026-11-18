@@ -1,6 +1,7 @@
 package com.formulamanager.sokker.auxiliares;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.util.LinkedHashMap;
 
@@ -13,17 +14,18 @@ public class JSONUtil {
 		String json = navegador.getPage(url).getWebResponse().getContentAsString();
 		return Configuration.defaultConfiguration().jsonProvider().parse(json);
 	}
-	
+
 	public static Object getJSON(LinkedHashMap<String, Object> lista, String path) {
 		String[] array = path.split("\\.");
 
 		for (int i = 0; i < array.length - 1; i++) {
-			lista = (LinkedHashMap<String, Object>) lista.get(array[i]);
-			if (lista == null) {
+			Object value = lista.get(array[i]);
+			if (!(value instanceof LinkedHashMap)) {
 				return null;
 			}
+			lista = (LinkedHashMap<String, Object>) value;
 		}
-		
+
 		return lista.get(array[array.length - 1]);
 	}
 
@@ -32,13 +34,26 @@ public class JSONUtil {
 	}
 
 	public static Integer getInteger(LinkedHashMap<String, Object> lista, String path) {
-		return (Integer) getJSON(lista, path);
+		Object value = getJSON(lista, path);
+		if (value == null) {
+			return null;
+		}
+		if (!(value instanceof Number)) {
+			throw new IllegalArgumentException("JSON field is not numeric: " + path);
+		}
+		try {
+			return Integer.valueOf(new BigDecimal(value.toString()).intValueExact());
+		} catch (ArithmeticException | NumberFormatException e) {
+			throw new IllegalArgumentException("JSON field is not an integer in range: " + path, e);
+		}
 	}
 
 	public static Integer getSkills(LinkedHashMap<String, Object> lista, String path) {
-		return getInteger(lista, "skills." + path) - getInteger(lista, "skillsChange." + path);
+		Integer skill = getInteger(lista, "skills." + path);
+		Integer change = getInteger(lista, "skillsChange." + path);
+		return skill == null || change == null ? null : Integer.valueOf(skill.intValue() - change.intValue());
 	}
-	
+
 	public static Boolean getBoolean(LinkedHashMap<String, Object> lista, String path) {
 		return (Boolean) getJSON(lista, path);
 	}
