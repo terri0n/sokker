@@ -45,9 +45,26 @@ public final class SqlitePersistence {
         new UserDAO(asistenteDatabase).migrateLegacy(newAsistente, asistenteRoot);
         SqlitePropertiesStore factorxMigrationSource = new SqlitePropertiesStore(factorxDatabase, factorxRoot);
         new FactorxDAO(factorxDatabase).migrateLegacy(factorxMigrationSource, factorxRoot);
+
+        // All legacy documents are now represented in SQLite: normalized
+        // player/user/FactorX tables or the generic key/value store. Retire
+        // remaining source files only after every migration has committed.
+        retireImportedSources(newAsistente, asistenteRoot);
+        retireImportedSources(factorxMigrationSource, factorxRoot);
+
         asistente = newAsistente;
         SqlitePersistence.factorxRoot = factorxRoot;
         SqlitePersistence.factorxDatabaseFile = factorxDatabase.getDatabaseFile();
+    }
+
+    private static void retireImportedSources(SqlitePropertiesStore store, File root)
+            throws IOException, SQLException {
+        for (String path : store.list(null, ".properties")) {
+            File source = new File(root, path.replace('/', File.separatorChar));
+            if (source.exists() && !source.delete()) {
+                throw new IOException("Cannot retire imported properties source: " + source);
+            }
+        }
     }
 
     public static SqlitePropertiesStore forFile(File file) throws IOException {
