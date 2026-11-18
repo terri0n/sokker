@@ -646,6 +646,22 @@ SERVLET_ASISTENTE._log_linea(usuario.getLogin(), "\t" + clave + ": " + tiempo_to
 		boolean incrementar_edad = ajuste_edad > 0;
 		
 		int tid = _usuario.getDef_tid();
+		File database = SqlitePersistence.getAsistenteDatabaseFile();
+		if (database == null) throw new IOException("Asistente SQLite no está inicializado");
+		long expectedUserUpdatedAt = UsuarioBO.obtener_ultima_actualizacion(_usuario.getLogin());
+		TeamPlayerDAO playerDao = new TeamPlayerDAO(new SqliteDatabase(database, true));
+		Map<Integer, String> expectedCurrentPlayers;
+		Map<Integer, String> expectedHistoricalPlayers;
+		Map<Integer, String> expectedCurrentJuniors;
+		Map<Integer, String> expectedHistoricalJuniors;
+		try {
+			expectedCurrentPlayers = playerDao.load(tid, "PLAYER", 0);
+			expectedHistoricalPlayers = playerDao.load(tid, "PLAYER_HISTORY", 0);
+			expectedCurrentJuniors = playerDao.load(tid, "JUVENILE", 0);
+			expectedHistoricalJuniors = playerDao.load(tid, "JUVENILE_HISTORY", 0);
+		} catch (SQLException e) {
+			throw new IOException("No se pudo leer el estado inicial del equipo " + tid, e);
+		}
 		
 //		List<Jugador> jugadores_nuevos = AsistenteBO.obtener_jugadores(tid, jornada_actual, _usuario, navegador);
 		List<Jugador> jugadores_nuevos;
@@ -791,8 +807,6 @@ if (nuevo.getLesion() > 0) {
 		Map<Integer, String> historicalJuniors = new LinkedHashMap<Integer, String>();
 		for (Juvenil juvenil : juveniles_historico) historicalJuniors.put(juvenil.getPid(), juvenil.serializar(true));
 
-		File database = SqlitePersistence.getAsistenteDatabaseFile();
-		if (database == null) throw new IOException("Asistente SQLite no está inicializado");
 		synchronized (UsuarioBO.class) {
 			UserDAO.SaveData userData;
 			_usuario.setDef_jornada(jornada_actual);
@@ -803,7 +817,9 @@ if (nuevo.getLesion() > 0) {
 			}
 			try {
 				new AsistenteUpdateDAO(new SqliteDatabase(database, true)).save(tid,
-					currentPlayers, historicalPlayers, currentJuniors, historicalJuniors, userData);
+					expectedCurrentPlayers, expectedHistoricalPlayers, expectedCurrentJuniors, expectedHistoricalJuniors,
+					currentPlayers, historicalPlayers, currentJuniors, historicalJuniors,
+					userData, expectedUserUpdatedAt);
 				_usuario.setDef_jornada(jornada_actual);
 			} catch (SQLException e) {
 				throw new IOException("No se pudo confirmar la actualización completa del equipo " + tid, e);
