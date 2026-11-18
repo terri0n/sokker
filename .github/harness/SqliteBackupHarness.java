@@ -93,6 +93,12 @@ public final class SqliteBackupHarness {
             finalPartRejected = true;
         }
         require(finalPartRejected, "Restore accepted a backup with a missing final fragment");
+
+        Path incompleteRoot = Files.createTempDirectory("sqlite-incomplete-backup-");
+        Files.write(incompleteRoot.resolve("factorx-backup-20261118T000000Z.part0001of0002"),
+                new byte[] {1, 2, 3});
+        require(SqliteBackupService.listParts(incompleteRoot.toFile(), "factorx-backup").isEmpty(),
+                "Backup sender exposed an incomplete generation as sendable");
         System.out.println("SqliteBackupHarness: OK");
     }
     private static void require(boolean condition,String message) {
