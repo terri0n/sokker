@@ -116,7 +116,7 @@ public final class PersistenceRoundTrip {
         try {
             SqlitePersistence.initialize(data.toFile(), factorx.toFile());
             Path outsideProperties = Files.createTempFile(data.getParent(), "outside-properties-", ".properties");
-            byte[] outsideBytes = "legacy=must-not-be-read\\n".getBytes(StandardCharsets.ISO_8859_1);
+            byte[] outsideBytes = "legacy=must-not-be-read\n".getBytes(StandardCharsets.ISO_8859_1);
             Files.write(outsideProperties, outsideBytes);
             boolean outsideReadRejected = false;
             try {
