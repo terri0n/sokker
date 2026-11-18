@@ -76,7 +76,7 @@ public final class AsistenteUpdateAtomicityHarness {
 
         Map<Integer, String> expectedCurrentAfterConcurrent = players.load(123, "PLAYER", 0);
         long staleUserVersion = users.load("atomic").getUpdatedAt();
-        users.setUpdatedAt("atomic", staleUserVersion + 1000L);
+        users.setUpdatedAt("atomic", staleUserVersion - 1L);
         boolean userConflictRejected = false;
         try {
             update.save(123, expectedCurrentAfterConcurrent, oldHistory, oldJuniors, oldJuniorHistory,
