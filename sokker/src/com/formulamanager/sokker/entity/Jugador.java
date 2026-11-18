@@ -449,7 +449,7 @@ public class Jugador implements Comparable<Jugador> {
                 try {
                     Jugador anterior = new Jugador(pid, valores.subList(i, valores.size()), false,
                             this.nombre, this.demarcacion, usuario, this.usuario2, edad);
-                    if (anterior.getJornada().equals(jornada)) campos_extra_serializacion = sublista;
+                    if (Objects.equals(anterior.getJornada(), jornada)) campos_extra_serializacion = sublista;
                     else original = anterior;
                 } catch (RuntimeException formato_desconocido) {
                     campos_extra_serializacion = sublista;
@@ -659,7 +659,7 @@ public class Jugador implements Comparable<Jugador> {
 
 		String serializacion_original = "";
 		// Evito bucles infinitos
-		if (original != null && (!jornada.equals(original.getJornada()) || original.tiene_campos_extra_serializacion())) {
+		if (original != null && (!Objects.equals(jornada, original.getJornada()) || original.tiene_campos_extra_serializacion())) {
             serializacion_original = "," + original.serializar(false);
         }
         if (!campos_extra_serializacion.isEmpty()) {

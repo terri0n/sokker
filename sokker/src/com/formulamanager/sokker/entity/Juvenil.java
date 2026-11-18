@@ -61,7 +61,7 @@ public class Juvenil extends Jugador {
             List<String> sublista = new ArrayList<String>(valores.subList(i, valores.size()));
             try {
                 Juvenil anterior = new Juvenil(pid, valores.subList(i, valores.size()), false, getNombre(), usuario);
-                if (anterior.getJornada().equals(getJornada())) setCamposExtraSerializacion(sublista);
+                if (Objects.equals(anterior.getJornada(), getJornada())) setCamposExtraSerializacion(sublista);
                 else setOriginal(anterior);
             } catch (RuntimeException formato_desconocido) {
                 setCamposExtraSerializacion(sublista);
@@ -85,7 +85,7 @@ public class Juvenil extends Jugador {
 		
 		String serializacion_original = "";
 		// Evito bucles infinitos
-		if (getOriginal() != null && (!getJornada().equals(getOriginal().getJornada())
+		if (getOriginal() != null && (!Objects.equals(getJornada(), getOriginal().getJornada())
                 || getOriginal().tiene_campos_extra_serializacion())) {
             serializacion_original = "," + getOriginal().serializar(false);
         }
