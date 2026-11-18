@@ -76,6 +76,25 @@ public class SqliteLegacyImportHarness {
         require(java.util.Arrays.equals(original, Files.readAllBytes(fixture.toPath())),
                 "Source file was modified");
 
+        byte[] changedSource = ("usuario=alice,secret,\\n" +
+                "future_field=changed-after-import\\n" +
+                "entrenamiento1200=Porteria-Defensa---,\\n" +
+                "notas=áéíóú\\n").getBytes(StandardCharsets.ISO_8859_1);
+        Files.write(fixture.toPath(), changedSource);
+        boolean changedLegacySourceRejected = false;
+        try {
+            importer.importAll();
+        } catch (java.sql.SQLException expected) {
+            changedLegacySourceRejected = true;
+        }
+        require(changedLegacySourceRejected,
+                "A changed legacy source must stop migration instead of being silently retired");
+        require("actualizado".equals(store.load("_alice.properties").getProperty("notas")),
+                "Rejecting a changed source must not overwrite SQLite data");
+        require(java.util.Arrays.equals(changedSource, Files.readAllBytes(fixture.toPath())),
+                "A changed legacy source must remain available for manual recovery");
+        Files.write(fixture.toPath(), original);
+
         File external = new File(root, "outside/iberica.properties");
         if (!external.getParentFile().mkdirs()) throw new IllegalStateException("Cannot create external fixture");
         byte[] externalBytes = "competicion_num_grupos=2\nfuture_iberia_key=preserve\n"
