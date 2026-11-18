@@ -71,6 +71,28 @@ public final class TeamPlayerDAO {
         }
     }
 
+    public void deleteTeam(int tid) throws SQLException {
+        if (tid <= 0) throw new IllegalArgumentException("tid must be positive");
+        try (Connection c = database.openConnection()) {
+            c.setAutoCommit(false);
+            try {
+                String[] tables = {"team_player", "team_player_extension", "player_group_assignment"};
+                for (String table : tables) {
+                    try (PreparedStatement d = c.prepareStatement("DELETE FROM " + table + " WHERE tid=?")) {
+                        d.setInt(1, tid);
+                        d.executeUpdate();
+                    }
+                }
+                c.commit();
+            } catch (SQLException e) {
+                c.rollback();
+                throw e;
+            } finally {
+                c.setAutoCommit(true);
+            }
+        }
+    }
+
     public String load(int tid,int pid,String recordType) throws SQLException {
         validate(tid,recordType,0);
         try(Connection c=database.openConnection();
