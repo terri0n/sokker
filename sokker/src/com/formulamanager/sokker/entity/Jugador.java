@@ -231,6 +231,7 @@ public class Jugador implements Comparable<Jugador> {
 	private Integer edicion;
 
 	private Jugador original;
+	private List<String> campos_extra_serializacion = new ArrayList<String>();
 
 	private boolean actualizado;					// "Fiable" para el asistente
 	private double talento_min;
@@ -441,9 +442,19 @@ public class Jugador implements Comparable<Jugador> {
 			}
 			
 			if (valores.size() > i && !valores.get(i).equals("*")) {
-				List<String> sublista = valores.subList(i, valores.size());
-				original = new Jugador(pid, sublista, false, this.nombre, this.demarcacion, usuario, this.usuario2, edad);
-			}
+                List<String> sublista = new ArrayList<String>(valores.subList(i, valores.size()));
+                if (!sublista.isEmpty() && "*".equals(sublista.get(sublista.size() - 1))) {
+                    sublista.remove(sublista.size() - 1);
+                }
+                try {
+                    Jugador anterior = new Jugador(pid, valores.subList(i, valores.size()), false,
+                            this.nombre, this.demarcacion, usuario, this.usuario2, edad);
+                    if (anterior.getJornada().equals(jornada)) campos_extra_serializacion = sublista;
+                    else original = anterior;
+                } catch (RuntimeException formato_desconocido) {
+                    campos_extra_serializacion = sublista;
+                }
+            }
 		} catch (Exception e) {
 			throw new RuntimeException("Error reading player " + Util.nvl(nombre) + " [" + pid + "] from " + usuario.getDef_equipo(), e);
 		}
@@ -648,9 +659,12 @@ public class Jugador implements Comparable<Jugador> {
 
 		String serializacion_original = "";
 		// Evito bucles infinitos
-		if (original != null && !jornada.equals(original.getJornada())) {
-			serializacion_original = "," + original.serializar(false);
-		}
+		if (original != null && (!jornada.equals(original.getJornada()) || original.tiene_campos_extra_serializacion())) {
+            serializacion_original = "," + original.serializar(false);
+        }
+        if (!campos_extra_serializacion.isEmpty()) {
+            serializacion_original += "," + String.join(",", campos_extra_serializacion);
+        }
 
 		// Concateno los datos y un asterisco al final para asegurarme de que no disminuye el nº de campos al leer el archivo
 		return String.join(",", valores) + serializacion_original + (primero ? ",*" : "");
@@ -1954,6 +1968,15 @@ public class Jugador implements Comparable<Jugador> {
 	//-------
 	// G & S
 	//-------
+
+	protected void setCamposExtraSerializacion(List<String> campos) {
+		this.campos_extra_serializacion = campos == null ? new ArrayList<String>() : new ArrayList<String>(campos);
+	}
+
+	protected boolean tiene_campos_extra_serializacion() {
+		return !campos_extra_serializacion.isEmpty()
+				|| (original != null && original.tiene_campos_extra_serializacion());
+	}
 
 	public Jugador getOriginal() {
 		return original;
