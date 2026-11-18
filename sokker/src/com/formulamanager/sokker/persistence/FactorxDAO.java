@@ -107,9 +107,6 @@ public final class FactorxDAO {
                 for(String path:documents) {
                     if(!isFactorxDocument(path)) continue;
                     if(!done) migrateDocument(connection,path,legacy.load(path));
-                    try(PreparedStatement d=connection.prepareStatement("DELETE FROM legacy_properties_file WHERE path=?")) {
-                        d.setString(1,path); d.executeUpdate();
-                    }
                 }
                 if(!done) try(PreparedStatement insert=connection.prepareStatement(
                         "INSERT INTO factorx_migration(name,completed_at) VALUES(?,?)")) {
@@ -123,10 +120,10 @@ public final class FactorxDAO {
                 throw new SQLException("Factor X migration failed",e);
             } finally { connection.setAutoCommit(true); }
         }
-        // Only remove source files after the complete normalized import committed.
+        // Only retire verified source files after the complete normalized import committed.
         for(String path:documents) if(isFactorxDocument(path)) {
             File source=new File(root,path.replace('/',File.separatorChar));
-            if(source.exists()&&!source.delete()) throw new IOException("Cannot remove migrated Factor X file: "+source);
+            legacy.retireImportedSource(source,path);
         }
     }
 
