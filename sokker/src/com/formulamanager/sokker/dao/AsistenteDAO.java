@@ -367,17 +367,17 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 					// Habilidades
 					jug_semana.setForma(requiredSkills(entrenamiento, "form"));
 					jug_semana.setDisciplina_tactica(requiredSkills(entrenamiento, "tacticalDiscipline"));
-					jug_semana.setTrabajo_en_equipo(JSONUtil.getSkills(entrenamiento, "teamwork"));
-					jug_semana.setExperiencia(JSONUtil.getSkills(entrenamiento, "experience"));
+					jug_semana.setTrabajo_en_equipo(requiredSkills(entrenamiento, "teamwork"));
+					jug_semana.setExperiencia(requiredSkills(entrenamiento, "experience"));
 	
-					jug_semana.setCondicion(JSONUtil.getSkills(entrenamiento, "stamina"));
-					jug_semana.setRapidez(JSONUtil.getSkills(entrenamiento, "pace"));
-					jug_semana.setTecnica(JSONUtil.getSkills(entrenamiento, "technique"));
-					jug_semana.setPases(JSONUtil.getSkills(entrenamiento, "passing"));
-					jug_semana.setPorteria(JSONUtil.getSkills(entrenamiento, "keeper"));
-					jug_semana.setDefensa(JSONUtil.getSkills(entrenamiento, "defending"));
-					jug_semana.setCreacion(JSONUtil.getSkills(entrenamiento, "playmaking"));
-					jug_semana.setAnotacion(JSONUtil.getSkills(entrenamiento, "striker"));
+					jug_semana.setCondicion(requiredSkills(entrenamiento, "stamina"));
+					jug_semana.setRapidez(requiredSkills(entrenamiento, "pace"));
+					jug_semana.setTecnica(requiredSkills(entrenamiento, "technique"));
+					jug_semana.setPases(requiredSkills(entrenamiento, "passing"));
+					jug_semana.setPorteria(requiredSkills(entrenamiento, "keeper"));
+					jug_semana.setDefensa(requiredSkills(entrenamiento, "defending"));
+					jug_semana.setCreacion(requiredSkills(entrenamiento, "playmaking"));
+					jug_semana.setAnotacion(requiredSkills(entrenamiento, "striker"));
 				}
 			}
 		}
