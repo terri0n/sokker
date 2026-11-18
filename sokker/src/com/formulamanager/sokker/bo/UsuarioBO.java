@@ -1,24 +1,17 @@
 package com.formulamanager.sokker.bo;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import com.formulamanager.sokker.auxiliares.SERVLET_ASISTENTE;
 import com.formulamanager.sokker.auxiliares.SystemUtil;
@@ -33,11 +26,6 @@ import com.formulamanager.sokker.persistence.UserDAO;
 
 public class UsuarioBO {
 	public static final String ACCOUNT_DELETION_REQUESTED_AT = "account_deletion_requested_at";
-
-	private static String ruta_usuario(String login) {
-		String loginNormalizado = login.toLowerCase();
-		return SystemUtil.getVar("path") + (loginNormalizado.startsWith("prueba/") ? "" : "_") + loginNormalizado + ".properties";
-	}
 
 	private static UserDAO user_dao() throws IOException {
 		File database = SqlitePersistence.getAsistenteDatabaseFile();
