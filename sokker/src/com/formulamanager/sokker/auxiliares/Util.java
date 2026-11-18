@@ -301,14 +301,12 @@ public class Util {
 		Properties prop = new Properties();
 
 		synchronized (nombre.intern()) {
-			try {
-				String ruta = SystemUtil.getVar("path") + nombre + ".properties";
-				File file = new File(ruta);
-				prop = cargar_properties(file);
-				if (prop == null) return hashmap;
-				for (Entry<Object, Object> entry : prop.entrySet()) {
-					hashmap.put((String)entry.getKey(), (String)entry.getValue());
-				}
+			String ruta = SystemUtil.getVar("path") + nombre + ".properties";
+			File file = new File(ruta);
+			prop = cargar_properties(file);
+			if (prop == null) return hashmap;
+			for (Entry<Object, Object> entry : prop.entrySet()) {
+				hashmap.put((String)entry.getKey(), (String)entry.getValue());
 			}
 		}
 		
