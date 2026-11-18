@@ -14,7 +14,6 @@ import com.formulamanager.sokker.auxiliares.SystemUtil;
 import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.persistence.SqlitePersistence;
 import com.formulamanager.sokker.persistence.SqliteDatabase;
-import com.formulamanager.sokker.entity.Usuario;
 
 public final class AccountDeletionHarness {
     private AccountDeletionHarness() {}
@@ -219,8 +218,8 @@ public final class AccountDeletionHarness {
         touch(data.resolve(tid + "_juveniles.properties"));
         touch(data.resolve(tid + "_juveniles_historico.properties"));
         Properties testProperties = new Properties();
-        Usuario testUser = new Usuario("prueba/" + tid, new Usuario(Integer.valueOf(tid), "Team " + tid));
-        testProperties.setProperty("usuario", testUser.serializar());
+        testProperties.setProperty("usuario", "prueba/" + tid + ",pw,sokker-prueba-" + tid + "," +
+                tid + ",," + tid + ",Team " + tid + ",,1200,,0,*");
         File testAccount = data.resolve("prueba/" + tid + ".properties").toFile();
         Files.createDirectories(testAccount.toPath().getParent());
         try (FileOutputStream output = new FileOutputStream(testAccount)) {
