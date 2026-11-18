@@ -299,7 +299,6 @@ public class Util {
 		HashMap<String, String> hashmap = new HashMap<String, String>();
 		
 		Properties prop = new Properties();
-		InputStream input = null;
 
 		synchronized (nombre.intern()) {
 			try {
@@ -309,14 +308,6 @@ public class Util {
 				if (prop == null) return hashmap;
 				for (Entry<Object, Object> entry : prop.entrySet()) {
 					hashmap.put((String)entry.getKey(), (String)entry.getValue());
-				}
-			} finally {
-				if (input != null) {
-					try {
-						input.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
 				}
 			}
 		}
