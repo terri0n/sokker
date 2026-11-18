@@ -71,6 +71,28 @@ public final class TeamPlayerDAO {
         }
     }
 
+    public List<String> listBackupFiles(int tid) throws SQLException {
+        if (tid <= 0) throw new IllegalArgumentException("tid must be positive");
+        List<String> paths = new ArrayList<String>();
+        String sql = "SELECT DISTINCT record_type,snapshot_round FROM team_player WHERE tid=? AND snapshot_round>0 " +
+                "UNION SELECT DISTINCT record_type,snapshot_round FROM team_player_extension WHERE tid=? AND snapshot_round>0 " +
+                "ORDER BY snapshot_round,record_type";
+        try (Connection c = database.openConnection(); PreparedStatement q = c.prepareStatement(sql)) {
+            q.setInt(1, tid); q.setInt(2, tid);
+            try (ResultSet r = q.executeQuery()) {
+                while (r.next()) {
+                    String type = r.getString(1);
+                    int round = r.getInt(2);
+                    String suffix = "PLAYER".equals(type) ? ""
+                            : "PLAYER_HISTORY".equals(type) ? "_historico"
+                            : "JUVENILE".equals(type) ? "_juveniles" : "_historico_juveniles";
+                    paths.add(tid + "_" + round + suffix + ".properties");
+                }
+            }
+        }
+        return Collections.unmodifiableList(paths);
+    }
+
     public void deleteTeam(int tid) throws SQLException {
         if (tid <= 0) throw new IllegalArgumentException("tid must be positive");
         try (Connection c = database.openConnection()) {
