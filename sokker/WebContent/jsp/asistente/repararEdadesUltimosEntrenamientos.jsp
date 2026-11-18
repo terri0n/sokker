@@ -1,21 +1,19 @@
 <%@ page import="java.io.File" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.io.StringReader" %>
-<%@ page import="java.nio.charset.StandardCharsets" %>
-<%@ page import="java.nio.file.AtomicMoveNotSupportedException" %>
-<%@ page import="java.nio.file.Files" %>
-<%@ page import="java.nio.file.Path" %>
-<%@ page import="java.nio.file.StandardCopyOption" %>
-<%@ page import="java.nio.file.StandardOpenOption" %>
+<%@ page import="java.io.StringWriter" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.Comparator" %>
+<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Properties" %>
 <%@ page import="java.util.UUID" %>
 <%@ page import="java.util.regex.Matcher" %>
 <%@ page import="java.util.regex.Pattern" %>
-<%@ page import="com.formulamanager.sokker.auxiliares.SystemUtil" %>
+<%@ page import="com.formulamanager.sokker.persistence.SqlitePersistence" %>
+<%@ page import="com.formulamanager.sokker.persistence.SqliteDatabase" %>
+<%@ page import="com.formulamanager.sokker.persistence.TeamPlayerDAO" %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 
 <%!
@@ -36,7 +34,6 @@
      */
     private static final int MIN_CLUB_TID_REPAIR = 801;
     private static final int NEW_TRAINING_FORMAT_WEEK_REPAIR = 993;
-    private static final Pattern TEAM_FILE_REPAIR = Pattern.compile("[0-9]+\\.properties");
     private static final Pattern PLAYER_LINE_REPAIR = Pattern.compile("(?m)^([0-9]+)([=:])(.*?)(\\r?)$");
 
     private int seasonIndex(int week) {
@@ -54,35 +51,24 @@
         return Integer.valueOf(latestAge + seasonIndex(snapshotWeek) - seasonIndex(latestWeek));
     }
 
-    private RepairSummary repairDirectory(File directory) throws IOException {
-        if (directory == null || !directory.isDirectory()) {
-            throw new IOException("No existe el directorio de datos: "
-                    + (directory == null ? "null" : directory.getAbsolutePath()));
+    private RepairSummary repairDatabase(File databaseFile) throws IOException {
+        if (databaseFile == null || !databaseFile.isFile()) {
+            throw new IOException("No existe la base de datos SQLite de Asistente");
         }
 
-        File[] files = directory.listFiles(new java.io.FileFilter() {
-            @Override
-            public boolean accept(File file) {
-                return file.isFile()
-                        && TEAM_FILE_REPAIR.matcher(file.getName()).matches()
-                        && clubTid(file.getName()) >= MIN_CLUB_TID_REPAIR;
-            }
-        });
-        if (files == null) {
-            throw new IOException("No se puede listar el directorio de datos: " + directory.getAbsolutePath());
+        TeamPlayerDAO dao = new TeamPlayerDAO(new SqliteDatabase(databaseFile, true));
+        List<Integer> tids;
+        try {
+            tids = dao.listTeamIds();
+        } catch (java.sql.SQLException e) {
+            throw new IOException("No se pueden listar los equipos de SQLite", e);
         }
-
-        Arrays.sort(files, new Comparator<File>() {
-            @Override
-            public int compare(File a, File b) {
-                return a.getName().compareTo(b.getName());
-            }
-        });
 
         RepairSummary summary = new RepairSummary();
-        for (File file : files) {
-            summary.scannedFiles++;
-            FileRepairResult result = repairFile(file.toPath());
+        for (Integer tid : tids) {
+            if (tid == null || tid.intValue() < MIN_CLUB_TID_REPAIR) continue;
+            summary.scannedTeams++;
+            FileRepairResult result = repairTeam(dao, tid.intValue());
             summary.modifiedFiles += result.modified ? 1 : 0;
             summary.modifiedPlayers += result.modifiedPlayers;
             summary.modifiedSnapshots += result.modifiedSnapshots;
@@ -91,53 +77,53 @@
         return summary;
     }
 
-    private FileRepairResult repairFile(Path path) throws IOException {
-        byte[] originalBytes = Files.readAllBytes(path);
-        String original = new String(originalBytes, StandardCharsets.ISO_8859_1);
-        RepairResult repaired = repairContent(original);
+    private FileRepairResult repairTeam(TeamPlayerDAO dao, int tid) throws IOException {
+        Map<Integer, String> original;
+        try {
+            original = dao.load(tid, "PLAYER", 0);
+        } catch (java.sql.SQLException e) {
+            throw new IOException("No se pueden leer los jugadores del equipo " + tid, e);
+        }
+        if (original.isEmpty()) return new FileRepairResult(false, false, 0, 0);
+
+        Properties properties = new Properties();
+        for (Map.Entry<Integer, String> entry : original.entrySet()) {
+            properties.setProperty(String.valueOf(entry.getKey()), entry.getValue());
+        }
+        StringWriter writer = new StringWriter();
+        properties.store(writer, null);
+        String source = writer.toString();
+
+        RepairResult repaired = repairContent(source);
         if (repaired.modifiedSnapshots == 0) {
             return new FileRepairResult(false, false, 0, 0);
         }
 
         RepairResult secondPass = repairContent(repaired.content);
         if (secondPass.modifiedSnapshots != 0 || !secondPass.content.equals(repaired.content)) {
-            throw new IOException("La reparación no es idempotente para " + path.getFileName());
+            throw new IOException("La reparación no es idempotente para el equipo " + tid);
         }
-        validateProperties(repaired.content, path);
+        validateProperties(repaired.content, "equipo " + tid);
 
-        if (!Arrays.equals(originalBytes, Files.readAllBytes(path))) {
-            return new FileRepairResult(false, true, 0, 0);
-        }
-
-        Path parent = path.toAbsolutePath().getParent();
-        Path temp = Files.createTempFile(parent, path.getFileName().toString(), ".training-age.tmp");
-        try {
-            Files.write(temp,
-                    repaired.content.getBytes(StandardCharsets.ISO_8859_1),
-                    StandardOpenOption.TRUNCATE_EXISTING,
-                    StandardOpenOption.WRITE);
-
-            String written = new String(Files.readAllBytes(temp), StandardCharsets.ISO_8859_1);
-            if (!written.equals(repaired.content)) {
-                throw new IOException("Error verificando el fichero temporal de " + path.getFileName());
+        Properties updatedProperties = new Properties();
+        updatedProperties.load(new StringReader(repaired.content));
+        Map<Integer, String> updated = new LinkedHashMap<Integer, String>();
+        for (String key : updatedProperties.stringPropertyNames()) {
+            try {
+                updated.put(Integer.valueOf(key), updatedProperties.getProperty(key));
+            } catch (NumberFormatException ignored) {
+                // El documento sintético solo contiene claves PID.
             }
+        }
 
-            if (!Arrays.equals(originalBytes, Files.readAllBytes(path))) {
+        try {
+            if (!dao.replacePlayersIfUnchanged(tid, original, updated)) {
                 return new FileRepairResult(false, true, 0, 0);
             }
-
-            try {
-                Files.move(temp, path,
-                        StandardCopyOption.ATOMIC_MOVE,
-                        StandardCopyOption.REPLACE_EXISTING);
-            } catch (AtomicMoveNotSupportedException e) {
-                Files.move(temp, path, StandardCopyOption.REPLACE_EXISTING);
-            }
-
-            return new FileRepairResult(true, false, repaired.modifiedPlayers, repaired.modifiedSnapshots);
-        } finally {
-            Files.deleteIfExists(temp);
+        } catch (java.sql.SQLException e) {
+            throw new IOException("No se pudo guardar la reparación del equipo " + tid, e);
         }
+        return new FileRepairResult(true, false, repaired.modifiedPlayers, repaired.modifiedSnapshots);
     }
 
     private RepairResult repairContent(String content) throws IOException {
@@ -325,21 +311,14 @@
         return properties.getProperty("value");
     }
 
-    private void validateProperties(String content, Path path) throws IOException {
+    private void validateProperties(String content, String description) throws IOException {
         Properties properties = new Properties();
         properties.load(new StringReader(content));
         if (properties.isEmpty() && content.length() > 0) {
-            throw new IOException("El fichero reparado no contiene propiedades: " + path.getFileName());
+            throw new IOException("El documento reparado no contiene propiedades: " + description);
         }
     }
 
-    private int clubTid(String fileName) {
-        try {
-            return Integer.parseInt(fileName.substring(0, fileName.length() - ".properties".length()));
-        } catch (RuntimeException e) {
-            return -1;
-        }
-    }
 
     private String join(String[] tokens) {
         StringBuilder result = new StringBuilder();
@@ -463,7 +442,7 @@
     }
 
     private static final class RepairSummary {
-        int scannedFiles;
+        int scannedTeams;
         int modifiedFiles;
         int modifiedPlayers;
         int modifiedSnapshots;
@@ -551,7 +530,7 @@
         return;
     }
 
-    File dataDirectory = new File(SystemUtil.getVar(SystemUtil.PATH));
+    File database = SqlitePersistence.getAsistenteDatabaseFile();
     String result = null;
     String error = null;
     String csrf = (String) session.getAttribute("repairTrainingAgesCsrf20260924");
@@ -571,7 +550,7 @@
         session.removeAttribute("repairTrainingAgesCsrf20260924");
 
         try {
-            RepairSummary summary = repairDirectory(dataDirectory);
+            RepairSummary summary = repairDatabase(database);
             if (summary.concurrentSkips == 0) {
                 result = "Reparación terminada. Ficheros revisados: " + summary.scannedFiles
                         + ", ficheros modificados: " + summary.modifiedFiles
