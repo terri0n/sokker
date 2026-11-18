@@ -49,7 +49,7 @@ public class UsuarioBO {
 		}
 	}
 
-	public static void solicitar_borrado(String login, long timestamp) throws IOException {
+	public static synchronized void solicitar_borrado(String login, long timestamp) throws IOException {
 		UserDAO.UserRecord record = load_user_record(login);
 		if (record == null) throw new IOException("Usuario no encontrado: " + login);
 		save_user_record(login, record.getSerialized(), record.getNotes(), Long.valueOf(timestamp),
@@ -239,7 +239,7 @@ public class UsuarioBO {
 			previous == null ? null : previous.getDeletionRequestedAt(), training, extensions);
 	}
 
-	public static void grabar_usuario(Usuario usuario) throws IOException {
+	public static synchronized void grabar_usuario(Usuario usuario) throws IOException {
 		UserDAO.SaveData data = preparar_guardado(usuario);
 		try {
 			user_dao().save(data.getLogin(), data.getSerialized(), data.getNotes(),
@@ -249,7 +249,7 @@ public class UsuarioBO {
 		}
 	}
 
-	public static void borrar_usuario(String login) throws IOException {
+	public static synchronized void borrar_usuario(String login) throws IOException {
 		try {
 			if (!user_dao().delete(login)) throw new IOException("Usuario no encontrado: " + login);
 		} catch (java.sql.SQLException e) {
