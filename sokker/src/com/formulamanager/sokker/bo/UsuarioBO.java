@@ -1,7 +1,6 @@
 package com.formulamanager.sokker.bo;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,6 +22,7 @@ import com.formulamanager.sokker.entity.Usuario;
 import com.formulamanager.sokker.persistence.SqlitePersistence;
 import com.formulamanager.sokker.persistence.SqliteDatabase;
 import com.formulamanager.sokker.persistence.UserDAO;
+import com.formulamanager.sokker.persistence.TeamPlayerDAO;
 
 public class UsuarioBO {
 	public static final String ACCOUNT_DELETION_REQUESTED_AT = "account_deletion_requested_at";
@@ -286,20 +286,12 @@ public class UsuarioBO {
 	}
 
 	public static String[] obtener_backups(int tid) {
+		File database = SqlitePersistence.getAsistenteDatabaseFile();
+		if (database == null) throw new IllegalStateException("SQLite Asistente database is not initialized");
 		try {
-			File root = new File(SystemUtil.getVar(SystemUtil.PATH));
-			List<String> paths = SqlitePersistence.list(root, "backup/" + tid + "_", ".properties");
-			if (paths != null) {
-				List<String> names = new ArrayList<String>();
-				for (String path : paths) names.add(path.substring(path.lastIndexOf('/') + 1));
-				return names.toArray(new String[names.size()]);
-			}
-			File directory = new File(root, "backup");
-			String[] files = directory.list(new FilenameFilter() {
-				@Override public boolean accept(File dir, String name) { return name.matches(tid + "_[0-9]+\\.properties"); }
-			});
-			return files;
-		} catch (IOException e) {
+			List<String> paths = new TeamPlayerDAO(new SqliteDatabase(database, true)).listBackupFiles(tid);
+			return paths.toArray(new String[paths.size()]);
+		} catch (java.sql.SQLException e) {
 			throw new IllegalStateException("Error listando backups del equipo " + tid, e);
 		}
 	}
