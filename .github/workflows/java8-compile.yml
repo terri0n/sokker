@@ -87,7 +87,8 @@ jobs:
             -failFast \
             -die1 \
             WEB-INF/jsp/asistente/entrenamiento.jsp \
-            jsp/asistente/asistente.jsp
+            jsp/asistente/asistente.jsp \
+            jsp/asistente/repararEdadesUltimosEntrenamientos.jsp
 
       - name: Assemble and verify WAR
         shell: bash
