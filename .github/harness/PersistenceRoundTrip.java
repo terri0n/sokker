@@ -13,6 +13,7 @@ import com.formulamanager.sokker.bo.AsistenteBO;
 import com.formulamanager.sokker.bo.UsuarioBO;
 import com.formulamanager.sokker.entity.Jugador;
 import com.formulamanager.sokker.entity.Juvenil;
+import com.formulamanager.sokker.auxiliares.SokkerJuniorsXmlCompat;
 import com.formulamanager.sokker.entity.Usuario;
 import com.formulamanager.sokker.persistence.SqlitePersistence;
 import com.formulamanager.sokker.persistence.TeamPlayerDAO;
@@ -28,6 +29,7 @@ public final class PersistenceRoundTrip {
         playerKnownFormatRoundTrip();
         unknownTrailingPlayerFieldsRoundTrip();
         unknownTrailingJuniorFieldsRoundTrip();
+        juniorPositionsReadFromSerializedRecords();
         playerUnmanagedEntryRoundTrip();
         userUnknownFieldsRoundTrip();
         userDeletionRequestRoundTrip();
@@ -56,6 +58,15 @@ public final class PersistenceRoundTrip {
         String future = known + ",future-junior-field";
         Juvenil junior = new Juvenil(42, Arrays.asList(future.split(",", -1)), true, null, null);
         require(future.equals(junior.serializar(true)), "Unknown trailing Juvenil field was lost");
+    }
+
+    private static void juniorPositionsReadFromSerializedRecords() {
+        Map<Integer, String> juniors = new HashMap<Integer, String>();
+        juniors.put(Integer.valueOf(12), "Junior,true,1200,16,5,10");
+        juniors.put(Integer.valueOf(13), "Junior,false,1200,16,5,10");
+        Map<Integer, Boolean> positions = SokkerJuniorsXmlCompat.readSavedPositions(juniors);
+        require(Boolean.TRUE.equals(positions.get(12)), "SQLite junior position true was not read");
+        require(Boolean.FALSE.equals(positions.get(13)), "SQLite junior position false was not read");
     }
 
     private static void playerUnmanagedEntryRoundTrip() throws Exception {
