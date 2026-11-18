@@ -49,6 +49,23 @@ public class AsistenteDAO {
 		return result;
 	}
 
+	private static List<LinkedHashMap<String, Object>> readRequiredObjectList(Object document, String path) throws IOException {
+		try {
+			Object value = JsonPath.read(document, path);
+			if (value == null) throw new IOException("Sokker JSON list is null: " + path);
+			if (!(value instanceof List)) throw new IOException("Expected JSON list at " + path);
+			List<?> values = (List<?>) value;
+			List<LinkedHashMap<String, Object>> result = new ArrayList<LinkedHashMap<String, Object>>(values.size());
+			for (Object item : values) {
+				if (!(item instanceof LinkedHashMap)) throw new IOException("Expected JSON object in " + path);
+				result.add((LinkedHashMap<String, Object>) item);
+			}
+			return result;
+		} catch (PathNotFoundException missingRequiredList) {
+			throw new IOException("Incomplete Sokker JSON payload: missing " + path, missingRequiredList);
+		}
+	}
+
 	private static Integer requiredInteger(LinkedHashMap<String, Object> object, String path) throws IOException {
 		Integer value = JSONUtil.getInteger(object, path);
 		if (value == null) throw new IOException("Incomplete Sokker JSON payload: missing " + path);
@@ -159,7 +176,7 @@ public class AsistenteDAO {
 		Object pagina = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/player?filter[limit]=200&filter[offset]=0&filter[team]=" + tid);
 SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString());
 
-		List<LinkedHashMap<String, Object>> jugadores = readObjectList(pagina, "$.players.*");
+		List<LinkedHashMap<String, Object>> jugadores = readRequiredObjectList(pagina, "$.players.*");
 		for (LinkedHashMap<String, Object> jugador : jugadores) {
 
 			Integer id = JSONUtil.getInteger(jugador, "id");
@@ -192,7 +209,7 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 		Set<Integer> avanzados = new HashSet<>();
 		
 		Object document = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/training/players");
-		List<LinkedHashMap<String, Object>> lista = readObjectList(document, "$.advanced");
+		List<LinkedHashMap<String, Object>> lista = readRequiredObjectList(document, "$.advanced");
 		for (LinkedHashMap<String, Object> player : lista) {
 			Integer pid = JSONUtil.getInteger(player, "id");
 			if (pid != null) avanzados.add(pid);
@@ -267,12 +284,12 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 		List<Jugador> jugadores = new ArrayList<>();
 		
 		Object pagina = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/training/players");
-		List<LinkedHashMap<String, Object>> general = readObjectList(pagina, "$.general");
+		List<LinkedHashMap<String, Object>> general = readRequiredObjectList(pagina, "$.general");
 		for (LinkedHashMap<String, Object> g : general) {
 			jugadores.add(leer_jugador_entrenamiento(false, jornada_actual, incrementar_edad, usuario, g));
 		}
 
-		List<LinkedHashMap<String, Object>> avanzado = readObjectList(pagina, "$.advanced");
+		List<LinkedHashMap<String, Object>> avanzado = readRequiredObjectList(pagina, "$.advanced");
 		for (LinkedHashMap<String, Object> a : avanzado) {
 			jugadores.add(leer_jugador_entrenamiento(true, jornada_actual, incrementar_edad, usuario, a));
 		}
@@ -292,7 +309,7 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 			for (Jugador j : jugadores) {
 				Object pagina = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/training/" + j.getPid() + "/report?filter[limit]=" + num_jornadas);
 SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString());
-				List<LinkedHashMap<String, Object>> entrenamientos = readObjectList(pagina, "$.reports");
+				List<LinkedHashMap<String, Object>> entrenamientos = readRequiredObjectList(pagina, "$.reports");
 				
 //System.out.println(j.getPid() + "[" + j.getEdad() + "] -> " + entrenamientos.size());
 				for (int i = 0; i < entrenamientos.size() - 1; i++) {
@@ -368,7 +385,7 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 
 	public static void obtener_juvenil(Juvenil juvenil, WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 		Object document = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/junior/" + juvenil.getPid() + "/graph");
-		List<LinkedHashMap<String, Object>> datos = readObjectList(document, "$.values");
+		List<LinkedHashMap<String, Object>> datos = readRequiredObjectList(document, "$.values");
 		//juvenil.setOriginal(null);
 		
 		for (LinkedHashMap<String, Object> dato : datos) {
@@ -384,7 +401,7 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 
 	public static PalmaresEquipo obtener_palmares(PalmaresEquipo palmares, String competicion, WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 		Object document = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/team/" + palmares.getTid() + "/trophies");
-		List<LinkedHashMap<String, Object>> trofeos = readObjectList(document, "$.trophies");
+		List<LinkedHashMap<String, Object>> trofeos = readRequiredObjectList(document, "$.trophies");
 		for (LinkedHashMap<String, Object> trofeo : trofeos) {
 			 int posicion = JSONUtil.getInteger(trofeo, "position");
 			 int nivel = JSONUtil.getInteger(trofeo, "level");
