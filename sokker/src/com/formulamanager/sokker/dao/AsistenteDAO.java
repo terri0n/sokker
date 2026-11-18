@@ -48,6 +48,12 @@ public class AsistenteDAO {
 		}
 	}
 
+	private static Integer requiredSkills(LinkedHashMap<String, Object> object, String path) throws IOException {
+		Integer value = JSONUtil.getSkills(object, path);
+		if (value == null) throw new IOException("Incomplete training report: missing skills or skillsChange." + path);
+		return value;
+	}
+
 	private static Integer requiredInteger(LinkedHashMap<String, Object> object, String path) throws IOException {
 		Integer value = JSONUtil.getInteger(object, path);
 		if (value == null) throw new IOException("Incomplete Sokker JSON payload: missing " + path);
@@ -245,19 +251,25 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 			j.setDemarcacion(j.getDemarcacion_entrenamiento());
 		}
 		
-		try {
-			j.setCondicion(JSONUtil.getInteger(jugador, "info.skills.stamina"));
-			j.setRapidez(JSONUtil.getInteger(jugador, "info.skills.pace"));
-			j.setTecnica(JSONUtil.getInteger(jugador, "info.skills.technique"));
-			j.setPases(JSONUtil.getInteger(jugador, "info.skills.passing"));
-			j.setPorteria(JSONUtil.getInteger(jugador, "info.skills.keeper"));
-			j.setDefensa(JSONUtil.getInteger(jugador, "info.skills.defending"));
-			j.setCreacion(JSONUtil.getInteger(jugador, "info.skills.playmaking"));
-			j.setAnotacion(JSONUtil.getInteger(jugador, "info.skills.striker"));
-
-			j.setActualizado(true); // Actualizado automáticamente
-		} catch (Exception e) {
-			// En las NTs no tendremos las habilidades
+		Integer condicion = JSONUtil.getInteger(jugador, "info.skills.stamina");
+		Integer rapidez = JSONUtil.getInteger(jugador, "info.skills.pace");
+		Integer tecnica = JSONUtil.getInteger(jugador, "info.skills.technique");
+		Integer pases = JSONUtil.getInteger(jugador, "info.skills.passing");
+		Integer porteria = JSONUtil.getInteger(jugador, "info.skills.keeper");
+		Integer defensa = JSONUtil.getInteger(jugador, "info.skills.defending");
+		Integer creacion = JSONUtil.getInteger(jugador, "info.skills.playmaking");
+		Integer anotacion = JSONUtil.getInteger(jugador, "info.skills.striker");
+		if (condicion != null && rapidez != null && tecnica != null && pases != null
+				&& porteria != null && defensa != null && creacion != null && anotacion != null) {
+			j.setCondicion(condicion);
+			j.setRapidez(rapidez);
+			j.setTecnica(tecnica);
+			j.setPases(pases);
+			j.setPorteria(porteria);
+			j.setDefensa(defensa);
+			j.setCreacion(creacion);
+			j.setAnotacion(anotacion);
+			j.setActualizado(true);
 		}
 		
 		j.setMinutos(requiredInteger(jugador, "effectiveness").floatValue());	// Tb "intensity", tiene el mismo valor
@@ -347,7 +359,7 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 //}
 					
 					// Habilidades
-					jug_semana.setForma(JSONUtil.getSkills(entrenamiento, "form"));
+					jug_semana.setForma(requiredSkills(entrenamiento, "form"));
 					jug_semana.setDisciplina_tactica(JSONUtil.getSkills(entrenamiento, "tacticalDiscipline"));
 					jug_semana.setTrabajo_en_equipo(JSONUtil.getSkills(entrenamiento, "teamwork"));
 					jug_semana.setExperiencia(JSONUtil.getSkills(entrenamiento, "experience"));
