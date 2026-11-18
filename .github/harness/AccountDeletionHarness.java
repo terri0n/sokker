@@ -170,7 +170,6 @@ public final class AccountDeletionHarness {
     }
 
     private static boolean hasTeamData(int tid) throws Exception {
-        TeamPlayerDAO dao = new TeamPlayerDAO(new SqliteDatabase(SqlitePersistence.getAsistenteDatabaseFile(), true));
         try (java.sql.Connection connection = new SqliteDatabase(SqlitePersistence.getAsistenteDatabaseFile(), true).openConnection();
              java.sql.PreparedStatement query = connection.prepareStatement(
                  "SELECT (SELECT COUNT(*) FROM team_player WHERE tid=?) + " +
