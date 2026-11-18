@@ -127,7 +127,11 @@ public final class LegacyPropertiesImporter {
                     String relativePath = sourceDirectory.toPath().relativize(file.toPath()).toString().replace(File.separatorChar, '/');
                     byte[] bytes = Files.readAllBytes(file.toPath());
                     String checksum = sha256(bytes);
-                    if (isImported(connection, relativePath)) {
+                    String importedChecksum = importedChecksum(connection, relativePath);
+                    if (importedChecksum != null) {
+                        if (!importedChecksum.equals(checksum)) {
+                            throw new SQLException("Legacy properties changed after import; refusing to retire modified source: " + relativePath);
+                        }
                         unchanged++;
                         continue;
                     }
@@ -265,15 +269,6 @@ public final class LegacyPropertiesImporter {
                 || candidate.equals(databasePath + "-shm");
     }
 
-    private boolean isImported(Connection connection, String path) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(
-                "SELECT 1 FROM legacy_properties_file WHERE path=?")) {
-            statement.setString(1, path);
-            try (java.sql.ResultSet result = statement.executeQuery()) {
-                return result.next();
-            }
-        }
-    }
 
     private void storeFile(Connection connection, String path, String checksum, long modifiedAt) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
