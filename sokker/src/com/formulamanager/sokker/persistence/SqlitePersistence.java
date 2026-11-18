@@ -42,6 +42,7 @@ public final class SqlitePersistence {
 
         SqlitePropertiesStore newAsistente = new SqlitePropertiesStore(asistenteDatabase, asistenteRoot);
         new TeamPlayerDAO(asistenteDatabase).migrateLegacy(newAsistente, asistenteRoot);
+        new UserDAO(asistenteDatabase).migrateLegacy(newAsistente, asistenteRoot);
         SqlitePropertiesStore factorxMigrationSource = new SqlitePropertiesStore(factorxDatabase, factorxRoot);
         new FactorxDAO(factorxDatabase).migrateLegacy(factorxMigrationSource, factorxRoot);
         asistente = newAsistente;
