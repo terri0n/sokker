@@ -3,7 +3,6 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
-import java.util.Collections;
 
 import com.formulamanager.sokker.persistence.SqliteDatabase;
 import com.formulamanager.sokker.persistence.TeamPlayerDAO;
