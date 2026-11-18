@@ -12,6 +12,9 @@ import java.util.Properties;
 
 import com.formulamanager.sokker.auxiliares.SystemUtil;
 import com.formulamanager.sokker.auxiliares.Util;
+import com.formulamanager.sokker.persistence.SqlitePersistence;
+import com.formulamanager.sokker.persistence.SqliteDatabase;
+import com.formulamanager.sokker.persistence.TeamPlayerDAO;
 
 public final class AccountDeletionHarness {
     private AccountDeletionHarness() {}
@@ -37,22 +40,20 @@ public final class AccountDeletionHarness {
         ntdb.put("owner", "alice,bob");
         ntdb.put("owner2", "malice,ALICE,charlie");
         Util.guardar_hashmap(ntdb, "NTDB");
+        initializeSqlite(data);
 
         AccountDeletionService.DeletionManifest manifest = AccountDeletionService.buildManifest("alice");
         require(manifest.isDeleteTeamData(), "Unique TID was not classified as exclusive");
         require(Integer.valueOf(123).equals(manifest.getTid()), "Manifest used the wrong TID");
         AccountDeletionService.execute(manifest);
 
-        require(!Files.exists(data.resolve("_alice.properties")), "Account file still exists");
+        require(UsuarioBO.leer_usuario("alice", false) == null, "Account row still exists in SQLite");
         require(!Files.exists(data.getParent().resolve("asistente-logs/_alice.log")), "Personal log still exists");
-        require(!Files.exists(data.resolve("123.properties")), "Current team data still exists");
-        require(!Files.exists(data.resolve("123_historico.properties")), "Historical team data still exists");
-        require(!Files.exists(data.resolve("123_juveniles.properties")), "Junior data still exists");
-        require(!Files.exists(data.resolve("123_juveniles_historico.properties")), "Historical junior data still exists");
+        require(!hasTeamData(123), "Team-owned SQLite data still exists");
         require(!Files.exists(data.resolve("prueba/123.properties")), "Test-user data still exists");
         require(!Files.exists(data.resolve("backup/123_1199.properties")), "Team backup still exists");
         require(!Files.exists(data.resolve("backup/123_1199_historico.properties")), "Historical team backup still exists");
-        require(Files.exists(data.resolve("backup/999_1199.properties")), "Unrelated backup was deleted");
+        require(hasTeamData(999), "Unrelated team backup data was deleted");
 
         HashMap<String, String> saved = Util.leer_hashmap("NTDB");
         require(!saved.containsKey("alice"), "Deleted user's NTDB entry remains");
@@ -71,12 +72,9 @@ public final class AccountDeletionHarness {
         require(!manifest.isDeleteTeamData(), "Shared TID was treated as exclusive");
         AccountDeletionService.execute(manifest);
 
-        require(!Files.exists(data.resolve("_alice.properties")), "Deleted account remains");
-        require(Files.exists(data.resolve("_other.properties")), "Other account was deleted");
-        require(Files.exists(data.resolve("123.properties")), "Shared current team data was deleted");
-        require(Files.exists(data.resolve("123_historico.properties")), "Shared historical data was deleted");
-        require(Files.exists(data.resolve("123_juveniles.properties")), "Shared junior data was deleted");
-        require(Files.exists(data.resolve("backup/123_1199.properties")), "Shared backup was deleted");
+        require(UsuarioBO.leer_usuario("alice", false) == null, "Deleted account remains in SQLite");
+        require(UsuarioBO.leer_usuario("other", false) != null, "Other account was deleted");
+        require(hasTeamData(123), "Shared team data or backup was deleted");
     }
 
     private static void nationalTeamReferencePreservesTeamData() throws Exception {
@@ -84,15 +82,13 @@ public final class AccountDeletionHarness {
         seedUser(data, "alice", 123, null, true);
         seedUser(data, "scout", 777, 123, false);
         seedTeamFiles(data, 123);
+        initializeSqlite(data);
 
         AccountDeletionService.DeletionManifest manifest = AccountDeletionService.buildManifest("alice");
         require(!manifest.isDeleteTeamData(),
                 "A team referenced as another account's national team was treated as exclusive");
         AccountDeletionService.execute(manifest);
-        require(Files.exists(data.resolve("123.properties")),
-                "Team data referenced through tid_nt was deleted");
-        require(Files.exists(data.resolve("backup/123_1199.properties")),
-                "Team backup referenced through tid_nt was deleted");
+        require(hasTeamData(123), "Team data referenced through tid_nt was deleted");
     }
 
     private static void nationalTeamDataIsPreserved() throws Exception {
@@ -101,16 +97,17 @@ public final class AccountDeletionHarness {
         seedTeamFiles(data, 123);
         touch(data.resolve("34.properties"));
         touch(data.resolve("34_historico.properties"));
+        initializeSqlite(data);
 
         AccountDeletionService.execute(AccountDeletionService.buildManifest("alice"));
 
-        require(Files.exists(data.resolve("34.properties")), "National-team current data was deleted");
-        require(Files.exists(data.resolve("34_historico.properties")), "National-team historical data was deleted");
+        require(hasTeamData(34), "National-team data was deleted");
     }
 
     private static void configuredAdminCannotBeDeleted() throws Exception {
         Path data = configure("sokker-delete-admin-", "admin");
         seedUser(data, "admin", 777, null, true);
+        initializeSqlite(data);
         boolean failed = false;
         try {
             AccountDeletionService.buildManifest("admin");
@@ -118,43 +115,63 @@ public final class AccountDeletionHarness {
             failed = true;
         }
         require(failed, "Configured admin account was deletable");
-        require(Files.exists(data.resolve("_admin.properties")), "Admin account changed during manifest build");
+        require(UsuarioBO.leer_usuario("admin", false) != null, "Admin account changed during manifest build");
     }
 
     private static void deletionIsIdempotent() throws Exception {
         Path data = configure("sokker-delete-idempotent-", "admin");
         seedUser(data, "alice", 123, null, true);
         seedTeamFiles(data, 123);
+        initializeSqlite(data);
         AccountDeletionService.DeletionManifest manifest = AccountDeletionService.buildManifest("alice");
         AccountDeletionService.execute(manifest);
         AccountDeletionService.execute(manifest);
-        require(!Files.exists(data.resolve("_alice.properties")), "Second execution recreated or retained the account");
+        require(UsuarioBO.leer_usuario("alice", false) == null, "Second execution recreated or retained the account");
     }
 
     private static void accountFileSurvivesInjectedFailure() throws Exception {
         Path data = configure("sokker-delete-failure-", "admin");
         seedUser(data, "alice", 123, null, true);
         seedTeamFiles(data, 123);
+        initializeSqlite(data);
         final AccountDeletionService.DeletionManifest manifest = AccountDeletionService.buildManifest("alice");
         boolean failed = false;
         try {
             AccountDeletionService.execute(manifest, new AccountDeletionService.FileOperations() {
                 @Override
                 public void deleteIfExists(File file) throws IOException {
-                    if ("123.properties".equals(file.getName())) {
-                        throw new IOException("injected deletion failure");
-                    }
                     Files.deleteIfExists(file.toPath());
+                }
+                @Override
+                public void deleteTeamData(int tid) throws IOException {
+                    throw new IOException("injected deletion failure");
                 }
             });
         } catch (IOException expected) {
             failed = true;
         }
         require(failed, "Injected deletion failure did not propagate");
-        require(Files.exists(data.resolve("_alice.properties")), "Account file disappeared after a prior deletion failure");
-        Properties account = load(data.resolve("_alice.properties").toFile());
-        require(account.getProperty(UsuarioBO.ACCOUNT_DELETION_REQUESTED_AT) != null,
+        require(UsuarioBO.obtener_fecha_solicitud_borrado("alice") != null,
                 "Pending deletion marker disappeared after a prior failure");
+    }
+
+    private static void initializeSqlite(Path data) throws Exception {
+        Path factorx = Files.createTempDirectory("sokker-delete-factorx-");
+        SqlitePersistence.initialize(data.toFile(), factorx.toFile());
+    }
+
+    private static boolean hasTeamData(int tid) throws Exception {
+        TeamPlayerDAO dao = new TeamPlayerDAO(new SqliteDatabase(SqlitePersistence.getAsistenteDatabaseFile(), true));
+        try (java.sql.Connection connection = new SqliteDatabase(SqlitePersistence.getAsistenteDatabaseFile(), true).openConnection();
+             java.sql.PreparedStatement query = connection.prepareStatement(
+                 "SELECT (SELECT COUNT(*) FROM team_player WHERE tid=?) + " +
+                 "(SELECT COUNT(*) FROM team_player_extension WHERE tid=?)")) {
+            query.setInt(1, tid);
+            query.setInt(2, tid);
+            try (java.sql.ResultSet result = query.executeQuery()) {
+                return result.next() && result.getInt(1) > 0;
+            }
+        }
     }
 
     private static Path configure(String prefix, String adminLogin) throws Exception {
