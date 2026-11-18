@@ -38,8 +38,8 @@ public final class AccountDeletionHarness {
         ntdb.put("alice", "bob,charlie");
         ntdb.put("owner", "alice,bob");
         ntdb.put("owner2", "malice,ALICE,charlie");
-        Util.guardar_hashmap(ntdb, "NTDB");
         initializeSqlite(data);
+        Util.guardar_hashmap(ntdb, "NTDB");
 
         AccountDeletionService.DeletionManifest manifest = AccountDeletionService.buildManifest("alice");
         require(manifest.isDeleteTeamData(), "Unique TID was not classified as exclusive");
