@@ -93,7 +93,7 @@ public final class PersistenceRoundTrip {
             initial.store(output, null);
         }
         Properties juniors = new Properties();
-        juniors.setProperty("77", "Junior,true,1200,17,5,3");
+        juniors.setProperty("77", "Junior,true,1200,17,5,3,");
         try (FileOutputStream output = new FileOutputStream(data.resolve("123_juveniles.properties").toFile())) {
             juniors.store(output, null);
         }
@@ -138,6 +138,8 @@ public final class PersistenceRoundTrip {
             require(Arrays.asList(UsuarioBO.obtener_backups(123)).contains("123_1200.properties"),
                     "Migrated team backup was not listed");
             require(AsistenteBO.leer_juveniles(123, false, usuario).size() == 1, "Juvenile DAO read failed");
+            require(AsistenteBO.leer_juveniles(123, false, usuario).get(0).serializar(true).endsWith(","),
+                    "Trailing empty juvenile serialization field was lost");
             require(AsistenteBO.leer_juveniles(123, true, usuario).size() == 1, "Historical juvenile DAO read failed");
             require(!data.resolve("124.properties").toFile().exists(), "Second legacy team file was not retired");
             require(!data.resolve("123_historico.properties").toFile().exists(), "Legacy player history was not retired");
