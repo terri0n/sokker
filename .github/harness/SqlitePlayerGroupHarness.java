@@ -31,6 +31,9 @@ public final class SqlitePlayerGroupHarness {
             require(aliceGroups.size() == 6, "Expected six shared default groups");
             int goalkeeperId = findDefault(aliceGroups, "GK").getId();
             int customId = GrupoJugadorDAO.crearGrupo("alice", "Prospects").getId();
+            require(GrupoJugadorDAO.obtenerGrupos("ALICE").size() == 7,
+                    "Group ownership was case-sensitive for login names");
+            GrupoJugadorDAO.renombrarGrupo("ALICE", customId, "Prospects");
 
             Map<Integer, GrupoJugador> initialAlice = GrupoJugadorDAO.obtenerAsignaciones("alice", 123);
             Map<Integer, GrupoJugador> initialBob = GrupoJugadorDAO.obtenerAsignaciones("bob", 123);
