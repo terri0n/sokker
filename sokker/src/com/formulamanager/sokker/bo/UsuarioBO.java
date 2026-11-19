@@ -216,7 +216,11 @@ public class UsuarioBO {
 
 		java.util.Map<Integer, String> training = new java.util.TreeMap<Integer, String>();
 		Properties extensions = previous == null ? new Properties() : previous.getExtensions();
-		for (Integer jornada : usuario.getTipo_entrenamiento(0).keySet()) {
+		// Sokker stores the four formations independently. A week is valid even
+		// when formation 0 has no training type, so persist the union of all weeks.
+		java.util.Set<Integer> jornadas = new java.util.TreeSet<Integer>();
+		for (int i = 0; i < 4; i++) jornadas.addAll(usuario.getTipo_entrenamiento(i).keySet());
+		for (Integer jornada : jornadas) {
 			String tipo;
 			String value;
 			if (jornada.intValue() < AsistenteBO.JORNADA_NUEVO_ENTRENO) {
