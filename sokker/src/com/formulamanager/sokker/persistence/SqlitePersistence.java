@@ -2,6 +2,9 @@ package com.formulamanager.sokker.persistence;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
@@ -37,30 +40,54 @@ public final class SqlitePersistence {
         SqliteDatabase asistenteDatabase = new SqliteDatabase(new File(asistenteRoot, "asistente.db"));
         SqliteDatabase factorxDatabase = new SqliteDatabase(new File(factorxRoot, "factorx.db"), false);
 
-        // Import both domains before publishing either store. The importer is
-        // idempotent and does not modify or delete the legacy source files.
-        LegacyPropertiesImporter asistenteImporter = new LegacyPropertiesImporter(asistenteDatabase, asistenteRoot);
-        File legacyIberica = new File(JugadorBO.PATH_BASE, "iberica.properties");
-        asistenteImporter.importExternal(legacyIberica, "iberica.properties");
-        asistenteImporter.importAll();
-        new LegacyPropertiesImporter(factorxDatabase, factorxRoot).importAll();
-
         SqlitePropertiesStore newAsistente = new SqlitePropertiesStore(asistenteDatabase, asistenteRoot);
-        new TeamPlayerDAO(asistenteDatabase).migrateLegacy(newAsistente, asistenteRoot);
-        new UserDAO(asistenteDatabase).migrateLegacy(newAsistente, asistenteRoot);
-        SqlitePropertiesStore factorxMigrationSource = new SqlitePropertiesStore(factorxDatabase, factorxRoot);
-        new FactorxDAO(factorxDatabase).migrateLegacy(factorxMigrationSource, factorxRoot);
+        if (!migrationCompleted(asistenteDatabase, "migration_marker", "legacy_properties_migrated")) {
+            LegacyPropertiesImporter importer = new LegacyPropertiesImporter(asistenteDatabase, asistenteRoot);
+            File legacyIberica = new File(JugadorBO.PATH_BASE, "iberica.properties");
+            importer.importExternal(legacyIberica, "iberica.properties");
+            importer.importAll();
 
-        // All legacy documents are now represented in SQLite: normalized
-        // player/user/FactorX tables or the generic key/value store. Retire
-        // remaining source files only after every migration has committed.
-        retireImportedSources(newAsistente, asistenteRoot);
-        retireImportedSources(factorxMigrationSource, factorxRoot);
-        asistenteImporter.retireExternal(legacyIberica, "iberica.properties");
+            new TeamPlayerDAO(asistenteDatabase).migrateLegacy(newAsistente, asistenteRoot);
+            new UserDAO(asistenteDatabase).migrateLegacy(newAsistente, asistenteRoot);
+            retireImportedSources(newAsistente, asistenteRoot);
+            importer.retireExternal(legacyIberica, "iberica.properties");
+            markMigrationCompleted(asistenteDatabase, "migration_marker", "legacy_properties_migrated");
+        }
+
+        if (!migrationCompleted(factorxDatabase, "factorx_migration", "legacy_properties_migrated")) {
+            new LegacyPropertiesImporter(factorxDatabase, factorxRoot).importAll();
+            SqlitePropertiesStore factorxSource = new SqlitePropertiesStore(factorxDatabase, factorxRoot);
+            new FactorxDAO(factorxDatabase).migrateLegacy(factorxSource, factorxRoot);
+            retireImportedSources(factorxSource, factorxRoot);
+            markMigrationCompleted(factorxDatabase, "factorx_migration", "legacy_properties_migrated");
+        }
 
         asistente = newAsistente;
         SqlitePersistence.factorxRoot = factorxRoot;
         SqlitePersistence.factorxDatabaseFile = factorxDatabase.getDatabaseFile();
+    }
+
+    private static boolean migrationCompleted(SqliteDatabase database, String table, String name)
+            throws SQLException {
+        try (Connection connection = database.openConnection();
+             PreparedStatement query = connection.prepareStatement(
+                     "SELECT 1 FROM " + table + " WHERE name=?")) {
+            query.setString(1, name);
+            try (ResultSet result = query.executeQuery()) {
+                return result.next();
+            }
+        }
+    }
+
+    private static void markMigrationCompleted(SqliteDatabase database, String table, String name)
+            throws SQLException {
+        try (Connection connection = database.openConnection();
+             PreparedStatement insert = connection.prepareStatement(
+                     "INSERT INTO " + table + "(name,completed_at) VALUES(?,?)")) {
+            insert.setString(1, name);
+            insert.setLong(2, System.currentTimeMillis());
+            insert.executeUpdate();
+        }
     }
 
     private static void retireImportedSources(SqlitePropertiesStore store, File root)
