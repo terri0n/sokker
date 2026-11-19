@@ -124,7 +124,7 @@ public final class SqlitePersistence {
 
     public static Properties load(File file) throws IOException {
         SqlitePropertiesStore store = forFile(file);
-        if (store == null) return null;
+        if (store == null) throw new IOException("No SQLite store configured for " + file);
         try {
             return store.load(store.relativePath(file));
         } catch (SQLException e) {
@@ -134,7 +134,7 @@ public final class SqlitePersistence {
 
     public static boolean exists(File file) throws IOException {
         SqlitePropertiesStore store = forFile(file);
-        if (store == null) return file != null && file.isFile();
+        if (store == null) throw new IOException("No SQLite store configured for " + file);
         try {
             return store.exists(store.relativePath(file));
         } catch (SQLException e) {
@@ -154,7 +154,7 @@ public final class SqlitePersistence {
 
     public static boolean delete(File file) throws IOException {
         SqlitePropertiesStore store = forFile(file);
-        if (store == null) return file != null && file.delete();
+        if (store == null) throw new IOException("No SQLite store configured for " + file);
         try {
             return store.delete(store.relativePath(file));
         } catch (SQLException e) {
@@ -164,7 +164,7 @@ public final class SqlitePersistence {
 
     public static List<String> list(File root, String prefix, String suffix) throws IOException {
         SqlitePropertiesStore store = forFile(root);
-        if (store == null) return null;
+        if (store == null) throw new IOException("No SQLite store configured for " + root);
         try {
             return store.list(prefix, suffix);
         } catch (SQLException e) {
@@ -174,7 +174,7 @@ public final class SqlitePersistence {
 
     public static long lastModified(File file) throws IOException {
         SqlitePropertiesStore store = forFile(file);
-        if (store == null) return file == null ? 0L : file.lastModified();
+        if (store == null) throw new IOException("No SQLite store configured for " + file);
         try {
             return store.lastModified(store.relativePath(file));
         } catch (SQLException e) {
