@@ -14,6 +14,7 @@ import java.util.Properties;
 import com.formulamanager.sokker.auxiliares.SystemUtil;
 import com.formulamanager.sokker.auxiliares.Util;
 import com.formulamanager.sokker.bo.AsistenteBO;
+import com.formulamanager.sokker.bo.EquipoBO.TIPO_ENTRENAMIENTO;
 import com.formulamanager.sokker.bo.UsuarioBO;
 import com.formulamanager.sokker.entity.Jugador;
 import com.formulamanager.sokker.entity.Juvenil;
@@ -36,6 +37,7 @@ public final class PersistenceRoundTrip {
         juniorPositionsReadFromSerializedRecords();
         playerUnmanagedEntryRoundTrip();
         userUnknownFieldsRoundTrip();
+        trainingWeekInNonPrimaryFormationRoundTrip();
         userDeletionRequestRoundTrip();
         retiredAutomaticUpdateSecretIsPurged();
     }
@@ -218,6 +220,34 @@ public final class PersistenceRoundTrip {
         require(loadedAgain != null, "Usuario could not be re-read after save");
         UsuarioBO.grabar_usuario(loadedAgain);
         assertUserFutureData(userFile);
+    }
+
+    private static void trainingWeekInNonPrimaryFormationRoundTrip() throws Exception {
+        Path data = configureTempDataPath("sokker-user-training-formations-");
+        Usuario seed = new Usuario(Arrays.asList("alice,pw,sokkerAlice,123,,123,Team,,1200,,0,*".split(",", -1)));
+        File userFile = data.resolve("_alice.properties").toFile();
+        Properties initial = new Properties();
+        initial.setProperty("usuario", seed.serializar());
+        try (FileOutputStream output = new FileOutputStream(userFile)) {
+            initial.store(output, null);
+        }
+        initializeSqlite(data);
+
+        Usuario loaded = UsuarioBO.leer_usuario("alice", false);
+        require(loaded != null, "User for formation training round-trip could not be read");
+        require(!loaded.getTipo_entrenamiento(0).containsKey(1201),
+                "Fixture unexpectedly has primary-formation training for round 1201");
+        loaded.getTipo_entrenamiento(2).put(Integer.valueOf(1201), TIPO_ENTRENAMIENTO.Porteria);
+        UsuarioBO.grabar_usuario(loaded);
+
+        UserDAO.UserRecord saved = userDao().load("alice");
+        String training = saved.getTraining().get(Integer.valueOf(1201));
+        require(training != null && training.split(",", -1)[0].split("-", -1).length > 2
+                && "Porteria".equals(training.split(",", -1)[0].split("-", -1)[2]),
+                "Training week existing only in formation 2 was not persisted");
+        Usuario reloaded = UsuarioBO.leer_usuario("alice", false);
+        require(TIPO_ENTRENAMIENTO.Porteria.equals(reloaded.getTipo_entrenamiento(2).get(1201)),
+                "Training week in formation 2 was not restored after reload");
     }
 
     private static void userDeletionRequestRoundTrip() throws Exception {
