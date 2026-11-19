@@ -136,11 +136,6 @@ public final class SqlitePropertiesStore {
     }
 
     /**
-     * Retires a migrated source only if its bytes still match the original
-     * import. The database marker is removed after the filesystem deletion,
-     * making retries safe if the process stops between the two operations.
-     */
-    /**
      * Deletes a migrated source only if its bytes still match the original
      * import. The key/value rows remain available to the generic properties
      * store after the legacy file has been retired.
