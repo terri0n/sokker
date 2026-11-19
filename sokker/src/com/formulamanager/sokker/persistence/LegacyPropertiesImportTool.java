@@ -3,8 +3,8 @@ package com.formulamanager.sokker.persistence;
 import java.io.File;
 
 /**
- * Explicit command-line entry point. It is intentionally not run at webapp
- * startup: production data must be backed up and the import report reviewed.
+ * Explicit command-line entry point for inspecting a legacy import. Webapp startup
+ * runs the complete one-time migration, including normalized DAO imports and source retirement.
  *
  * Usage: LegacyPropertiesImportTool <legacy-data-directory> <sqlite-file>
  */
