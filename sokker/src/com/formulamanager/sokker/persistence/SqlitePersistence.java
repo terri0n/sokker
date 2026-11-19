@@ -54,9 +54,9 @@ public final class SqlitePersistence {
             markMigrationCompleted(asistenteDatabase, "migration_marker", "legacy_properties_migrated");
         }
 
+        SqlitePropertiesStore factorxSource = new SqlitePropertiesStore(factorxDatabase, factorxRoot);
         if (!migrationCompleted(factorxDatabase, "factorx_migration", "legacy_properties_migrated")) {
             new LegacyPropertiesImporter(factorxDatabase, factorxRoot).importAll();
-            SqlitePropertiesStore factorxSource = new SqlitePropertiesStore(factorxDatabase, factorxRoot);
             new FactorxDAO(factorxDatabase).migrateLegacy(factorxSource, factorxRoot);
             retireImportedSources(factorxSource, factorxRoot);
             markMigrationCompleted(factorxDatabase, "factorx_migration", "legacy_properties_migrated");
