@@ -36,6 +36,7 @@ public final class PersistenceRoundTrip {
         unknownTrailingJuniorFieldsRoundTrip();
         juniorPositionsReadFromSerializedRecords();
         playerUnmanagedEntryRoundTrip();
+        legacyMigrationRunsOnlyOnce();
         userUnknownFieldsRoundTrip();
         trainingWeekInNonPrimaryFormationRoundTrip();
         userDeletionRequestRoundTrip();
@@ -185,6 +186,36 @@ public final class PersistenceRoundTrip {
             List<Jugador> loadedAgain = AsistenteBO.leer_jugadores(123, "Team", false, usuario);
             require(loadedAgain.size() == 2 && loadedAgain.stream().anyMatch(j -> Integer.valueOf(42).equals(j.getPid())),
                     "Player database could not be re-read after saving to SQLite");
+        } finally {
+            SqlitePersistence.shutdown();
+        }
+    }
+
+    private static void legacyMigrationRunsOnlyOnce() throws Exception {
+        Path data = configureTempDataPath("sokker-one-time-migration-");
+        Path factorx = Files.createTempDirectory("sokker-one-time-factorx-");
+        File initial = data.resolve("NTDB.properties").toFile();
+        Properties properties = new Properties();
+        properties.setProperty("alice", "initial");
+        try (FileOutputStream output = new FileOutputStream(initial)) {
+            properties.store(output, null);
+        }
+
+        try {
+            SqlitePersistence.initialize(data.toFile(), factorx.toFile());
+            require(!initial.exists(), "Initial legacy source was not retired");
+
+            File late = data.resolve("late.properties").toFile();
+            Properties lateProperties = new Properties();
+            lateProperties.setProperty("must", "not-be-imported");
+            try (FileOutputStream output = new FileOutputStream(late)) {
+                lateProperties.store(output, null);
+            }
+
+            SqlitePersistence.initialize(data.toFile(), factorx.toFile());
+            require(late.exists(), "A post-migration file was unexpectedly treated as a legacy source");
+            require(!SqlitePersistence.exists(late),
+                    "A post-migration .properties file was imported into the SQLite store");
         } finally {
             SqlitePersistence.shutdown();
         }
