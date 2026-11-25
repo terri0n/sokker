@@ -284,6 +284,25 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 		return j;
 	}
 	
+	/**
+	 * La respuesta de /api/training/players no incluye el estado de venta.
+	 * Sokker solo expone transfer.deadline.date en la ficha individual.
+	 */
+	@SuppressWarnings("unchecked")
+	private static Integer obtener_estado_venta(Integer pid, WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
+		try {
+			Object pagina = JSONUtil.getJson(navegador, AsistenteBO.SOKKER_URL + "/api/player/" + pid);
+			if (!(pagina instanceof LinkedHashMap)) {
+				throw new IOException("Incomplete Sokker player payload for PID " + pid);
+			}
+			LinkedHashMap<String, Object> jugador = (LinkedHashMap<String, Object>) pagina;
+			return JSONUtil.getJSON(jugador, "transfer.deadline.date") == null ? null : Integer.valueOf(1);
+		} catch (FailingHttpStatusCodeException e) {
+			if (e.getStatusCode() == 404) return null;
+			throw e;
+		}
+	}
+
 	public static List<Jugador> obtener_entrenamiento(Usuario usuario, int jornada_actual, boolean incrementar_edad, WebClient navegador) throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 		List<Jugador> jugadores = new ArrayList<>();
 		
@@ -296,6 +315,13 @@ SERVLET_ASISTENTE._log_linea("_XMLS", "__TID: " + tid + "__\n" + pagina.toString
 		List<LinkedHashMap<String, Object>> avanzado = readRequiredObjectList(pagina, "$.advanced");
 		for (LinkedHashMap<String, Object> a : avanzado) {
 			jugadores.add(leer_jugador_entrenamiento(true, jornada_actual, incrementar_edad, usuario, a));
+		}
+
+		// La API de entrenamiento no incluye transfer.deadline.date. Completamos
+		// únicamente ese dato desde la ficha individual, sin reemplazar el resto
+		// de la información de entrenamiento que ya hemos recibido.
+		for (Jugador jugador : jugadores) {
+			jugador.setEn_venta(obtener_estado_venta(jugador.getPid(), navegador));
 		}
 
 		return jugadores;
